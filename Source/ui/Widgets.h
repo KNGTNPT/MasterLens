@@ -83,10 +83,12 @@ public:
 
 private:
     void paintRow (juce::Graphics&, juce::Rectangle<int>, const juce::String& label,
-                   const juce::String& windowText, float valueDb, juce::Colour colour);
+                   const juce::String& windowText, float valueDb, float holdDb, juce::Colour colour);
 
     StatsSnapshot stats;
     float target = -14.0f;
+    float holdM = -100.0f;
+    float holdS = -100.0f;
 };
 
 //==============================================================================
@@ -100,7 +102,7 @@ public:
 private:
     void paintMeter (juce::Graphics&, juce::Rectangle<int>, const juce::String& label,
                      const juce::String& readout, float normalised, juce::Colour fill,
-                     float marker = -1.0f);
+                     float marker = -1.0f, juce::Colour status = juce::Colour (0xff6c6f75));
 
     StatsSnapshot stats;
 };
@@ -199,10 +201,17 @@ class HistoryGraph : public juce::Component
 public:
     HistoryGraph();
 
+    struct Event
+    {
+        float ageSeconds = 0.0f;
+        int severity = 0;
+    };
+
     void setData (std::vector<float> curve, float targetLufs);
+    void setEvents (std::vector<Event> newEvents) { events = std::move (newEvents); repaint(); }
     void setBand (float lraValue) { bandLra = lraValue; repaint(); }
     void paint (juce::Graphics&) override;
-    void resized() override { backgroundDirty = true; }
+    void resized() override {}
     void refreshLanguage() { backgroundDirty = true; repaint(); }
     void invalidateBackground() { backgroundDirty = true; repaint(); }
 
@@ -214,6 +223,7 @@ public:
     Range getRange() const noexcept { return range; }
 
 private:
+    void ensureBackground();
     void paintPlot (juce::Graphics&);
     void paintOverlay (juce::Graphics&);
     juce::Rectangle<int> plotArea() const;
@@ -221,6 +231,7 @@ private:
     int pointsForRange() const;
 
     std::vector<float> data;
+    std::vector<Event> events;
     float target = -14.0f;
     float bandLra = 0.0f;
     Range range = Range::oneMinute;
@@ -228,6 +239,9 @@ private:
     bool backgroundDirty = true;
     int cachedThemeRevision = -1;
     int hoverX = -1;
+
+public:
+    std::function<void (double)> onSeek;
 };
 
 //==============================================================================

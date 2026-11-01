@@ -47,9 +47,7 @@ void MasterLensAudioProcessorEditor::paint (juce::Graphics& g)
             auto chip = juce::Rectangle<int> (x, content.getY(), versionW, 17);
 
             g.setColour (ml::theme::cardAlt);
-            g.fillRoundedRectangle (chip.toFloat(), 8.5f);
-            g.setColour (ml::theme::border);
-            g.drawRoundedRectangle (chip.toFloat().reduced (0.5f), 8.5f, 1.0f);
+            g.fillRoundedRectangle (chip.toFloat(), 4.0f);
             g.setColour (ml::theme::textFaint);
             g.setFont (versionFont);
             g.drawText (versionText, chip, juce::Justification::centred, false);
@@ -69,26 +67,65 @@ void MasterLensAudioProcessorEditor::paint (juce::Graphics& g)
                         juce::Justification::centredLeft, false);
         }
 
+        const auto verdict = rail.getVerdictHeadline().isNotEmpty()
+                                 ? rail.getVerdictHeadline()
+                                 : T ("等待信号", "Waiting for signal");
+        const auto verdictColour = rail.getVerdictHeadline().isNotEmpty()
+                                       ? rail.getVerdictColour() : ml::theme::textFaint;
+
+        g.setColour (verdictColour);
+        g.fillEllipse ((float) textX, (float) content.getY() + 27.0f, 7.0f, 7.0f);
         g.setColour (ml::theme::textDim);
         g.setFont (ml::uiFont (ml::tokens::unit));
-        g.drawText (T ("BerryStudio · 母带交付检查 · 默认旁路，试听时改变输出",
-                       "BerryStudio · mastering QC · bypassed unless auditioning"),
-                    textX, content.getY() + 24, maxW, 14, juce::Justification::centredLeft);
+        g.drawText (verdict, textX + 14, content.getY() + 24, maxW - 132, 14,
+                    juce::Justification::centredLeft, false);
 
         g.restoreState();
 
+        // One output state in the header: BYPASS / MATCH / REFERENCE / AUDITION.
+        juce::String outState = T ("BYPASS", "BYPASS");
+        auto outColour = ml::theme::textFaint;
+
+        if (processor.referencePlayer.isEnabled())
+        {
+            outState = T ("REFERENCE", "REFERENCE");
+            outColour = ml::theme::warn;
+        }
+        else if (processor.isAuditionActive())
+        {
+            outState = T ("AUDITION", "AUDITION");
+            outColour = ml::theme::accent;
+        }
+        else if (processor.isMonitorMatch())
+        {
+            outState = T ("MATCH ", "MATCH ") + ml::sgn (processor.getMonitorTrimDb(), 1) + " dB";
+            outColour = ml::theme::accent;
+        }
+
+        const auto outFont = ml::uiFont (ml::tokens::unit);
+        const int outW = juce::jmin (116, juce::roundToInt (
+            juce::GlyphArrangement::getStringWidth (outFont, outState)) + 22);
+        auto outChip = juce::Rectangle<int> (brandRight - outW, content.getY() + 1, outW, 18);
+
+        g.setColour (outColour.withAlpha (0.12f));
+        g.fillRoundedRectangle (outChip.toFloat(), 4.0f);
+        g.setColour (outColour);
+        g.fillEllipse ((float) outChip.getX() + 8.0f, (float) outChip.getCentreY() - 3.0f, 6.0f, 6.0f);
+        g.setFont (outFont);
+        g.drawText (outState, outChip.withTrimmedLeft (19), juce::Justification::centredLeft, false);
+
         if (frozen && maxW > 360)
         {
-            const auto pill = juce::Rectangle<int> (brandRight - 64, content.getY() + 23, 56, 16);
+            const auto pill = juce::Rectangle<int> (brandRight - 176, content.getY() + 23, 56, 16);
 
             g.setColour (ml::theme::warn.withAlpha (0.16f));
-            g.fillRoundedRectangle (pill.toFloat(), 8.0f);
+            g.fillRoundedRectangle (pill.toFloat(), 4.0f);
             g.setColour (ml::theme::warn);
             g.setFont (ml::uiFont (ml::tokens::unit));
             g.drawText (T ("已保持", "Held"), pill, juce::Justification::centred);
         }
 
-        g.setColour (ml::theme::border);
+        g.setColour (ml::theme::divider);
         g.drawHorizontalLine (headerArea.getBottom() - 1, 0.0f, (float) baseBounds().getWidth());
     }
 
@@ -97,16 +134,16 @@ void MasterLensAudioProcessorEditor::paint (juce::Graphics& g)
         g.setColour (ml::theme::card);
         g.fillRect (paramArea);
 
-        g.setColour (ml::theme::border);
+        g.setColour (ml::theme::divider);
         g.drawHorizontalLine (paramArea.getBottom() - 1, 0.0f, (float) baseBounds().getWidth());
     }
 
     // ---- footer -------------------------------------------------------------
     {
-        g.setColour (ml::theme::border);
+        g.setColour (ml::theme::divider);
         g.drawHorizontalLine (footerArea.getY(), 0.0f, (float) baseBounds().getWidth());
 
-        auto f = footerArea.reduced (14, 4);
+        auto f = footerArea.reduced (16, 4);
 
         g.setColour (ml::theme::textFaint);
         g.setFont (ml::monoFont (ml::tokens::unit));
@@ -114,24 +151,25 @@ void MasterLensAudioProcessorEditor::paint (juce::Graphics& g)
                     + ml::sep() + (stats.stereo ? T ("立体声", "stereo") : T ("单声道", "mono"))
                     + ml::sep() + juce::String ("4") + ml::times() + " TP";
 
-        if (stats.hostLength > 0.0)
+        if (selectedPage == (int) ml::PageId::files)
+            tech = T ("OFFLINE · 离线分析结果 · 不随播放更新", "OFFLINE · analysis results · not live");
+        else if (selectedPage == (int) ml::PageId::album)
+            tech = T ("ALBUM · 专辑快照 · 离线记录", "ALBUM · snapshots · offline records");
+        else if (stats.hostLength > 0.0)
             tech << ml::sep() << T ("覆盖 ", "cov ") << ml::num (stats.coveragePct) << "%";
 
-        g.drawText (tech, f.getX(), f.getY(), 360, f.getHeight(),
+        g.drawText (tech, f.getX(), f.getY(), 390, f.getHeight(),
                     juce::Justification::centredLeft);
 
-        if (footerStatusText.isNotEmpty())
+        // The one global verdict lives in the header. Transient operation
+        // messages stay here, in the muted text colour, without a second pill.
+        if (footerStatusText.isNotEmpty() && footerStatusText != rail.getVerdictHeadline())
         {
-            auto pill = juce::Rectangle<int> (f.getCentreX() - 46, f.getY(), 92, f.getHeight());
-
-            g.setColour (footerStatusColour.withAlpha (0.12f));
-            g.fillRoundedRectangle (pill.toFloat(), 9.0f);
-
-            g.setColour (footerStatusColour);
-            g.fillEllipse ((float) pill.getX() + 12.0f, (float) pill.getCentreY() - 3.0f, 6.0f, 6.0f);
-
+            g.setColour (footerStatusColour.withAlpha (0.9f));
+            g.fillEllipse ((float) f.getCentreX() - 54.0f, (float) f.getCentreY() - 3.0f, 6.0f, 6.0f);
+            g.setColour (ml::theme::textDim);
             g.setFont (ml::uiFont (ml::tokens::unit));
-            g.drawText (footerStatusText, pill.withTrimmedLeft (24),
+            g.drawText (footerStatusText, f.getCentreX() - 42, f.getY(), 220, f.getHeight(),
                         juce::Justification::centredLeft);
         }
 

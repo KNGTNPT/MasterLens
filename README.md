@@ -5,17 +5,19 @@
 **母带响度 / 文件 QC / 频谱图 / 选区 / M/S / CLI**<br>
 by **BerryStudio** · developer **KNGTNPT**<br>
 macOS / Windows 音频总线插件（VST3 / AU / 独立版），C++17 + JUCE 8。<br>
-当前版本：**2.0.0**（正式版）
+当前版本：**2.0.1**（正式版）
 
 MasterLens 是插在总线或母带链最后一级的检查器。它默认零延迟、逐位旁路，不碰你的音频；只有你主动点试听、开等响监听或切到参考 A/B 时，输出才会临时改变。
 
 它不负责把歌变好听，这件事还是得你来。它负责在你觉得“应该差不多了”的时候，把响度、平台会怎么处理、信号有没有受伤、整张专辑是否一致摊开给你看。
 
-2.0 之前，它更像一块实时表。2.0 把几件真正影响交付的事接上了：整张专辑可以离线跑完、参考轨可以按宿主位置播放、时间戳跟宿主走、报告能直接交给客户或存档。
+2.0 之前，它更像一块实时表。2.0 把几件真正影响交付的事接上了：整张专辑可以离线跑完、参考轨可以按宿主位置播放、时间戳跟宿主走、报告能直接交给客户或存档。2.0.1 没加新测量，主要把界面从“卡片博览会”收回到一台安静的仪器，并把 UI 线程的开销重新量了一遍。
 
-![MasterLens 2.0 界面](docs/screenshot-2.0.png)
+![MasterLens 2.0.1 主界面](docs/screenshot-2.0.1.png)
 
-![文件 QC / 离线批量分析](docs/fileqc-2.0.png)
+![文件 QC / 离线批量分析](docs/fileqc-2.0.1.png)
+
+![立体声 / 相位](docs/stereo-2.0.1.png)
 
 ![频谱图 / 瀑布图](docs/waterfall-2.0.png)
 
@@ -47,22 +49,24 @@ MasterLens 是插在总线或母带链最后一级的检查器。它默认零延
 
 ## 五分钟上手
 
-教程随版本更新，当前对应 **2.0.0**。
+教程随版本更新，当前对应 **2.0.1**。
 
 ### 装好并插到总线
 
-macOS 打开 DMG，双击「安装 Install.command」，然后重启 DAW。Windows 运行 `MasterLens-2.0.0-Windows-*.exe`，同样重启 DAW。
+macOS 打开 DMG，双击「安装 Install.command」，然后重启 DAW。Windows 运行 `MasterLens-2.0.1-Windows-*.exe`，同样重启 DAW。
 
 把 MasterLens 插在 **Master / Stereo Out** 最后一级，确认没有被宿主 bypass 或 mute。播放音频，它就会开始测量。
 
 ### 先看一首歌
 
-从头播放 20–30 秒，等综合响度稳定。首页四张卡分别看综合响度、真峰值、LRA 和 PLR：
+从头播放 20–30 秒，等综合响度稳定。首页四张读数卡分别看综合响度、真峰值、LRA 和 PLR：
 
 - 真峰值有没有超过顶部的「真峰值上限」；
 - LRA 是不是被压得太扁；
 - PLR 还剩多少瞬态；
 - 平台归一化会带来多少衰减或浪费。
+
+数值下方那根 4 px 短横线才是状态：铜色是达标，黄是注意，红是超限。数字本身不再染色，省得四个读数一起像警报。顶部的「真峰值上限」和「参考响度」可以直接点进去键入，也可以上下键步进；参考响度要先在预设里选「手动参考值」才生效。
 
 如果读数是上一版留下的，点「清零统计」或按 R，再重新播放当前版本。想比较修改前后，点底部 A / B 存快照，再点一次切换，右键清空。
 
@@ -82,7 +86,7 @@ macOS 打开 DMG，双击「安装 Install.command」，然后重启 DAW。Windo
 
 按 F 打开「文件 QC」，把 WAV / AIFF / FLAC 或整个专辑文件夹拖进来。也可以点「选择文件」或「选择文件夹」。
 
-等右上角从 Analysing 变成 Done。每个文件会显示采样率、位深、时长、LUFS、TP、LRA 和风险。成功的结果会自动写入当前专辑，并重算中位和门禁。
+这个页面是离线结果，不会跟着播放更新，所以底部直播时间线会自动收起来，底栏改成 OFFLINE。等右上角从 Analysing 变成 Done。每个文件会显示采样率、位深、时长、LUFS、TP、LRA 和风险；表头可以点，按文件名、采样率、响度、真峰值、LRA 或风险排序；行可以滚，也可以点开看单曲详情。需要交给别人时点「导出表」，得到一份 CSV。成功的结果会自动写入当前专辑，并重算中位和门禁。
 
 然后按 5 看「专辑统一 / 交付门禁」：确认专辑名和曲目名，看右侧风险排序。文件 QC 的覆盖度是 100%，不需要填总长。点「导出证明」会得到 JSON + TXT，里面有每首快照、中位、规则、diff 和哈希。
 
@@ -156,15 +160,73 @@ MasterLens 不会做总线 ARA。原因不复杂：ARA 在大多数宿主里只�
 
 ## English summary
 
-MasterLens 2.0 is a mastering bus inspector for macOS and Windows (VST3, AU, Standalone). It is bit-transparent by default and only changes the output when you explicitly audition, enable loudness matching, or switch to the reference player.
+MasterLens 2.0.1 is a mastering bus inspector for macOS and Windows (VST3, AU, Standalone). It is bit-transparent by default and only changes the output when you explicitly audition, enable loudness matching, or switch to the reference player.
 
 It measures integrated / momentary / short-term loudness, LRA, PLR, 4× true peak, independent Mid / Side loudness, per-channel and Side true peak. It models eight platform-normalisation destinations, checks signal integrity, compares against reference tracks or an album median, and keeps a versioned album gate with JSON / TXT proof.
 
-The 2.0 release adds offline file and folder QC at native sample rates, host-playhead timestamps with coverage checks, equal-loudness monitoring, an in-plugin reference A/B player, spectrogram and band-heat views, timeline region estimates, 100 ms series export, PDF summaries, and a headless `MasterLensCli`.
+The 2.0 release added offline file and folder QC at native sample rates, host-playhead timestamps with coverage checks, equal-loudness monitoring, an in-plugin reference A/B player, spectrogram and band-heat views, timeline region estimates, 100 ms series export, PDF summaries, and a headless `MasterLensCli`.
+
+2.0.1 is a UI and performance release. The palette is warm graphite with one copper accent, cards no longer use outlines, readings are neutral numbers with a 4 px status rule, the left rail is 208 px with short labels, the parameter bar is a 36 px settings strip with editable values, and the output state (BYPASS / MATCH / REFERENCE / AUDITION) is always visible. File QC now scrolls, sorts, opens a row detail and exports a CSV; the file and album pages hide the live timeline and say OFFLINE. Stereo meters are 4 px tracks with peak hold, and history markers sit on the curve with hover readout and click-to-audition.
 
 There is no bus ARA. Most hosts expose ARA only on audio tracks, usually as the first insert; a bus analyser cannot rely on it. A per-track ARA variant is a possible future product, not part of 2.0.
 
-**Verified:** 73 offline DSP assertions, `auval`, and CI on macOS, Windows x64 and Windows ARM64.
+**Verified:** 73 offline DSP assertions, `auval`, CI on macOS, Windows x64 and Windows ARM64, and a no-DSP-change report comparison. UI paint p95 at 1120×700 is 2.5 ms on the loudness page, 8.6 ms on the spectrum page and 1.4 ms on File QC; the spectrum page stays under 6% single-core load.
+
+---
+
+## 2.0.1 更新：界面重做、质感与性能预算
+
+上一版把界面堆成了卡片博览会：每个数字都有一个框，每层都有描边，蓝色从按钮一路亮到曲线。功能没少，但看久了像在盯一块 2015 年的监控屏。2.0.1 只做三件事：把视觉收干净、把几个真正别扭的交互修掉、把 UI 开销重新量一遍。测量、门禁、导出逻辑一行没改。
+
+### 视觉：暖石墨 + 单一铜色
+
+- 只有三层表面：底 `#141517`、面板 `#1A1B1E`、浮起 `#202226`；靠明度差分层，卡片不再描边。
+- 一屏只有一种强调色 `#C2703C`，只给可交互元素和当前状态；达标 / 注意 / 超限只用小圆点、4 px 短横线和小标签，不再给大数字染色。
+- 读数统一主文字色，28–34 px 等宽；标签 12–13 px、单位 11 px。圆角只有 4 和 8 两档，间距走 8 pt 网格。
+- 面板顶部 1 px 内高光、图表边缘暗角、2.5% 噪点薄层和曲线下方铜色渐变；这些纹理都离屏缓存，不在每帧 paint 里做模糊。
+- 参考调研和“借什么 / 不借什么”记在 `docs/ui-reference.md`，截图只作内部对照，不随产品分发。
+
+### 修掉的交互
+
+- **左栏不再截断**：宽度 186 → 208，标题区留够 104 px；文案缩成「专辑门禁」「曲风交付」「响度基准」，数值列压到 60 px。
+- **设置条压成 36 px**：原来的两块常驻滑杆是设置，不是读数；现在是小标签 + 细轨 + 可键入数值。参考响度和真峰值上限都可以直接输入、上下键步进、失焦生效，并显示单位。
+- **只保留一条总状态**：顶部状态点 + 一句话，左栏不再重复一张 verdict 卡，底栏也不再放第二个红色胶囊。
+- **输出状态常驻**：BYPASS / MATCH −0.6 dB / REFERENCE / AUDITION 在标题行右侧；等响监听或参考播放改变输出时，不用猜现在听到的是哪一路。
+- **文件 QC 真能用了**：表格不再按 `rowIndex >= 16` 硬截断；支持滚轮 / 滚动条、表头排序、点击行看单曲详情、导出 CSV。文件页加 OFFLINE 模式带，直播时间线自动隐藏，底栏也不再冒充实时总线。
+- **立体声页**：三条表改成 4 px 轨道 + 铜色填充 + 2 px 峰值保持 + 目标线；L / R / Side TP 和单声道折叠是四张无边框面板；三段分频改成三列文本，不再是一排小卡片。
+- **历史曲线**：标记直接叠在曲线上，不再单独占一条 40 px 时间线；hover 出时间和 LUFS，点击把该点送进试听。
+- **数字和结论分家**：四个大数字统一主文字色，状态是下方的短横线；文件 QC 的「注意 63」改成「风险 63/100」。
+
+### 性能：先量，再动
+
+同一台 Apple Silicon、1120×700、48 kHz / 512 缓冲，`MasterLensUiShot bench` 的离屏结果。CPU 是 UI 定时器负载，paint 是把整棵组件树画进复用图像的时间：
+
+| 场景 | 2.0.0 旧界面 | 2.0.1 新界面 | 预算 |
+| --- | --- | --- | --- |
+| 响度页 CPU | 1.41% | **1.37%** | ≤ 3% |
+| 频谱页 CPU | 2.13% | **2.41%** | ≤ 6% |
+| 文件 QC CPU | 1.24% | **1.40%** | ≤ 3% |
+| 响度页 paint p95 | 2.6 ms | **2.5 ms** | ≤ 10 ms |
+| 频谱页 paint p95 | 8.2 ms | **8.6 ms** | ≤ 10 ms |
+| 文件 QC paint p95 | 1.7 ms | **1.4 ms** | ≤ 10 ms |
+
+新界面多了纹理、暗角和更多状态，CPU 没有明显上涨；频谱页仍低于 6%。真正救回 paint 时间的是缓存：在缓存前，同一套新界面的响度页 p95 约 14 ms，频谱页约 18 ms；把详情底、历史图和频谱网格改成离屏缓存后，才落到 2.5 / 8.6 ms。
+
+做法不神秘：
+
+- 编辑器 / 详情页 / 历史图的底色、暗角、噪点全部离屏缓存，按尺寸和主题 revision 失效；paint 只贴图，不重复生成纹理。
+- 左栏 11 个模块改成批量更新，最后一帧统一 repaint；不再每 `setModule` 重画一次。
+- 文件 QC 只画可见行；结果多时用滚动窗口，不把整张专辑塞进一屏。
+- 计时器在真实窗口隐藏时直接返回；离屏 UiShot 没有 peer，仍能驱动快照。
+- 缓存总量约 6 MB（详情页、历史图、频谱网格），远低于 48 MB 上限。
+
+完整方法和 880×560、12 文件批量、RSS 数字在 `docs/performance-2.0.1.md`。
+
+**没改的部分**：DSP、测量、门限、LRA 统计、真峰值过采样和导出格式都没动；73 项离线 DSP 断言仍全过，固定测试文件的 JSON 报告与 2.0.0 逐项一致。编辑器关闭时音频线程实测 0.42–0.46%，`processBlock` 没有新增分配或锁。
+
+### 还是没做
+
+AAX / AudioSuite、总线 ARA、DDP / PQ、编码预演、macOS 公证和 Windows 代码签名，仍然卡在 SDK、规格或证书上。原因和 2.0 那段一样，不重复吹一遍；没有条件就不假装完成。
 
 ---
 
@@ -431,7 +493,7 @@ There is no bus ARA. Most hosts expose ARA only on audio tracks, usually as the 
 ### 界面
 
 - 深色专业主题（可切浅色）；界面缩放 100–200%，字号、行高、卡片与窗口一起等比放大且不截字。
-- 2.0 基准布局：**880×560 – 1900×1400**，默认 **1120×700**；100% 采用更紧的字号 / 行高 / 卡片令牌，统计页纵向填满。
+- 2.0.1 基准布局：**880×560 – 1900×1400**，默认 **1120×700**；100% 采用暖石墨 / 单一铜色、4 / 8 px 圆角、28–34 px 读数与可键入的设置条。
 - **中英双语**：右上角 `EN / 中文` 一键切换；界面、诊断、报告同步；语言保存在插件状态。
 - 11 个模块：响度、真峰值、频谱、立体声、平台归一化、专辑、信号健康、诊断、时间线、曲风目标、文件 QC；快捷键 1–9 + 0 + F。
 - **等响监听 / 参考 A/B**：底栏「等响监听」按目标 LUFS 自动 trim；频谱页「参考 A/B」在插件内按宿主 playhead 播放参考文件。
@@ -528,11 +590,11 @@ build/MasterLensCli_artefacts/Release/MasterLensCli
 ./scripts/make_dmg.sh
 ```
 
-输出 `dist/MasterLens-2.0.0-macOS.dmg`，并复制一份到桌面；内含 VST3、AU、独立版、`MasterLensCli`、安装 / 卸载脚本与说明。
+输出 `dist/MasterLens-2.0.1-macOS.dmg`，并复制一份到桌面；内含 VST3、AU、独立版、`MasterLensCli`、安装 / 卸载脚本与说明。
 
 ### Windows
 
-Windows x64 / ARM64 安装包由 GitHub Actions 的 MSVC + NSIS 矩阵生成；推送 `v*` 标签即可产出 `MasterLens-2.0.0-Windows-x64.exe` 与 `-ARM64.exe`，安装目录内包含 `MasterLensCli.exe`。
+Windows x64 / ARM64 安装包由 GitHub Actions 的 MSVC + NSIS 矩阵生成；推送 `v*` 标签即可产出 `MasterLens-2.0.1-Windows-x64.exe` 与 `-ARM64.exe`，安装目录内包含 `MasterLensCli.exe`。
 
 ---
 
@@ -581,7 +643,7 @@ Windows x64 / ARM64 安装包由 GitHub Actions 的 MSVC + NSIS 矩阵生成；�
 auval -v aufx Maln OrcA
 ```
 
-VST3 moduleinfo：Version **2.0.0**，Vendor **BerryStudio**；显示版本 **2.0.0**，AU Bundle ID `com.berrystudio.masterlens`。
+VST3 moduleinfo：Version **2.0.1**，Vendor **BerryStudio**；显示版本 **2.0.1**，AU Bundle ID `com.berrystudio.masterlens`。
 
 ---
 
@@ -649,7 +711,7 @@ scripts/                    DMG / 发布 / logo 工具
 ## 发布 / 仓库
 
 - 仓库：<https://github.com/KNGTNPT/MasterLens>
-- 最新 Release：<https://github.com/KNGTNPT/MasterLens/releases/tag/v2.0.0>
+- 最新 Release：<https://github.com/KNGTNPT/MasterLens/releases/tag/v2.0.1>
 - 安装包：macOS DMG、Windows x64 / ARM64 EXE
 - 历史版本：`v1.5.0` … `v1.0.0`，每个 tag 都可以单独 checkout；本 README 的版本段落保留了它们的功能脉络。
 

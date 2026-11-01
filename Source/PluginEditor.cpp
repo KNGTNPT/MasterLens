@@ -67,6 +67,15 @@ MasterLensAudioProcessorEditor::MasterLensAudioProcessorEditor (MasterLensAudioP
     };
     detail.onAuditionSignal  = [this] (int i) { auditionSignal (i); };
     detail.onAuditionSignalRegion = [this] (int i, double s, double e) { auditionSignalRegion (i, s, e); };
+    detail.onHistorySeek = [this] (double age)
+    {
+        const double now = timelineNow();
+        const double t = juce::jmax (0.0, now - age);
+        processor.startAudition (juce::jmax (0.0, t - 1.0), t + 1.0, 20.0, 20000.0, false);
+        footerStatusText = T ("试听曲线选点 · Esc 停止", "Auditioning graph point · Esc to stop");
+        footerStatusColour = ml::theme::accent;
+        repaint();
+    };
     detail.onAuditionRiskDetail = [this] (const juce::String& d) { auditionRiskDetail (d); };
     detail.onTargetGenreChanged = [this] (int index) { setTargetGenre (index); };
     detail.onTargetWarChanged = [this] (float pct) { setTargetWar (pct); };
@@ -75,6 +84,7 @@ MasterLensAudioProcessorEditor::MasterLensAudioProcessorEditor (MasterLensAudioP
     detail.onChooseFolder = [this] { chooseFolder(); };
     detail.onAddFileResultsToAlbum = [this] { addFileResultsToAlbum(); };
     detail.onClearFileResults = [this] { clearFileResults(); };
+    detail.onExportFileTable = [this] { exportFileTable(); };
     timeline.onDoubleClick   = [this] (double t) { addManualMarker (t); };
     timeline.onSelectionChanged = [this] (double start, double end) { measureRegion (start, end); };
 

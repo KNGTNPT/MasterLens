@@ -11,8 +11,8 @@ ModuleRail::ModuleRail()
 
 juce::Rectangle<int> ModuleRail::rowBounds (int index) const
 {
-    const int top = 68;
-    const int rowH = juce::jlimit (24, 36, (getHeight() - top - 8) / juce::jmax (1, numPages));
+    const int top = 12;
+    const int rowH = juce::jlimit (28, 38, (getHeight() - top - 8) / juce::jmax (1, numPages));
     return { 0, top + index * rowH, getWidth(), rowH };
 }
 
@@ -27,7 +27,18 @@ void ModuleRail::setModule (int index, juce::String title, juce::String value,
     item.value = std::move (value);
     item.status = std::move (status);
     item.colour = colour;
-    repaint();
+
+    if (batchDepth == 0)
+        repaint();
+}
+
+void ModuleRail::endBatch()
+{
+    if (batchDepth > 0)
+        --batchDepth;
+
+    if (batchDepth == 0)
+        repaint();
 }
 
 void ModuleRail::setSelected (int index)
@@ -41,37 +52,15 @@ void ModuleRail::setVerdict (juce::String headline, juce::String subline, juce::
     verdictHeadline = std::move (headline);
     verdictSubline = std::move (subline);
     verdictColour = colour;
-    repaint();
+
+    if (batchDepth == 0)
+        repaint();
 }
 
 void ModuleRail::paint (juce::Graphics& g)
 {
     g.fillAll (theme::card);
 
-    // ---- overall verdict -----------------------------------------------------
-    {
-        auto card = juce::Rectangle<int> (10, 10, getWidth() - 20, 48);
-
-        g.setColour (theme::cardAlt);
-        g.fillRoundedRectangle (card.toFloat(), tokens::radiusCard);
-        g.setColour (theme::border);
-        g.drawRoundedRectangle (card.toFloat().reduced (0.5f), tokens::radiusCard, 1.0f);
-
-        g.setColour (verdictColour);
-        g.fillRoundedRectangle ((float) card.getX() + 10.0f, (float) card.getY() + 13.0f,
-                                3.0f, 26.0f, 1.5f);
-
-        g.setFont (uiFont (tokens::section, true));
-        g.drawText (verdictHeadline, card.getX() + 20, card.getY() + 8, card.getWidth() - 30, 22,
-                    juce::Justification::centredLeft);
-
-        g.setColour (theme::textFaint);
-        g.setFont (uiFont (tokens::unit));
-        g.drawText (verdictSubline, card.getX() + 20, card.getY() + 30, card.getWidth() - 30, 16,
-                    juce::Justification::centredLeft);
-    }
-
-    // ---- module rows ---------------------------------------------------------
     for (int i = 0; i < numPages; ++i)
     {
         auto row = rowBounds (i);
@@ -81,36 +70,39 @@ void ModuleRail::paint (juce::Graphics& g)
         if (sel)
         {
             g.setColour (theme::accentSoft);
-            g.fillRoundedRectangle (row.toFloat().reduced (6, 2), 6.0f);
+            g.fillRoundedRectangle (row.toFloat().withTrimmedLeft (8).reduced (0, 2),
+                                    tokens::radiusControl);
             g.setColour (theme::accent);
-            g.fillRoundedRectangle ((float) row.getX() + 6.0f, (float) row.getY() + 6.0f,
-                                    2.0f, (float) row.getHeight() - 12.0f, 1.0f);
+            g.fillRoundedRectangle ((float) row.getX() + 8.0f, (float) row.getY() + 7.0f,
+                                    2.0f, (float) row.getHeight() - 14.0f, 1.0f);
         }
         else if (i == hoverRow)
         {
-            g.setColour (theme::cardAlt.withAlpha (0.6f));
-            g.fillRoundedRectangle (row.toFloat().reduced (6, 2), 6.0f);
+            g.setColour (theme::raised.withAlpha (0.55f));
+            g.fillRoundedRectangle (row.toFloat().withTrimmedLeft (8).reduced (0, 2),
+                                    tokens::radiusControl);
         }
 
         g.setColour (item.colour);
-        g.fillEllipse (16.0f, (float) row.getY() + (row.getHeight() < 34 ? 9.0f : 13.0f), 6.0f, 6.0f);
+        g.fillEllipse (16.0f, (float) row.getY() + (row.getHeight() < 34 ? 9.0f : 11.0f), 6.0f, 6.0f);
 
         const bool compact = row.getHeight() < 34;
+        const int titleW = juce::jmax (96, row.getWidth() - 92);
 
         g.setColour (sel ? theme::text : theme::textDim);
         g.setFont (uiFont (tokens::label, sel));
-        g.drawText (item.title, 28, row.getY() + (compact ? 3 : 5), row.getWidth() - 110,
-                    compact ? 14 : 17, juce::Justification::centredLeft);
+        g.drawFittedText (item.title, 28, row.getY() + (compact ? 2 : 4), titleW,
+                          compact ? 14 : 16, juce::Justification::centredLeft, 1);
 
         g.setColour (item.colour);
         g.setFont (uiFont (tokens::unit));
-        g.drawText (item.status, 28, row.getY() + (compact ? 16 : 22), 90, compact ? 12 : 14,
-                    juce::Justification::centredLeft);
+        g.drawFittedText (item.status, 28, row.getY() + (compact ? 15 : 20), titleW,
+                          compact ? 12 : 13, juce::Justification::centredLeft, 1);
 
         g.setColour (theme::textFaint);
         g.setFont (monoFont (tokens::unit));
-        g.drawText (item.value, row.getWidth() - 106, row.getY() + (compact ? 7 : 8), 92, 14,
-                    juce::Justification::centredRight);
+        g.drawFittedText (item.value, row.getWidth() - 64, row.getY() + (compact ? 7 : 9),
+                          56, 14, juce::Justification::centredRight, 1);
     }
 }
 

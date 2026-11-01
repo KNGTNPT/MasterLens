@@ -119,6 +119,11 @@ public:
     void setSelected (int index);
     int getSelected() const noexcept { return selected; }
     void setVerdict (juce::String headline, juce::String subline, juce::Colour colour);
+    void beginBatch() noexcept { ++batchDepth; }
+    void endBatch();
+
+    juce::String getVerdictHeadline() const { return verdictHeadline; }
+    juce::Colour getVerdictColour() const { return verdictColour; }
 
     std::function<void (int)> onSelect;
 
@@ -142,6 +147,7 @@ private:
     juce::Colour verdictColour { theme::textDim };
     int selected = 0;
     int hoverRow = -1;
+    int batchDepth = 0;
 };
 
 //==============================================================================
@@ -204,6 +210,7 @@ public:
     std::function<void()> onExportReport;
     std::function<void()> onAddMarkerNow;
     std::function<void (double)> onAddMarkerAt;
+    std::function<void (double)> onHistorySeek;
     std::function<void()> onExportMarkers;
     std::function<void()> onImportMarkers;
     std::function<void()> onAlbumCapture;
@@ -223,6 +230,7 @@ public:
     std::function<void()> onChooseFolder;
     std::function<void()> onAddFileResultsToAlbum;
     std::function<void()> onClearFileResults;
+    std::function<void()> onExportFileTable;
 
     void setFileResults (std::vector<FileAnalysisResult> results, bool busy,
                          int done, int total, const juce::String& status);
@@ -243,12 +251,14 @@ public:
     void resized() override;
     void mouseDown (const juce::MouseEvent&) override;
     void mouseDoubleClick (const juce::MouseEvent&) override;
+    void mouseWheelMove (const juce::MouseEvent&, const juce::MouseWheelDetails&) override;
 
 private:
     void layoutForPage();
     void hideAllChildren();
     juce::Rectangle<int> contentArea() const;
     void paintPageHeader (juce::Graphics&, const juce::String& meta);
+    void ensureBackground();
 
     void paintLoudness (juce::Graphics&);
     void paintTruePeak (juce::Graphics&);
@@ -294,13 +304,25 @@ private:
     juce::Slider warSlider;
     juce::TextButton applyTarget;
 
-    juce::TextButton fileChoose, fileFolder, fileAddAlbum, fileClear;
+    juce::TextButton fileChoose, fileFolder, fileAddAlbum, fileClear, fileExport;
     std::vector<FileAnalysisResult> fileResults;
     juce::String fileStatus;
     bool fileBusy = false;
     int fileDone = 0, fileTotal = 0;
+    int fileScroll = 0;
+    int fileSortColumn = 0;
+    bool fileSortAscending = true;
+    int fileSelected = -1;
+
+    juce::Rectangle<int> fileTableBounds() const;
+    bool handleFileMouseDown (const juce::MouseEvent&);
+    void handleFileWheel (const juce::MouseWheelDetails&);
 
     juce::Rectangle<int> signalProblemRowBounds, signalAttributionBounds, signalGridBounds;
     std::array<juce::Rectangle<int>, 4> signalChipBounds;
+
+    juce::Image backgroundCache;
+    bool backgroundDirty = true;
+    int cachedBackgroundRevision = -1;
 };
 } // namespace ml

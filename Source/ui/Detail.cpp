@@ -12,6 +12,12 @@ DetailArea::DetailArea()
     addChildComponent (tiles);
     addChildComponent (levelBars);
     addChildComponent (history);
+
+    history.onSeek = [this] (double age)
+    {
+        if (onHistorySeek != nullptr)
+            onHistorySeek (age);
+    };
     addChildComponent (spectrum);
     addChildComponent (spectrogram);
     addChildComponent (bands);
@@ -88,6 +94,8 @@ DetailArea::DetailArea()
     fileFolder.onClick = [this] { if (onChooseFolder != nullptr) onChooseFolder(); };
     fileAddAlbum.onClick = [this] { if (onAddFileResultsToAlbum != nullptr) onAddFileResultsToAlbum(); };
     fileClear.onClick = [this] { if (onClearFileResults != nullptr) onClearFileResults(); };
+    fileExport.onClick = [this] { if (onExportFileTable != nullptr) onExportFileTable(); };
+    addChildComponent (fileExport);
 
     for (auto& b : albumRuleButtons)
         addChildComponent (b);
@@ -183,6 +191,7 @@ void DetailArea::refreshTexts()
     fileChoose.setButtonText (T ("选择文件", "Choose files"));
     fileFolder.setButtonText (T ("选择文件夹", "Choose folder"));
     fileAddAlbum.setButtonText (T ("加入专辑", "Add to album"));
+    fileExport.setButtonText (T ("导出表", "Export CSV"));
     fileClear.setButtonText (T ("清空结果", "Clear results"));
     fileChoose.setTooltip (T ("离线分析 WAV / AIFF / FLAC，秒级出完整报告",
                                "Offline analysis of WAV / AIFF / FLAC in seconds"));
@@ -205,6 +214,7 @@ void DetailArea::refreshTexts()
 
 void DetailArea::invalidateDisplays()
 {
+    backgroundDirty = true;
     spectrum.invalidateBackground();
     bands.invalidateBackground();
     history.invalidateBackground();
@@ -249,6 +259,7 @@ void DetailArea::hideAllChildren()
     fileFolder.setVisible (false);
     fileAddAlbum.setVisible (false);
     fileClear.setVisible (false);
+    fileExport.setVisible (false);
 
     for (auto& b : albumRuleButtons)
         b.setVisible (false);
@@ -341,11 +352,21 @@ void DetailArea::setFileResults (std::vector<FileAnalysisResult> results, bool b
     fileDone = done;
     fileTotal = total;
     fileStatus = status;
+
+    if (fileSelected >= (int) fileResults.size())
+        fileSelected = -1;
+
     repaint();
 }
 
 void DetailArea::mouseDown (const juce::MouseEvent& e)
 {
+    if (page == PageId::files)
+    {
+        handleFileMouseDown (e);
+        return;
+    }
+
     if (page == PageId::album)
     {
         auto area = contentArea().withTrimmedTop (30);
@@ -433,6 +454,16 @@ void DetailArea::setState (UiState s)
                 tiles.setValues (state.stats, state.basis, state.platform,
                                  state.target, state.ceiling, state.stats.hasSignal);
                 levelBars.setValues (state.stats, state.target);
+
+                const double now = state.stats.hostPosition > 0.0
+                                       ? state.stats.hostPosition : state.stats.elapsed;
+                std::vector<HistoryGraph::Event> evs;
+
+                for (const auto& m : state.markers)
+                    if (now >= m.time)
+                        evs.push_back ({ (float) (now - m.time), m.severity });
+
+                history.setEvents (std::move (evs));
             }
             break;
 
@@ -687,18 +718,21 @@ void DetailArea::resized()
         case PageId::files:
         {
             auto buttons = area.removeFromBottom (34);
-            fileClear.setBounds (buttons.removeFromRight (86).withSizeKeepingCentre (86, 30));
+            fileClear.setBounds (buttons.removeFromRight (76).withSizeKeepingCentre (76, 30));
             buttons.removeFromRight (6);
-            fileAddAlbum.setBounds (buttons.removeFromRight (96).withSizeKeepingCentre (96, 30));
+            fileExport.setBounds (buttons.removeFromRight (102).withSizeKeepingCentre (102, 30));
             buttons.removeFromRight (6);
-            fileFolder.setBounds (buttons.removeFromRight (104).withSizeKeepingCentre (104, 30));
+            fileAddAlbum.setBounds (buttons.removeFromRight (92).withSizeKeepingCentre (92, 30));
             buttons.removeFromRight (6);
-            fileChoose.setBounds (buttons.removeFromRight (104).withSizeKeepingCentre (104, 30));
+            fileFolder.setBounds (buttons.removeFromRight (96).withSizeKeepingCentre (96, 30));
+            buttons.removeFromRight (6);
+            fileChoose.setBounds (buttons.removeFromRight (96).withSizeKeepingCentre (96, 30));
 
             fileChoose.setVisible (true);
             fileFolder.setVisible (true);
             fileAddAlbum.setVisible (true);
             fileClear.setVisible (true);
+            fileExport.setVisible (true);
             break;
         }
 

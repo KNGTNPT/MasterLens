@@ -27,6 +27,11 @@ void MasterLensAudioProcessorEditor::setPage (int index)
     selectedPage = juce::jlimit (0, ml::numPages - 1, index);
     rail.setSelected (selectedPage);
     detail.setPage ((ml::PageId) selectedPage);
+
+    const bool offline = selectedPage == (int) ml::PageId::files
+                      || selectedPage == (int) ml::PageId::album;
+    timeline.setVisible (! offline);
+    resized();
     repaint();
 }
 
@@ -56,6 +61,11 @@ void MasterLensAudioProcessorEditor::addManualMarker (double time)
 
 void MasterLensAudioProcessorEditor::timerCallback()
 {
+    // Hidden real windows cost nothing; the offscreen UiShot renderer has no
+    // peer and must still be able to drive its timer.
+    if (! isShowing() && getPeer() != nullptr)
+        return;
+
     ++frameCounter;
 
     if (holdFromKeyboard && ! juce::KeyPress::isKeyCurrentlyDown (juce::KeyPress::spaceKey))

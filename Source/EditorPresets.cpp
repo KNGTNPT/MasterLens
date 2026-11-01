@@ -740,6 +740,14 @@ void MasterLensAudioProcessorEditor::toggleReferencePlayback()
 //==============================================================================
 void MasterLensAudioProcessorEditor::exportReport()
 {
+    if (processor.isMonitorMatch() || processor.referencePlayer.isEnabled()
+        || processor.isAuditionActive())
+    {
+        footerStatusText = T ("输出仍在被监听功能修改；导出前请确认这符合预期",
+                              "Output is still being changed by monitoring; confirm before export");
+        footerStatusColour = ml::theme::bad;
+    }
+
     const auto stamp = juce::Time::getCurrentTime().formatted ("%Y%m%d-%H%M");
     const auto defaultFile = juce::File::getSpecialLocation (juce::File::userDesktopDirectory)
                                  .getChildFile ("MasterLens-Report-" + stamp + ".txt");

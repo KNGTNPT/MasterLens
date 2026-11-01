@@ -16,24 +16,21 @@ namespace ml
 */
 namespace tokens
 {
-inline constexpr float display = 32.0f;   // hero reading (true peak page)
-inline constexpr float value   = 28.0f;   // metric card reading
-inline constexpr float section = 14.0f;   // section title
+inline constexpr float display = 34.0f;   // hero reading
+inline constexpr float value   = 32.0f;   // metric/readout values
+inline constexpr float section = 16.0f;   // section title
 inline constexpr float label   = 13.0f;   // control label
 inline constexpr float aux     = 12.0f;   // secondary copy
 inline constexpr float unit    = 11.0f;   // units, axis labels, time codes
 
-inline constexpr float radiusCard    = 9.0f;
-inline constexpr float radiusControl = 5.0f;
+inline constexpr float radiusCard    = 8.0f;
+inline constexpr float radiusControl = 4.0f;
 
-// 2.0 density pass: the old 100 % layout had generous 40 / 104 px rows and
-// 12 px gaps around 10-11 px type. At native scale that wasted vertical space
-// and made the interface feel spread out even though the glyphs were small.
-inline constexpr int rowHeight     = 34;
+inline constexpr int rowHeight     = 36;
 inline constexpr int controlHeight = 30;
-inline constexpr int cardHeight    = 96;
+inline constexpr int cardHeight    = 104;
 inline constexpr int gap           = 8;
-inline constexpr int margin        = 12;
+inline constexpr int margin        = 16;
 } // namespace tokens
 
 /** Runtime interface zoom (1.0 - 2.0).
@@ -84,24 +81,25 @@ inline juce::String scaleText (float s) { return juce::String (juce::roundToInt 
 */
 namespace theme
 {
-inline juce::Colour background { 0xff0b0e13 };
-inline juce::Colour card       { 0xff141922 };
-inline juce::Colour cardAlt    { 0xff1b222d };
-inline juce::Colour raised     { 0xff1b222d };
-inline juce::Colour border     { 0xff232b38 };
-inline juce::Colour borderSoft { 0xff1e2632 };
-inline juce::Colour divider    { 0xff1e2632 };
-inline juce::Colour text       { 0xffe6eaf2 };
-inline juce::Colour textDim    { 0xff9aa6b8 };
-inline juce::Colour textFaint  { 0xff7e8a9c };
-inline juce::Colour accent     { 0xff4c8dff };
-inline juce::Colour accentSoft { 0xff1e2c46 };
-inline juce::Colour cyan       { 0xff46c8d8 };
-inline juce::Colour good       { 0xff35c48a };
-inline juce::Colour info       { 0xff4c8dff };
-inline juce::Colour warn       { 0xfff5a623 };
-inline juce::Colour bad        { 0xffff5c5c };
-inline juce::Colour violet     { 0xff8b7bff };
+inline juce::Colour background { 0xff141517 };
+inline juce::Colour card       { 0xff1a1b1e };
+inline juce::Colour cardAlt    { 0xff202226 };
+inline juce::Colour raised     { 0xff202226 };
+inline juce::Colour border     { 0x12ffffff };
+inline juce::Colour borderSoft { 0x0affffff };
+inline juce::Colour divider    { 0x12ffffff };
+inline juce::Colour text       { 0xffe9e9e7 };
+inline juce::Colour textDim    { 0xff9b9da2 };
+inline juce::Colour textFaint  { 0xff6c6f75 };
+inline juce::Colour accent     { 0xffc2703c };
+inline juce::Colour accentHover{ 0xffd07c45 };
+inline juce::Colour accentSoft { 0x24c2703c };
+inline juce::Colour cyan       { 0xffc2703c };
+inline juce::Colour good       { 0xff6fa36f };
+inline juce::Colour info       { 0xffc2703c };
+inline juce::Colour warn       { 0xffc99a3f };
+inline juce::Colour bad        { 0xffc25b5b };
+inline juce::Colour violet     { 0xff8a5a3d };
 
 inline bool dark { true };
 inline int revisionCounter { 0 };
@@ -111,6 +109,21 @@ inline int revision() noexcept { return revisionCounter; }
 /** Applies the dark (true) or light palette and bumps the revision counter. */
 void apply (bool useDark);
 } // namespace theme
+
+/** Matte-instrument surface helpers.
+
+    The texture and shadows are rendered from small cached images, never with a
+    live blur. Panel fills carry only a 1 px inner highlight; cards do not get
+    outlines.
+*/
+namespace surface
+{
+void panel (juce::Graphics&, juce::Rectangle<float> area, bool raised = false);
+void graph (juce::Graphics&, juce::Rectangle<float> area);
+void noise (juce::Graphics&, juce::Rectangle<float> area);
+void vignette (juce::Graphics&, juce::Rectangle<float> area);
+void shadow (juce::Graphics&, juce::Rectangle<float> area, float radius = tokens::radiusCard);
+} // namespace surface
 
 juce::String typefaceName();
 juce::Font uiFont (float height, bool bold = false);

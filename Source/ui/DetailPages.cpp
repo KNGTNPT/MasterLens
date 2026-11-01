@@ -3,6 +3,30 @@
 
 namespace ml
 {
+void DetailArea::ensureBackground()
+{
+    if (! backgroundDirty && ! backgroundCache.isNull()
+        && cachedBackgroundRevision == theme::revision()
+        && backgroundCache.getWidth() == juce::roundToInt (getWidth() * juce::jmax (1.0f, getDesktopScaleFactor()))
+        && backgroundCache.getHeight() == juce::roundToInt (getHeight() * juce::jmax (1.0f, getDesktopScaleFactor())))
+        return;
+
+    if (getWidth() <= 0 || getHeight() <= 0)
+        return;
+
+    const int scale = juce::roundToInt (juce::jmax (1.0f, getDesktopScaleFactor()));
+    backgroundCache = juce::Image (juce::Image::ARGB, getWidth() * scale, getHeight() * scale, true);
+
+    juce::Graphics bg (backgroundCache);
+    bg.addTransform (juce::AffineTransform::scale ((float) scale));
+    const auto b = getLocalBounds().toFloat().reduced (0.5f);
+    surface::panel (bg, b);
+    surface::noise (bg, b);
+
+    backgroundDirty = false;
+    cachedBackgroundRevision = theme::revision();
+}
+
 static juce::String pageTitle (PageId p)
 {
     switch (p)
@@ -39,12 +63,8 @@ void DetailArea::paintPageHeader (juce::Graphics& g, const juce::String& meta)
 
 void DetailArea::paint (juce::Graphics& g)
 {
-    const auto b = getLocalBounds().toFloat().reduced (0.5f);
-
-    g.setColour (theme::card);
-    g.fillRoundedRectangle (b, tokens::radiusCard);
-    g.setColour (theme::border);
-    g.drawRoundedRectangle (b, tokens::radiusCard, 1.0f);
+    ensureBackground();
+    g.drawImage (backgroundCache, getLocalBounds().toFloat());
 
     juce::String meta;
 

@@ -11,8 +11,8 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 REPO_NAME="${1:-MasterLens}"
 VISIBILITY="${2:-public}"
 TOKEN="${GH_TOKEN:-${GITHUB_TOKEN:-}}"
-VERSION="2.0.0"
-TAG="${TAG:-v2.0.0}"
+VERSION="2.0.1"
+TAG="${TAG:-v2.0.1}"
 DMG="$ROOT/dist/MasterLens-$VERSION-macOS.dmg"
 
 if [ -z "$TOKEN" ]; then

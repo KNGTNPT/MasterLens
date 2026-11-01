@@ -11,49 +11,127 @@ void theme::apply (bool useDark)
 
     if (useDark)
     {
-        theme::background = juce::Colour (0xff0b0e13);
-        theme::card       = juce::Colour (0xff141922);
-        theme::cardAlt    = juce::Colour (0xff1b222d);
-        theme::raised     = juce::Colour (0xff1b222d);
-        theme::border     = juce::Colour (0xff232b38);
-        theme::borderSoft = juce::Colour (0xff1e2632);
-        theme::divider    = juce::Colour (0xff1e2632);
-        theme::text       = juce::Colour (0xffe6eaf2);
-        theme::textDim    = juce::Colour (0xff9aa6b8);
-        theme::textFaint  = juce::Colour (0xff7e8a9c);
-        theme::accent     = juce::Colour (0xff4c8dff);
-        theme::accentSoft = juce::Colour (0xff1e2c46);
-        theme::cyan       = juce::Colour (0xff46c8d8);
-        theme::good       = juce::Colour (0xff35c48a);
-        theme::info       = juce::Colour (0xff4c8dff);
-        theme::warn       = juce::Colour (0xfff5a623);
-        theme::bad        = juce::Colour (0xffff5c5c);
-        theme::violet     = juce::Colour (0xff8b7bff);
+        theme::background = juce::Colour (0xff141517);
+        theme::card       = juce::Colour (0xff1a1b1e);
+        theme::cardAlt    = juce::Colour (0xff202226);
+        theme::raised     = juce::Colour (0xff202226);
+        theme::border     = juce::Colour (0x12ffffff);
+        theme::borderSoft = juce::Colour (0x0affffff);
+        theme::divider    = juce::Colour (0x12ffffff);
+        theme::text       = juce::Colour (0xffe9e9e7);
+        theme::textDim    = juce::Colour (0xff9b9da2);
+        theme::textFaint  = juce::Colour (0xff6c6f75);
+        theme::accent     = juce::Colour (0xffc2703c);
+        theme::accentHover= juce::Colour (0xffd07c45);
+        theme::accentSoft = juce::Colour (0x24c2703c);
+        theme::cyan       = juce::Colour (0xffc2703c);
+        theme::good       = juce::Colour (0xff6fa36f);
+        theme::info       = juce::Colour (0xffc2703c);
+        theme::warn       = juce::Colour (0xffc99a3f);
+        theme::bad        = juce::Colour (0xffc25b5b);
+        theme::violet     = juce::Colour (0xff8a5a3d);
     }
     else
     {
-        theme::background = juce::Colour (0xfff1f5fb);
-        theme::card       = juce::Colour (0xffffffff);
-        theme::cardAlt    = juce::Colour (0xfff7faff);
-        theme::raised     = juce::Colour (0xffffffff);
-        theme::border     = juce::Colour (0xffe2e9f3);
-        theme::borderSoft = juce::Colour (0xffedf2f9);
-        theme::divider    = juce::Colour (0xffedf2f9);
-        theme::text       = juce::Colour (0xff16232f);
-        theme::textDim    = juce::Colour (0xff55657a);
-        theme::textFaint  = juce::Colour (0xff63728a);
-        theme::accent     = juce::Colour (0xff2f7bf6);
-        theme::accentSoft = juce::Colour (0xffe6efff);
-        theme::cyan       = juce::Colour (0xff16b6c9);
-        theme::good       = juce::Colour (0xff14835a);
-        theme::info       = juce::Colour (0xff2f7bf6);
-        theme::warn       = juce::Colour (0xffb46a10);
-        theme::bad        = juce::Colour (0xffc9302a);
-        theme::violet     = juce::Colour (0xff5f4fe0);
+        theme::background = juce::Colour (0xffefebe5);
+        theme::card       = juce::Colour (0xfff8f5f0);
+        theme::cardAlt    = juce::Colour (0xffe9e3da);
+        theme::raised     = juce::Colour (0xfffffdf9);
+        theme::border     = juce::Colour (0x18000000);
+        theme::borderSoft = juce::Colour (0x0d000000);
+        theme::divider    = juce::Colour (0x18000000);
+        theme::text       = juce::Colour (0xff252422);
+        theme::textDim    = juce::Colour (0xff6b6862);
+        theme::textFaint  = juce::Colour (0xff8d877d);
+        theme::accent     = juce::Colour (0xffa9582d);
+        theme::accentHover= juce::Colour (0xffbc6537);
+        theme::accentSoft = juce::Colour (0x24a9582d);
+        theme::cyan       = juce::Colour (0xffa9582d);
+        theme::good       = juce::Colour (0xff4f7f50);
+        theme::info       = juce::Colour (0xffa9582d);
+        theme::warn       = juce::Colour (0xff9a6a1f);
+        theme::bad        = juce::Colour (0xffa84444);
+        theme::violet     = juce::Colour (0xff7b4e37);
     }
 
     ++theme::revisionCounter;
 }
+
+//==============================================================================
+namespace surface
+{
+static const juce::Image& noiseImage()
+{
+    static const juce::Image image = []
+    {
+        juce::Image img (juce::Image::ARGB, 256, 256, true);
+        juce::Random rng (0x4d4c4e);
+        juce::Image::BitmapData data (img, juce::Image::BitmapData::writeOnly);
+
+        for (int y = 0; y < img.getHeight(); ++y)
+            for (int x = 0; x < img.getWidth(); ++x)
+            {
+                const auto v = (juce::uint8) (rng.nextInt (256));
+                data.setPixelColour (x, y, juce::Colour::fromRGB (v, v, v));
+            }
+
+        return img;
+    }();
+
+    return image;
+}
+
+void noise (juce::Graphics& g, juce::Rectangle<float> area)
+{
+    g.setOpacity (theme::dark ? 0.025f : 0.018f);
+    g.drawImage (noiseImage(), area);
+    g.setOpacity (1.0f);
+}
+
+void vignette (juce::Graphics& g, juce::Rectangle<float> area)
+{
+    if (area.getWidth() < 8.0f || area.getHeight() < 8.0f)
+        return;
+
+    juce::ColourGradient grad (juce::Colour (0x00000000), area.getCentreX(), area.getCentreY(),
+                               juce::Colour (0x0f000000), area.getX(), area.getY(), true);
+    g.setGradientFill (grad);
+    g.fillRect (area);
+}
+
+void panel (juce::Graphics& g, juce::Rectangle<float> area, bool raised)
+{
+    const auto r = area.reduced (0.5f);
+    const auto base = raised ? theme::raised : theme::card;
+
+    g.setColour (base);
+    g.fillRoundedRectangle (r, tokens::radiusCard);
+
+    // One-pixel inner top highlight. It reads as a soft edge without a border.
+    g.setColour (juce::Colours::white.withAlpha (theme::dark ? 0.04f : 0.30f));
+    g.drawHorizontalLine (juce::roundToInt (r.getY() + 1.0f),
+                          r.getX() + tokens::radiusCard, r.getRight() - tokens::radiusCard);
+
+    if (raised)
+        shadow (g, r, tokens::radiusCard);
+}
+
+void graph (juce::Graphics& g, juce::Rectangle<float> area)
+{
+    panel (g, area, false);
+    vignette (g, area);
+    noise (g, area);
+}
+
+void shadow (juce::Graphics& g, juce::Rectangle<float> area, float radius)
+{
+    for (int i = 3; i >= 1; --i)
+    {
+        g.setColour (juce::Colours::black.withAlpha (0.035f * (float) (4 - i)));
+        g.fillRoundedRectangle (area.expanded ((float) i * 2.0f).translated (0.0f, 2.0f), radius + (float) i);
+    }
+}
+} // namespace surface
 
 //==============================================================================
 juce::String typefaceName()

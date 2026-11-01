@@ -1,7 +1,9 @@
 #include <juce_gui_extra/juce_gui_extra.h>
 
+#include <algorithm>
 #include <cstdlib>
 #include <ctime>
+#include <vector>
 
 #include "PluginEditor.h"
 #include "PluginProcessor.h"
@@ -63,6 +65,35 @@ public:
         processor->setRateAndBufferSizeDetails (48000.0, 512);
         processor->prepareToPlay (48000.0, 512);
 
+        if (commandLine.containsIgnoreCase ("closedbench"))
+        {
+            juce::AudioBuffer<float> buffer (2, 512);
+            juce::MidiBuffer midi;
+            juce::Random rng (11);
+
+            for (int i = 0; i < 512; ++i)
+            {
+                const float v = (rng.nextFloat() * 2.0f - 1.0f) * 0.2f;
+                buffer.setSample (0, i, v);
+                buffer.setSample (1, i, v * 0.9f);
+            }
+
+            const int blocks = (int) (48000.0 * 30.0 / 512.0);
+            const auto start = juce::Time::getHighResolutionTicks();
+
+            for (int b = 0; b < blocks; ++b)
+            {
+                midi.clear();
+                processor->processBlock (buffer, midi);
+            }
+
+            const double wall = juce::Time::highResolutionTicksToSeconds (
+                juce::Time::getHighResolutionTicks() - start);
+            std::printf ("CLOSED_BENCH wall=%.3f s load=%.2f%%\n", wall, 100.0 * wall / 30.0);
+            quit();
+            return;
+        }
+
         if (! emptyShot)
             feedTestAudio (200.0);
 
@@ -71,8 +102,10 @@ public:
         processor->apvts.state.setProperty ("uiScale", scale, nullptr);
 
         editor = std::make_unique<MasterLensAudioProcessorEditor> (*processor);
-        editor->setSize (juce::roundToInt ((minShot ? 880.0f : (smallShot ? 900.0f : 1280.0f)) * scale),
-                         juce::roundToInt ((minShot ? 560.0f : (smallShot ? 620.0f : 820.0f)) * scale));
+        const bool standardShot = commandLine.containsIgnoreCase ("size1120");
+        const float shotW = minShot ? 880.0f : (smallShot ? 900.0f : (standardShot ? 1120.0f : 1280.0f));
+        const float shotH = minShot ? 560.0f : (smallShot ? 620.0f : (standardShot ? 700.0f : 820.0f));
+        editor->setSize (juce::roundToInt (shotW * scale), juce::roundToInt (shotH * scale));
 
         std::printf ("UiShot %s page=%d scale=%.2f size=%dx%d\n", ml::kVersion, pageShot,
                      scale, editor->getWidth(), editor->getHeight());
@@ -137,8 +170,40 @@ public:
                 const double wall = (juce::Time::getMillisecondCounterHiRes() - benchWallStart) / 1000.0;
                 const double cpu = ((double) (std::clock() - benchCpuStart)) / (double) CLOCKS_PER_SEC;
 
-                std::printf ("UI_BENCH page=%d cpu=%.3f s wall=%.3f s load=%.2f%%\n",
-                             pageShot, cpu, wall, wall > 0.0 ? 100.0 * cpu / wall : 0.0);
+                std::vector<double> frames;
+
+                // Paint the whole tree into a reusable image. Unlike
+                // createComponentSnapshot this excludes allocation and gives a
+                // comparable per-frame UI paint time.
+                juce::Image frame (juce::Image::ARGB, editor->getWidth(), editor->getHeight(), true);
+
+                for (int i = 0; i < 30; ++i)
+                {
+                    juce::Graphics g (frame);
+                    g.fillAll (juce::Colours::black);
+
+                    const auto t0 = juce::Time::getHighResolutionTicks();
+                    editor->paintEntireComponent (g, true);
+                    const auto t1 = juce::Time::getHighResolutionTicks();
+                    frames.push_back (1000.0 * (double) (t1 - t0)
+                                      / (double) juce::Time::getHighResolutionTicksPerSecond());
+                }
+
+                std::sort (frames.begin(), frames.end());
+                const auto percentile = [&frames] (double p)
+                {
+                    if (frames.empty())
+                        return 0.0;
+
+                    const size_t index = (size_t) juce::jlimit (0, (int) frames.size() - 1,
+                        (int) std::floor ((double) frames.size() * p));
+                    return frames[index];
+                };
+
+                std::printf ("UI_BENCH page=%d cpu=%.3f s wall=%.3f s load=%.2f%% "
+                             "paint_p50=%.2fms p95=%.2fms max=%.2fms\n",
+                             pageShot, cpu, wall, wall > 0.0 ? 100.0 * cpu / wall : 0.0,
+                             percentile (0.50), percentile (0.95), frames.back());
                 quit();
             });
         }

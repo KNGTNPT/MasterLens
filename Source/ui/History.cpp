@@ -74,6 +74,17 @@ void HistoryGraph::mouseDown (const juce::MouseEvent& e)
             return;
         }
     }
+
+    const auto plot = plotArea();
+
+    if (plot.contains (e.getPosition()) && onSeek != nullptr)
+    {
+        const int span = juce::jmax (2, pointsForRange());
+        const float stepX = (float) plot.getWidth() / (float) (span - 1);
+        const int indexFromRight = juce::jlimit (0, span - 1,
+            juce::roundToInt ((float) (plot.getRight() - e.x) / juce::jmax (1.0f, stepX)));
+        onSeek ((double) indexFromRight * 0.1);
+    }
 }
 
 void HistoryGraph::mouseMove (const juce::MouseEvent& e)
@@ -102,9 +113,31 @@ void HistoryGraph::mouseExit (const juce::MouseEvent&)
     }
 }
 
+void HistoryGraph::ensureBackground()
+{
+    if (! backgroundDirty && ! background.isNull()
+        && cachedThemeRevision == theme::revision()
+        && background.getWidth() == juce::roundToInt (getWidth() * juce::jmax (1.0f, getDesktopScaleFactor()))
+        && background.getHeight() == juce::roundToInt (getHeight() * juce::jmax (1.0f, getDesktopScaleFactor())))
+        return;
+
+    if (getWidth() <= 0 || getHeight() <= 0)
+        return;
+
+    const int scale = juce::roundToInt (juce::jmax (1.0f, getDesktopScaleFactor()));
+    background = juce::Image (juce::Image::ARGB, getWidth() * scale, getHeight() * scale, true);
+    juce::Graphics bg (background);
+    bg.addTransform (juce::AffineTransform::scale ((float) scale));
+    surface::graph (bg, getLocalBounds().toFloat());
+
+    backgroundDirty = false;
+    cachedThemeRevision = theme::revision();
+}
+
 void HistoryGraph::paint (juce::Graphics& g)
 {
-    g.fillAll (theme::card);
+    ensureBackground();
+    g.drawImage (background, getLocalBounds().toFloat());
     paintPlot (g);
     paintOverlay (g);
 }
@@ -211,11 +244,31 @@ void HistoryGraph::paintPlot (juce::Graphics& g)
             filled.lineTo (firstX, (float) plot.getBottom());
             filled.closeSubPath();
 
-            g.setColour (theme::accent.withAlpha (0.10f));
+            juce::ColourGradient fillGrad (theme::accent.withAlpha (0.16f), 0.0f, (float) plot.getY(),
+                                           theme::accent.withAlpha (0.0f), 0.0f, (float) plot.getBottom(), false);
+            g.setGradientFill (fillGrad);
             g.fillPath (filled);
 
             g.setColour (theme::accent);
-            g.strokePath (path, juce::PathStrokeType (1.6f));
+            g.strokePath (path, juce::PathStrokeType (1.4f));
+
+            // Events live on the curve, not on a separate 40 px strip.
+            for (const auto& ev : events)
+            {
+                if (ev.ageSeconds < 0.0f)
+                    continue;
+
+                const float mx = (float) plot.getRight() - (ev.ageSeconds / 0.1f) * stepX;
+
+                if (mx < (float) plot.getX() || mx > (float) plot.getRight())
+                    continue;
+
+                const auto c = ev.severity >= 2 ? theme::bad
+                             : (ev.severity == 1 ? theme::warn : theme::accent);
+                g.setColour (c.withAlpha (0.7f));
+                g.fillRoundedRectangle (mx - 1.0f, (float) plot.getY(), 2.0f,
+                                        (float) plot.getHeight(), 1.0f);
+            }
         }
     }
 }
@@ -242,9 +295,7 @@ void HistoryGraph::paintOverlay (juce::Graphics& g)
 
     if (latest > -99.0f)
     {
-        const auto colour = std::abs (latest - target) <= 2.0f ? theme::good : theme::warn;
-
-        g.setColour (colour);
+        g.setColour (theme::text);
         g.setFont (monoFont (18.0f, true));
         g.drawText (num (latest),
                     juce::Rectangle<int> (plot.getRight() + 6, plot.getY() + 4, 58, 22),
@@ -289,11 +340,8 @@ void HistoryGraph::paintOverlay (juce::Graphics& g)
     {
         const bool active = (int) range == i;
 
-        g.setColour (active ? theme::accentSoft : theme::cardAlt);
+        g.setColour (active ? theme::accentSoft : theme::raised);
         g.fillRoundedRectangle (chips[(size_t) i].toFloat(), tokens::radiusControl);
-        g.setColour (active ? theme::accent.withAlpha (0.65f) : theme::border);
-        g.drawRoundedRectangle (chips[(size_t) i].toFloat().reduced (0.5f),
-                                tokens::radiusControl, 1.0f);
 
         g.setColour (active ? theme::accent : theme::textDim);
         g.setFont (uiFont (tokens::unit));
@@ -330,10 +378,8 @@ void HistoryGraph::paintOverlay (juce::Graphics& g)
                 auto tip = juce::Rectangle<int> (juce::roundToInt (x) + 10, plot.getY() + 6, tw, 22);
                 tip.setX (juce::jlimit (plot.getX(), plot.getRight() - tw, tip.getX()));
 
-                g.setColour (theme::cardAlt);
+                g.setColour (theme::raised);
                 g.fillRoundedRectangle (tip.toFloat(), tokens::radiusControl);
-                g.setColour (theme::border);
-                g.drawRoundedRectangle (tip.toFloat().reduced (0.5f), tokens::radiusControl, 1.0f);
 
                 g.setColour (theme::text);
                 g.setFont (font);

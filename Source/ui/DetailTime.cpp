@@ -188,7 +188,7 @@ void DetailArea::paintTimeline (juce::Graphics& g)
     g.setFont (monoFont (tokens::unit));
     g.drawText ("00:00", inner.getX(), (int) strip.getBottom() - 18, 46, 12,
                 juce::Justification::centredLeft);
-    g.drawText (fmtTime (total), inner.getRight() - 46, (int) strip.getBottom() - 18, 46, 12,
+    g.drawText (fmtTime (total), inner.getRight() - 56, (int) strip.getBottom() - 18, 56, 12,
                 juce::Justification::centredRight);
 }
 

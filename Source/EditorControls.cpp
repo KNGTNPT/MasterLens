@@ -25,12 +25,16 @@ void MasterLensAudioProcessorEditor::buildControls()
     addAndMakeVisible (ceilingCaption);
 
     targetSlider.setSliderStyle (juce::Slider::LinearHorizontal);
-    targetSlider.setTextBoxStyle (juce::Slider::TextBoxRight, true, 72, 32);
+    targetSlider.setTextBoxStyle (juce::Slider::TextBoxRight, false, 104, 28);
     targetSlider.setDoubleClickReturnValue (true, -14.0);
+    targetSlider.setNumDecimalPlacesToDisplay (1);
+    targetSlider.setTextValueSuffix (" LU");
     addAndMakeVisible (targetSlider);
 
     ceilingSlider.setSliderStyle (juce::Slider::LinearHorizontal);
-    ceilingSlider.setTextBoxStyle (juce::Slider::TextBoxRight, true, 72, 32);
+    ceilingSlider.setTextBoxStyle (juce::Slider::TextBoxRight, false, 96, 28);
+    ceilingSlider.setNumDecimalPlacesToDisplay (1);
+    ceilingSlider.setTextValueSuffix (" dBTP");
     ceilingSlider.setDoubleClickReturnValue (true, -1.0);
     addAndMakeVisible (ceilingSlider);
 

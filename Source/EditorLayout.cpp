@@ -69,13 +69,13 @@ void MasterLensAudioProcessorEditor::resized()
     auto base = baseBounds();
     auto b = base;
 
-    headerArea = b.removeFromTop (52);
-    paramArea = b.removeFromTop (64);
+    headerArea = b.removeFromTop (56);
+    paramArea = b.removeFromTop (36);
     footerArea = b.removeFromBottom (36);
 
     // ---- header widgets -----------------------------------------------------
     {
-        auto h = headerArea.reduced (14, 10);
+        auto h = headerArea.reduced (16, 14);
 
         languageButton.setBounds (h.removeFromRight (46).withSizeKeepingCentre (46, 28));
         h.removeFromRight (8);
@@ -90,36 +90,40 @@ void MasterLensAudioProcessorEditor::resized()
         presetBox.setBounds (h.removeFromRight (presetW).withSizeKeepingCentre (presetW, 28));
     }
 
-    // ---- parameter bar: 12 column grid --------------------------------------
+    // ---- parameter bar: compact settings, not readings ----------------------
     {
-        auto bar = paramArea.reduced (14, 8);
-        auto actions = bar.removeFromRight (juce::jlimit (160, 186, bar.getWidth() / 4));
+        auto bar = paramArea.reduced (16, 4);
+        auto actions = bar.removeFromRight (juce::jlimit (160, 176, bar.getWidth() / 4));
 
-        holdButton.setBounds (actions.removeFromRight (74).withSizeKeepingCentre (74, 30));
+        holdButton.setBounds (actions.removeFromRight (72).withSizeKeepingCentre (72, 28));
         actions.removeFromRight (6);
-        clearButton.setBounds (actions.removeFromRight (90).withSizeKeepingCentre (90, 30));
+        clearButton.setBounds (actions.removeFromRight (88).withSizeKeepingCentre (88, 28));
 
-        bar.removeFromRight (12);
+        bar.removeFromRight (16);
 
-        const int colW = juce::jmax (40, bar.getWidth() / 12);
+        const int half = juce::jmax (190, (bar.getWidth() - 16) / 2);
+        auto left = bar.removeFromLeft (half);
+        bar.removeFromLeft (16);
+        auto right = bar.removeFromLeft (half);
 
-        auto left = bar.withWidth (colW * 5);
-        auto right = bar.withX (bar.getX() + colW * 6).withWidth (colW * 5);
-
-        targetCaption.setBounds (left.removeFromTop (15));
-        targetSlider.setBounds (left.removeFromTop (30));
-        ceilingCaption.setBounds (right.removeFromTop (15));
-        ceilingSlider.setBounds (right.removeFromTop (30));
+        targetCaption.setBounds (left.removeFromLeft (104).withSizeKeepingCentre (104, 24));
+        targetSlider.setBounds (left);
+        ceilingCaption.setBounds (right.removeFromLeft (100).withSizeKeepingCentre (100, 24));
+        ceilingSlider.setBounds (right);
     }
 
     // ---- body ---------------------------------------------------------------
-    auto body = b.reduced (12, 10);
+    auto body = b.reduced (16, 8);
 
-    rail.setBounds (body.removeFromLeft (186));
-    body.removeFromLeft (10);
+    rail.setBounds (body.removeFromLeft (208));
+    body.removeFromLeft (16);
 
-    timeline.setBounds (body.removeFromBottom (40));
-    body.removeFromBottom (6);
+    if (timeline.isVisible())
+    {
+        timeline.setBounds (body.removeFromBottom (40));
+        body.removeFromBottom (8);
+    }
+
     detail.setBounds (body);
 
     // ---- footer widgets -----------------------------------------------------

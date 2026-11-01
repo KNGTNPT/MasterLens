@@ -94,6 +94,7 @@ private:
     void addFileResultToAlbum (const ml::FileAnalysisResult& result);
     void addFileResultsToAlbum();
     void clearFileResults();
+    void exportFileTable();
     void captureRawSeries();
     void resetRawSeries();
     void measureRegion (double start, double end);

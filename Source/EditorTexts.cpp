@@ -24,12 +24,14 @@ void MasterLensAudioProcessorEditor::updateTexts()
                                  "Loudness-matched monitor: trim to the reference LUFS; bypassed when off"));
 
     targetCaption.setText (basisMode == ml::BasisMode::manual
-                               ? T ("手动参考 LUFS", "Manual reference LUFS")
-                               : T ("参考响度（不设固定目标）", "Reference level (no fixed target)"),
+                               ? T ("参考响度", "Reference")
+                               : T ("参考响度", "Reference"),
                            juce::dontSendNotification);
-    ceilingCaption.setText (T ("真峰值上限 dBTP", "Ceiling dBTP"), juce::dontSendNotification);
+    ceilingCaption.setText (T ("真峰值上限", "Ceiling"), juce::dontSendNotification);
 
     targetSlider.setEnabled (basisMode == ml::BasisMode::manual);
+    targetSlider.setTooltip (T ("选择“手动参考值”后可键入目标 LUFS", "Choose Manual reference to type a target LUFS"));
+    ceilingSlider.setTooltip (T ("可直接键入真峰值上限，失焦后生效", "Type the true-peak ceiling directly"));
 
     updatingPreset = true;
     presetBox.clear (juce::dontSendNotification);

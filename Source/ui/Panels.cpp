@@ -62,57 +62,69 @@ void MetricGrid::paintCard (juce::Graphics& g, juce::Rectangle<int> area, const 
                             const juce::String& value, const juce::String& unit,
                             const juce::String& hint, const juce::String& pill, juce::Colour colour)
 {
-    const auto r = area.toFloat().reduced (0.5f);
+    const auto r = area.toFloat();
 
-    g.setColour (theme::cardAlt);
+    g.setColour (theme::raised);
     g.fillRoundedRectangle (r, tokens::radiusCard);
-    g.setColour (theme::border);
-    g.drawRoundedRectangle (r, tokens::radiusCard, 1.0f);
+    g.setColour (juce::Colours::white.withAlpha (0.04f));
+    g.drawHorizontalLine (area.getY() + 1, r.getX() + tokens::radiusCard,
+                          r.getRight() - tokens::radiusCard);
 
-    const auto pillFont = uiFont (tokens::unit);
-    const int pillWidth = pill.isNotEmpty()
-                              ? juce::roundToInt (juce::GlyphArrangement::getStringWidth (pillFont, pill)) + 14
-                              : 0;
+    const auto statusFont = uiFont (tokens::unit);
+    const bool narrow = area.getWidth() < 165;
+    const int statusWidth = pill.isNotEmpty() && ! narrow
+                                ? juce::roundToInt (juce::GlyphArrangement::getStringWidth (statusFont, pill))
+                                : 0;
 
     g.setColour (theme::textDim);
     g.setFont (uiFont (tokens::label));
-    g.drawFittedText (title, area.getX() + 12, area.getY() + 8,
-                      juce::jmax (20, area.getWidth() - 24 - (pillWidth > 0 ? pillWidth + 8 : 0)), 16,
+    g.drawFittedText (title, area.getX() + 16, area.getY() + 11,
+                      juce::jmax (20, area.getWidth() - 32 - (statusWidth > 0 ? statusWidth + 10 : 0)), 18,
                       juce::Justification::centredLeft, 1);
 
-    if (pill.isNotEmpty())
+    if (pill.isNotEmpty() && ! narrow)
     {
-        auto pr = juce::Rectangle<int> (area.getRight() - 12 - pillWidth, area.getY() + 8, pillWidth, 18);
-
-        g.setColour (colour.withAlpha (0.14f));
-        g.fillRoundedRectangle (pr.toFloat(), 9.0f);
-        g.setColour (colour.withAlpha (0.30f));
-        g.drawRoundedRectangle (pr.toFloat().reduced (0.5f), 9.0f, 1.0f);
         g.setColour (colour);
-        g.setFont (pillFont);
-        g.drawText (pill, pr, juce::Justification::centred);
+        g.setFont (statusFont);
+        g.drawText (pill, area.getRight() - 16 - statusWidth, area.getY() + 12,
+                    statusWidth, 16, juce::Justification::centredRight, false);
+    }
+    else
+    {
+        g.setColour (theme::textFaint);
+        g.setFont (monoFont (tokens::unit));
+        g.drawText (unit, area.getRight() - 48, area.getY() + 12, 32, 16,
+                    juce::Justification::centredRight, false);
     }
 
-    const auto valueFont = monoFont (tokens::value, true);
+    const auto valueFont = monoFont (narrow ? 28.0f : tokens::value, true);
     const int valueWidth = juce::roundToInt (
         juce::GlyphArrangement::getStringWidth (valueFont, value));
 
-    auto valueRow = juce::Rectangle<int> (area.getX() + 12, area.getY() + 30,
-                                          area.getWidth() - 24, 38);
+    auto valueRow = juce::Rectangle<int> (area.getX() + 16, area.getY() + 36,
+                                          area.getWidth() - 32, 38);
 
-    g.setColour (colour);
+    g.setColour (theme::text);
     g.setFont (valueFont);
     g.drawText (value, valueRow.withWidth (valueWidth + 6), juce::Justification::centredLeft);
 
-    g.setColour (theme::textFaint);
-    g.setFont (monoFont (tokens::unit));
-    g.drawText (unit, valueRow.withTrimmedLeft (valueWidth + 10).withTrimmedTop (12),
-                juce::Justification::centredLeft);
+    if (! narrow)
+    {
+        g.setColour (theme::textFaint);
+        g.setFont (monoFont (tokens::unit));
+        g.drawText (unit, valueRow.withTrimmedLeft (valueWidth + 10).withTrimmedTop (14),
+                    juce::Justification::centredLeft);
+    }
+
+    // Status is a tiny underline, not a coloured number.
+    g.setColour (colour.withAlpha (0.9f));
+    g.fillRoundedRectangle ((float) area.getX() + 16.0f, (float) area.getY() + 76.0f,
+                            28.0f, 3.0f, 1.5f);
 
     g.setFont (uiFont (area.getHeight() < 100 ? tokens::unit : tokens::aux));
     g.setColour (theme::textFaint);
-    g.drawText (hint, area.getX() + 12, area.getY() + (area.getHeight() < 100 ? 72 : 80),
-                area.getWidth() - 24, area.getHeight() < 100 ? 14 : 18,
+    g.drawText (hint, area.getX() + 16, area.getY() + (area.getHeight() < 100 ? 82 : 86),
+                area.getWidth() - 32, area.getHeight() < 100 ? 14 : 18,
                 juce::Justification::centredLeft);
 }
 
@@ -163,14 +175,13 @@ void MetricGrid::paint (juce::Graphics& g)
         {
             pill = (platform.maxCutDb > 0.05f ? T ("衰减 ", "cut ") : T ("提升 ", "boost "))
                  + num (platform.maxCutDb > 0.05f ? platform.maxCutDb : platform.maxBoostDb) + " dB";
-            hint = T ("归一化后 −14 · 丢弃 ", "normalised −14 · wasted ")
-                 + num (platform.maxWastedDb) + " LU · "
-                 + T ("限幅 ", "limit ") + num (platform.maxLimitedDb) + " dB";
+            hint = T ("丢弃 ", "wasted ")
+                 + num (platform.maxWastedDb) + " LU";
             colour = platform.maxLimitedDb > 0.05f ? theme::warn
                    : (platform.maxWastedDb > 3.0f ? theme::info : theme::good);
         }
 
-        paintCard (g, cell (0, 0), T ("综合响度 / 平台后果", "INTEGRATED / PLATFORM"),
+        paintCard (g, cell (0, 0), T ("综合响度", "INTEGRATED"),
                    valid ? num (stats.integrated) : noReading, "LUFS", hint, pill, colour);
     }
 
@@ -199,7 +210,7 @@ void MetricGrid::paint (juce::Graphics& g)
 
         const juce::String rangeHint = T ("参考 ", "Typical ") + fmtRange (5.0f, 12.0f) + " LU";
 
-        paintCard (g, cell (2, 0), T ("响度范围 / LRA", "LOUDNESS RANGE"),
+        paintCard (g, cell (2, 0), T ("响度范围", "LRA"),
                    valid ? num (stats.lra) : noReading, "LU",
                    valid ? rangeHint : T ("等待信号", "Waiting for signal"),
                    juce::String(), colour);
@@ -215,7 +226,7 @@ void MetricGrid::paint (juce::Graphics& g)
 
         const juce::String rangeHint = T ("参考 ", "Typical ") + fmtRange (10.0f, 16.0f) + " dB";
 
-        paintCard (g, cell (3, 0), T ("峰响比 / PLR", "PEAK / LOUDNESS"),
+        paintCard (g, cell (3, 0), T ("峰响比", "PLR"),
                    valid ? num (plr) : noReading, "dB",
                    valid ? rangeHint : T ("等待信号", "Waiting for signal"),
                    juce::String(), colour);

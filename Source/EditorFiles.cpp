@@ -230,3 +230,67 @@ void MasterLensAudioProcessorEditor::clearFileResults()
     detail.setFileResults ({}, false, 0, 0, {});
     repaint();
 }
+
+void MasterLensAudioProcessorEditor::exportFileTable()
+{
+    if (fileResults.empty())
+    {
+        footerStatusText = T ("没有可导出的文件结果", "No file results to export");
+        footerStatusColour = ml::theme::warn;
+        repaint();
+        return;
+    }
+
+    fileChooser = std::make_unique<juce::FileChooser> (
+        T ("导出文件 QC 表", "Export File QC table"),
+        juce::File::getSpecialLocation (juce::File::userDocumentsDirectory)
+            .getChildFile ("MasterLens-FileQC.csv"),
+        "*.csv");
+
+    fileChooser->launchAsync (juce::FileBrowserComponent::saveMode
+                                  | juce::FileBrowserComponent::warnAboutOverwriting,
+                              [this] (const juce::FileChooser& fc)
+                              {
+                                  auto file = fc.getResult();
+
+                                  if (file == juce::File())
+                                      return;
+
+                                  if (file.getFileExtension().isEmpty())
+                                      file = file.withFileExtension ("csv");
+
+                                  juce::StringArray lines;
+                                  lines.add ("file,sample_rate_hz,bit_depth,duration_s,integrated_lufs,"
+                                             "true_peak_dbtp,lra_lu,plr_db,risk,result");
+
+                                  for (const auto& r : fileResults)
+                                  {
+                                      const auto name = "\"" + r.fileName.replace ("\"", "\"\"") + "\"";
+                                      const auto result = r.ok ? "ok" : "\"" + r.error.replace ("\"", "\"\"") + "\"";
+
+                                      lines.add (name + "," + juce::String (r.sampleRate, 0) + ","
+                                                 + juce::String (r.bitDepth) + ","
+                                                 + juce::String (r.durationSeconds, 3) + ","
+                                                 + juce::String (r.stats.integrated, 2) + ","
+                                                 + juce::String (r.stats.truePeakDb, 2) + ","
+                                                 + juce::String (r.stats.lra, 2) + ","
+                                                 + juce::String (r.stats.getPlr(), 2) + ","
+                                                 + juce::String (r.ok ? juce::roundToInt (r.defects.worstRisk()) : -1)
+                                                 + "," + result);
+                                  }
+
+                                  if (file.replaceWithText (lines.joinIntoString ("\n")))
+                                  {
+                                      footerStatusText = T ("文件表已导出 · ", "File table exported · ")
+                                                         + file.getFileName();
+                                      footerStatusColour = ml::theme::good;
+                                  }
+                                  else
+                                  {
+                                      footerStatusText = T ("无法写入文件表", "Could not write file table");
+                                      footerStatusColour = ml::theme::bad;
+                                  }
+
+                                  repaint();
+                              });
+}

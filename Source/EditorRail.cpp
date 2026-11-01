@@ -11,6 +11,8 @@ using ml::statusColour;
 //==============================================================================
 void MasterLensAudioProcessorEditor::updateRail()
 {
+    rail.beginBatch();
+
     const float target = processor.getTargetLufs();
     const float ceiling = processor.getCeilingDb();
     const bool live = stats.hasSignal;
@@ -35,7 +37,7 @@ void MasterLensAudioProcessorEditor::updateRail()
             const int level = std::abs (diff) <= 1.0f ? 0 : (std::abs (diff) <= 2.0f ? 1 : 2);
             note (level);
 
-            rail.setModule (0, T ("响度 / 基准", "Loudness / basis"),
+            rail.setModule (0, T ("响度基准", "Loudness"),
                             T ("Δ ", "Δ ") + ml::sgn (diff, 1),
                             basis.label() + ml::sep() + ml::statusLabel (level),
                             ml::statusColour (level));
@@ -46,7 +48,7 @@ void MasterLensAudioProcessorEditor::updateRail()
             const int level = std::abs (diff) <= 1.5f ? 0 : 1;
             note (level);
 
-            rail.setModule (0, T ("响度 / 手动", "Loudness / manual"),
+            rail.setModule (0, T ("响度基准", "Loudness"),
                             T ("Δ ", "Δ ") + ml::sgn (diff, 1),
                             T ("手动参考", "manual reference"), ml::statusColour (level));
         }
@@ -57,7 +59,7 @@ void MasterLensAudioProcessorEditor::updateRail()
                             : (platform.maxWastedDb > 3.0f ? 1 : 0));
 
             if (valid) note (level);
-            rail.setModule (0, T ("响度 / 归一化", "Loudness / normalised"),
+            rail.setModule (0, T ("响度基准", "Loudness"),
                             valid ? T ("衰减 ", "cut ") + ml::num (platform.maxCutDb) + " dB" : ml::noValue(),
                             valid ? T ("归一化后感知不变", "level unchanged after norm")
                                   : ml::statusLabel (-1),
@@ -130,7 +132,7 @@ void MasterLensAudioProcessorEditor::updateRail()
         const int level = ! hasTracks ? -1 : (albumGate.blocked ? 3 : (warnings > 0 ? 2 : 0));
 
         if (level >= 0) note (level);
-        rail.setModule (5, T ("专辑统一 / 门禁", "Album / gate"),
+        rail.setModule (5, T ("专辑门禁", "Album gate"),
                         juce::String ((int) albumSnapshot.tracks.size()) + T (" 首", " tracks"),
                         hasTracks ? (albumGate.blocked ? T ("阻断", "BLOCK") : T ("放行", "PASS"))
                                   : T ("未采集", "No capture"),
@@ -183,7 +185,7 @@ void MasterLensAudioProcessorEditor::updateRail()
     // 9 genre loudness target / platform delivery requirements
     {
         const auto target = ml::presets::war::warTargetLufs (targetGenreIndex, targetWarPct);
-        rail.setModule (9, T ("曲风目标 / 交付", "Genre target / delivery"),
+        rail.setModule (9, T ("曲风交付", "Genre / delivery"),
                         ml::num (target) + " LUFS",
                         juce::String (juce::roundToInt (targetWarPct)) + T ("% 参与度", "% war"),
                         ml::theme::accent);
@@ -191,16 +193,14 @@ void MasterLensAudioProcessorEditor::updateRail()
 
     if (! live && albumSnapshot.tracks.empty())
     {
-        footerStatusText = ml::statusLabel (-1);
-        footerStatusColour = ml::statusColour (-1);
+        footerStatusText.clear();
         rail.setVerdict (T ("等待信号", "Waiting for signal"),
                          T ("播放音频后开始测量", "Play audio to start"),
                          ml::theme::textFaint);
     }
     else if (albumGate.blocked)
     {
-        footerStatusText = T ("专辑门禁阻断", "Album gate blocked");
-        footerStatusColour = ml::theme::bad;
+        footerStatusText.clear();
         rail.setVerdict (T ("专辑门禁阻断", "Album gate blocked"),
                          juce::String (albumGate.blockers) + T (" 个阻断项；查看专辑页排序",
                                                               " blockers; see album ranking"),
@@ -208,22 +208,19 @@ void MasterLensAudioProcessorEditor::updateRail()
     }
     else if (worst >= 3)
     {
-        footerStatusText = ml::statusLabel (3);
-        footerStatusColour = ml::statusColour (3);
+        footerStatusText.clear();
         rail.setVerdict (T ("需要处理", "Action needed"),
                          T ("硬性超限，请先处理", "Hard limit exceeded"), ml::theme::bad);
     }
     else if (worst == 2)
     {
-        footerStatusText = ml::statusLabel (2);
-        footerStatusColour = ml::statusColour (2);
+        footerStatusText.clear();
         rail.setVerdict (T ("建议检查", "Review suggested"),
                          T ("存在临界项", "Borderline readings"), ml::theme::warn);
     }
     else
     {
-        footerStatusText = ml::statusLabel (0);
-        footerStatusColour = ml::statusColour (0);
+        footerStatusText.clear();
         rail.setVerdict (T ("未发现阻断项", "No blockers"),
                          T ("基准差异与动态风险已显示，不代表固定目标合格",
                             "Basis differences and dynamic risk are shown; no fixed target is applied"),
@@ -233,6 +230,8 @@ void MasterLensAudioProcessorEditor::updateRail()
     if (processor.isAuditionActive())
     {
         footerStatusText = T ("试听中 · Esc 停止", "Auditioning · Esc to stop");
-        footerStatusColour = ml::theme::cyan;
+        footerStatusColour = ml::theme::accent;
     }
+
+    rail.endBatch();
 }
