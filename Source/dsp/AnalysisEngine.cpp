@@ -166,6 +166,13 @@ void AnalysisEngine::reset()
     for (int b = 0; b < 3; ++b)
         bandL2[b] = bandR2[b] = bandLR[b] = bandMid[b] = bandSide[b] = 0.0;
 
+    sumMidK = sumSideK = 0.0;
+    for (auto& v : midRing)
+        v = 0.0;
+    for (auto& v : sideRing)
+        v = 0.0;
+    midRingWrite = sideRingWrite = 0;
+
     sumSubL2 = sumSubR2 = 0.0;
     partialFlatTop = 0.0;
     partialProcessed = 0.0;
@@ -219,6 +226,10 @@ void AnalysisEngine::reset()
         b.store (0);
     for (auto& b : shortHist)
         b.store (0);
+    for (auto& b : midBlockHist)
+        b.store (0);
+    for (auto& b : sideBlockHist)
+        b.store (0);
     shortHistCount.store (0);
 
     for (auto& v : shortCurve)
@@ -254,6 +265,11 @@ void AnalysisEngine::process (const juce::AudioBuffer<float>& buffer, Stats& sta
 
         sumWeightedK += isStereo ? (double) kl * kl + (double) kr * kr
                                  : (double) kl * kl;
+
+        const double weightedMid = 0.5 * ((double) kl + (double) kr);
+        const double weightedSide = 0.5 * ((double) kl - (double) kr);
+        sumMidK += weightedMid * weightedMid;
+        sumSideK += weightedSide * weightedSide;
 
         // --- true peak, 4x oversampled (per channel + side) ------------------
         const float tpL = truePeak[0].process (l);
@@ -379,6 +395,11 @@ void AnalysisEngine::finishPartialBlock (Stats& stats)
 
     partialRing[ringWrite] = energy;
     ringWrite = (ringWrite + 1) & 63;
+
+    midRing[midRingWrite] = sumMidK * inv;
+    sideRing[sideRingWrite] = sumSideK * inv;
+    midRingWrite = (midRingWrite + 1) & 63;
+    sideRingWrite = (sideRingWrite + 1) & 63;
 
     if (ringCount < 64)
         ++ringCount;
@@ -572,6 +593,43 @@ void AnalysisEngine::finishPartialBlock (Stats& stats)
         stats.integrated = computeIntegrated();
     }
 
+    if (windowM >= 4)
+    {
+        double midEnergy = 0.0, sideEnergy = 0.0;
+
+        for (int i = 0; i < windowM; ++i)
+        {
+            midEnergy += midRing[(midRingWrite - 1 - i + 64) & 63];
+            sideEnergy += sideRing[(sideRingWrite - 1 - i + 64) & 63];
+        }
+
+        midEnergy /= (double) windowM;
+        sideEnergy /= (double) windowM;
+
+        const float midDb = energyToLufs (midEnergy);
+        const float sideDb = energyToLufs (sideEnergy);
+
+        if (midDb > histMinDb)
+            midBlockHist[toBin (midDb)].fetch_add (1);
+
+        if (sideDb > histMinDb)
+            sideBlockHist[toBin (sideDb)].fetch_add (1);
+
+        stats.midLufs = computeIntegratedHist (midBlockHist);
+        stats.sideLufs = computeIntegratedHist (sideBlockHist);
+
+        double midShort = 0.0, sideShort = 0.0;
+
+        for (int i = 0; i < windowS; ++i)
+        {
+            midShort += midRing[(midRingWrite - 1 - i + 64) & 63];
+            sideShort += sideRing[(sideRingWrite - 1 - i + 64) & 63];
+        }
+
+        stats.midShortTerm = energyToLufs (midShort / (double) juce::jmax (1, windowS));
+        stats.sideShortTerm = energyToLufs (sideShort / (double) juce::jmax (1, windowS));
+    }
+
     ++partialCounter;
 
     if (windowS >= 30 && (partialCounter % 10) == 0 && sDb > histMinDb)
@@ -634,6 +692,7 @@ void AnalysisEngine::finishPartialBlock (Stats& stats)
     sumSubL2 = sumSubR2 = 0.0;
     partialFlatTop = 0.0;
     sumWeightedK = 0.0;
+    sumMidK = sumSideK = 0.0;
     sumLR = sumL2 = sumR2 = 0.0;
     sumMid = sumSide = 0.0;
     bandL2[0] = bandR2[0] = bandLR[0] = bandMid[0] = bandSide[0] = 0.0;
@@ -648,13 +707,13 @@ void AnalysisEngine::finishPartialBlock (Stats& stats)
 }
 
 //==============================================================================
-float AnalysisEngine::computeIntegrated() const
+float AnalysisEngine::computeIntegratedHist (const std::atomic<unsigned int>* histogram) const
 {
     double totalEnergy = 0.0, totalCount = 0.0;
 
     for (int i = 0; i < histBins; ++i)
     {
-        const auto count = blockHist[i].load();
+        const auto count = histogram[i].load();
 
         if (count == 0)
             continue;
@@ -673,7 +732,7 @@ float AnalysisEngine::computeIntegrated() const
 
     for (int i = 0; i < histBins; ++i)
     {
-        const auto count = blockHist[i].load();
+        const auto count = histogram[i].load();
 
         if (count == 0)
             continue;
@@ -691,6 +750,11 @@ float AnalysisEngine::computeIntegrated() const
         return kSilentDb;
 
     return energyToLufs (gatedEnergy / gatedCount);
+}
+
+float AnalysisEngine::computeIntegrated() const
+{
+    return computeIntegratedHist (blockHist);
 }
 
 float AnalysisEngine::computeLra() const

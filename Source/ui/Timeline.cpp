@@ -54,6 +54,23 @@ void TimelineStrip::paint (juce::Graphics& g)
     g.setColour (theme::borderSoft);
     g.fillRoundedRectangle ((float) track.getX(), y - 1.5f, (float) track.getWidth(), 3.0f, 1.5f);
 
+    if (selectionEnd > selectionStart + 0.01)
+    {
+        const float x1 = (float) track.getX()
+                         + (float) juce::jlimit (0.0, 1.0, selectionStart / total) * (float) track.getWidth();
+        const float x2 = (float) track.getX()
+                         + (float) juce::jlimit (0.0, 1.0, selectionEnd / total) * (float) track.getWidth();
+
+        g.setColour (theme::accent.withAlpha (0.18f));
+        g.fillRect (juce::Rectangle<float> (x1, (float) track.getY() - 16.0f,
+                                            juce::jmax (2.0f, x2 - x1), (float) track.getHeight() + 32.0f));
+        g.setColour (theme::accent);
+        g.drawVerticalLine (juce::roundToInt (x1), (float) track.getY() - 16.0f,
+                            (float) track.getY() + 16.0f);
+        g.drawVerticalLine (juce::roundToInt (x2), (float) track.getY() - 16.0f,
+                            (float) track.getY() + 16.0f);
+    }
+
     for (const auto& m : markers)
     {
         const float t = (float) juce::jlimit (0.0, 1.0, m.time / total);
@@ -79,6 +96,42 @@ void TimelineStrip::paint (juce::Graphics& g)
                 juce::Justification::centredLeft);
     g.drawText (fmtTime (total), track.getRight() - 46, (int) b.getBottom() - 14, 46, 12,
                 juce::Justification::centredRight);
+}
+
+void TimelineStrip::mouseDown (const juce::MouseEvent& e)
+{
+    if (! trackArea().expanded (0, 10).contains (e.getPosition()))
+        return;
+
+    draggingSelection = true;
+    selectionStart = selectionEnd = timeAtX (e.x);
+    repaint();
+}
+
+void TimelineStrip::mouseDrag (const juce::MouseEvent& e)
+{
+    if (! draggingSelection)
+        return;
+
+    selectionEnd = timeAtX (e.x);
+
+    if (selectionEnd < selectionStart)
+        std::swap (selectionStart, selectionEnd);
+
+    repaint();
+}
+
+void TimelineStrip::mouseUp (const juce::MouseEvent&)
+{
+    if (! draggingSelection)
+        return;
+
+    draggingSelection = false;
+
+    if (selectionEnd - selectionStart >= 0.15 && onSelectionChanged != nullptr)
+        onSelectionChanged (selectionStart, selectionEnd);
+
+    repaint();
 }
 
 void TimelineStrip::mouseDoubleClick (const juce::MouseEvent& e)

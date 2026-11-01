@@ -11,8 +11,8 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 REPO_NAME="${1:-MasterLens}"
 VISIBILITY="${2:-public}"
 TOKEN="${GH_TOKEN:-${GITHUB_TOKEN:-}}"
-VERSION="2.0.0"
-TAG="${TAG:-v2.0.0-beta.1}"
+VERSION="2.0.0-beta.2"
+TAG="${TAG:-v2.0.0-beta.2}"
 DMG="$ROOT/dist/MasterLens-$VERSION-macOS.dmg"
 
 if [ -z "$TOKEN" ]; then
@@ -63,7 +63,7 @@ if [ ! -f "$DMG" ]; then
     echo "   未找到 $DMG，先执行 ./scripts/make_dmg.sh"
 else
     RELEASE="$(api -X POST "https://api.github.com/repos/$LOGIN/$REPO_NAME/releases" \
-        -d "$(python3 -c "import json;print(json.dumps({'tag_name':'$TAG','name':'MasterLens $VERSION-beta','body':'Universal (arm64 + x86_64) VST3 / AU / Standalone. Open the DMG and run the install script.','draft':False,'prerelease':True}))")")"
+        -d "$(python3 -c "import json;print(json.dumps({'tag_name':'$TAG','name':'MasterLens $VERSION','body':'Universal (arm64 + x86_64) VST3 / AU / Standalone. Open the DMG and run the install script.','draft':False,'prerelease':True}))")")"
 
     UPLOAD_URL="$(printf '%s' "$RELEASE" | python3 -c "import sys,json;print(json.load(sys.stdin).get('upload_url','').split('{')[0])")"
 

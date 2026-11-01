@@ -32,6 +32,8 @@ juce::String MasterLensAudioProcessorEditor::buildReportCsv() const
     line ("loudness", "shortTermLufs", ml::num (stats.shortTerm));
     line ("loudness", "momentaryLufs", ml::num (stats.momentary));
     line ("loudness", "lraLu", ml::num (stats.lra));
+    line ("loudness", "midIntegratedLufs", ml::num (stats.midLufs));
+    line ("loudness", "sideIntegratedLufs", ml::num (stats.sideLufs));
     line ("loudness", "plrDb", ml::num (stats.getPlr()));
     line ("loudness", "psrDb", ml::num (stats.psr));
     line ("loudness", "psrMinDb", ml::num (stats.psrMin));
@@ -112,6 +114,23 @@ juce::String MasterLensAudioProcessorEditor::buildReportCsv() const
                                              ml::platformSummary (stats),
                                              analyzer.hasReference() || currentBasis().hasAlbum))
         line ("check", c.label, c.value);
+
+    if (lastRegion.valid)
+    {
+        line ("region", "name", lastRegion.name);
+        line ("region", "start", ml::num (lastRegion.start, 3));
+        line ("region", "end", ml::num (lastRegion.end, 3));
+        line ("region", "integratedLufs", ml::num (lastRegion.lufs));
+        line ("region", "midLufs", ml::num (lastRegion.midLufs));
+        line ("region", "sideLufs", ml::num (lastRegion.sideLufs));
+        line ("region", "truePeakDbtp", ml::num (lastRegion.truePeak));
+        line ("region", "plrDb", ml::num (lastRegion.plr));
+        line ("region", "correlation", ml::sgn (lastRegion.correlation, 2));
+        line ("region", "widthPct", ml::num (lastRegion.widthPct));
+
+        for (int i = 0; i < 10; ++i)
+            line ("region", "band" + juce::String (i + 1) + "Db", ml::num (lastRegion.bands[(size_t) i]));
+    }
 
     for (const auto& m : markers)
         line ("marker", ml::fmtTime (m.time), m.text);

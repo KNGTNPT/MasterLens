@@ -1,4 +1,4 @@
-# MasterLens 2.0.0-beta.1 — file QC, equal-loudness A/B, host timeline
+# MasterLens 2.0.0-beta.2 — file QC, waterfall, regions, M/S, CLI
 
 This beta turns the live inspector into a pre-delivery workflow. It is not a
 replacement for listening; it is the fast path between "the mix is done" and
@@ -35,15 +35,34 @@ replacement for listening; it is the fast path between "the mix is done" and
   tighter, the stereo page no longer centres a fixed-height block, and the
   signal cards fill the available height.
 
+## Beta2 additions
+
+- **Waterfall / band heat**: UI-side 20 Hz columns captured from the already
+  smoothed `SpectrumAnalyzer`; 256 columns ≈ 12.8 s. No second FFT and no audio
+  thread work.
+- **Timeline region**: drag the bottom time strip; the editor computes an
+  energy estimate from its 100 ms series (LUFS / M / S / TP / PLR / correlation /
+  width) and adds it to TXT / JSON / CSV reports. This is explicitly an
+  estimate, not an offline re-analysis.
+- **M/S integrated + short-term loudness**: separate K-weighted mid/side
+  histograms and 3 s rings; the stereo page shows M/S integrated values.
+- **100 ms series + PDF**: every report export also writes
+  `-timeseries.csv` and an ASCII PDF summary.
+- **MasterLensCli**: `analyze <file-or-folder> [--json out.json] [--csv]`.
+- **Coarse reference alignment**: normalized correlation of the last 30 s
+  short-term envelope against the reference envelope; offset is applied to the
+  in-plugin reference player.
+
 ## Verification
 
-- **69** offline DSP assertions pass, including:
+- **73** offline DSP assertions pass, including:
   - 997 Hz −20 dBFS mono → −23.00 LUFS at 44.1 / 48 / 88.2 / 96 kHz file rates;
   - 96 kHz reference resampled into a 48 kHz project → −23.00 LUFS;
   - host `timeOrigin` 83.25 s → event timestamps in host time;
   - out-of-range audition rejected, not silently substituted;
+  - M/S integrated loudness: dual-mono mid −23 LUFS, side silent;
   - reference player renders at the requested host position.
-- `auval` passes; VST3 vendor `BerryStudio`, display version `2.0.0-beta.1`.
+- `auval` passes; VST3 vendor `BerryStudio`, display version `2.0.0-beta.2`.
 - Offscreen snapshots: 100 % 880×560 and 1280×820.
 
 ## Reproduce
@@ -64,6 +83,9 @@ MasterLensUiShot fileqc
   alignment.
 - Live coverage needs a manually entered total length; without it the reading is
   recorded as 100 % of the measured span.
-- AAX / ARA2 / DDP / codec preview are not in this beta.
+- AAX / ARA2 / DDP / codec preview are not in this beta; they need external
+  SDKs / encoders that are not in the repository.
+- macOS notarization / Windows signing remain credential-dependent; the current
+  builds are ad-hoc signed and CI-compiled.
 - The file worker is I/O bound; a very large album still takes time, but it is
   no longer tied to real-time playback.

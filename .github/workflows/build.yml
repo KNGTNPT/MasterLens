@@ -14,7 +14,7 @@ concurrency:
 
 env:
   JUCE_TAG: "8.0.15"
-  APP_VERSION: "2.0.0"
+  APP_VERSION: "2.0.0-beta.2"
 
 jobs:
   macos:
@@ -40,6 +40,9 @@ jobs:
           cp -R build/MasterLens_artefacts/Release/VST3/MasterLens.vst3 stage/
           cp -R build/MasterLens_artefacts/Release/AU/MasterLens.component stage/
           cp -R build/MasterLens_artefacts/Release/Standalone/MasterLens.app stage/
+          if [ -x build/MasterLensCli_artefacts/Release/MasterLensCli ]; then
+            cp build/MasterLensCli_artefacts/Release/MasterLensCli stage/
+          fi
           cp packaging/Install.command "stage/安装 Install.command"
           cp packaging/Uninstall.command "stage/卸载 Uninstall.command"
           cp packaging/README-DMG.txt "stage/使用说明 README.txt"
@@ -94,10 +97,11 @@ jobs:
       - name: Configure (MSVC ${{ matrix.arch }})
         run: cmake -S . -B build -G "$env:VS_GENERATOR" -A ${{ matrix.arch }}
 
-      - name: Build VST3 + Standalone
+      - name: Build VST3 + Standalone + CLI
         run: |
           cmake --build build --config Release --target MasterLens_VST3 -j 4
           cmake --build build --config Release --target MasterLens_Standalone -j 4
+          cmake --build build --config Release --target MasterLensCli -j 4
 
       - name: Install NSIS
         run: choco install nsis -y --no-progress
@@ -109,6 +113,7 @@ jobs:
           New-Item -ItemType Directory -Force -Path $stage | Out-Null
           Copy-Item -Recurse "build/MasterLens_artefacts/Release/VST3/MasterLens.vst3" $stage
           Copy-Item "build/MasterLens_artefacts/Release/Standalone/MasterLens.exe" $stage
+          Copy-Item "build/MasterLensCli_artefacts/Release/MasterLensCli.exe" $stage
           "STAGE_DIR=$stage" | Out-File -FilePath $env:GITHUB_ENV -Append
 
       - name: Build installer (NSIS)

@@ -49,6 +49,7 @@ MasterLensAudioProcessorEditor::MasterLensAudioProcessorEditor (MasterLensAudioP
     detail.onImportReference = [this] { importReference(); };
     detail.onClearReference  = [this] { clearReference(); };
     detail.onToggleReferencePlayback = [this] { toggleReferencePlayback(); };
+    detail.onAutoAlignReference = [this] { autoAlignReference(); };
     detail.onExportReport    = [this] { exportReport(); };
     detail.onAddMarkerNow    = [this] { addManualMarker (timelineNow()); };
     detail.onAddMarkerAt     = [this] (double t) { addManualMarker (t); };
@@ -75,6 +76,7 @@ MasterLensAudioProcessorEditor::MasterLensAudioProcessorEditor (MasterLensAudioP
     detail.onAddFileResultsToAlbum = [this] { addFileResultsToAlbum(); };
     detail.onClearFileResults = [this] { clearFileResults(); };
     timeline.onDoubleClick   = [this] (double t) { addManualMarker (t); };
+    timeline.onSelectionChanged = [this] (double start, double end) { measureRegion (start, end); };
 
     buildControls();
 

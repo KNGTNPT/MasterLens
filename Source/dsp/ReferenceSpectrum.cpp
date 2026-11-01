@@ -44,6 +44,7 @@ void ReferenceSpectrum::clear()
     {
         const juce::SpinLock::ScopedLockType sl (lock);
         spectrumDb.clear();
+        envelopeDb.clear();
         refStats = StatsSnapshot {};
         status = "empty";
     }
@@ -65,6 +66,12 @@ juce::StringArray ReferenceSpectrum::getFiles() const
     return pendingFiles;
 }
 
+std::vector<float> ReferenceSpectrum::getEnvelopeDb() const
+{
+    const juce::SpinLock::ScopedLockType sl (lock);
+    return envelopeDb;
+}
+
 std::vector<float> ReferenceSpectrum::getSpectrumDb() const
 {
     const juce::SpinLock::ScopedLockType sl (lock);
@@ -83,6 +90,8 @@ void ReferenceSpectrum::run()
     const int numBins = fftSize / 2 + 1;
 
     std::vector<double> power ((size_t) numBins, 0.0);
+    std::vector<float> envelope;
+    envelope.reserve ((size_t) 4 * 60 * 30);
     int totalBlocks = 0;
 
     juce::AudioFormatManager formats;
@@ -175,6 +184,19 @@ void ReferenceSpectrum::run()
 
             refEngine.process (readBuffer, refEngineStats, n);
             ++totalBlocks;
+
+            double blockPower = 0.0;
+
+            for (int ch = 0; ch < channels; ++ch)
+                for (int k = 0; k < n; ++k)
+                {
+                    const double v = (double) readBuffer.getSample (ch, k);
+                    blockPower += v * v;
+                }
+
+            blockPower /= (double) juce::jmax (1, n * channels);
+            envelope.push_back (juce::Decibels::gainToDecibels (
+                (float) std::sqrt (juce::jmax (0.0, blockPower)), -100.0f));
         }
 
         resampler.releaseResources();
@@ -202,6 +224,8 @@ void ReferenceSpectrum::run()
     {
         const juce::SpinLock::ScopedLockType sl (lock);
         spectrumDb = std::move (result);
+        envelopeDb = std::move (envelope);
+        envelopeHop.store ((double) fftSize / pendingSampleRate);
         refStats = ml::snapshot (refEngineStats);
         status = "ready";
         statsReady.store (refStats.hasSignal);

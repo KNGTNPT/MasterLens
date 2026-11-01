@@ -33,9 +33,29 @@ juce::String MasterLensAudioProcessorEditor::buildReport() const
              << ml::fmt1 (platform.maxWastedDb) << " LU)\n";
 
     r << "  S / M        : " << ml::fmtDb (s.shortTerm) << " / " << ml::fmtDb (s.momentary) << " LUFS\n";
+    r << "  M / S integ. : " << ml::fmtDb (s.midLufs) << " / " << ml::fmtDb (s.sideLufs) << " LUFS\n";
     r << "  LRA / PLR    : " << ml::fmt1 (s.lra) << " LU / " << ml::fmt1 (s.getPlr()) << " dB\n";
     r << "  PSR (min)    : " << ml::fmtDb (s.psr) << " / " << ml::fmtDb (s.psrMin) << " dB"
       << " @ " << ml::fmtTime (s.psrMinTime) << "\n\n";
+
+    if (lastRegion.valid)
+    {
+        r << "\n" << T ("【时间线选区】\n", "[Timeline region]\n");
+        r << "  " << lastRegion.name << "  "
+          << ml::fmtTime (lastRegion.start) << " - " << ml::fmtTime (lastRegion.end) << "\n";
+        r << "  I / M / S : " << ml::fmt1 (lastRegion.lufs) << " / "
+          << ml::fmt1 (lastRegion.midLufs) << " / " << ml::fmt1 (lastRegion.sideLufs) << " LUFS\n";
+        r << "  TP / PLR  : " << ml::fmt1 (lastRegion.truePeak) << " dBTP / "
+          << ml::fmt1 (lastRegion.plr) << " dB\n";
+        r << "  corr/width: " << ml::sgn (lastRegion.correlation, 2) << " / "
+          << ml::fmt1 (lastRegion.widthPct) << "%\n";
+        r << "  bands dB  : ";
+
+        for (int b = 0; b < 10; ++b)
+            r << (b > 0 ? " / " : "") << ml::fmt1 (lastRegion.bands[(size_t) b]);
+
+        r << "\n";
+    }
 
     r << T ("【真峰值】\n", "[True peak]\n");
     r << "  TP max       : " << ml::fmtDb (s.truePeakDb) << " dBTP"

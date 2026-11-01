@@ -122,6 +122,9 @@ void MasterLensAudioProcessorEditor::timerCallback()
     if (viewingSnapshot >= 0 && snapshots[viewingSnapshot].valid)
         stats = snapshots[viewingSnapshot].stats;
 
+    if ((frameCounter % 6) == 0)
+        captureRawSeries();
+
     const float manualTarget = processor.getTargetLufs();
     const float ceiling = processor.getCeilingDb();
 

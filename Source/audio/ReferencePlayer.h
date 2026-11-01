@@ -35,6 +35,16 @@ public:
     void setEnabled (bool shouldPlay) noexcept { enabled.store (shouldPlay, std::memory_order_release); }
     bool isEnabled() const noexcept { return enabled.load (std::memory_order_acquire); }
 
+    void setOffsetSeconds (double seconds) noexcept
+    {
+        offsetSeconds.store (seconds, std::memory_order_relaxed);
+    }
+
+    double getOffsetSeconds() const noexcept
+    {
+        return offsetSeconds.load (std::memory_order_relaxed);
+    }
+
     /** Replaces the output with the reference at the host position.
         @returns true when reference audio was written. */
     bool render (juce::AudioBuffer<float>& output, double hostSeconds,
@@ -60,5 +70,6 @@ private:
     std::atomic<bool> ready { false };
     std::atomic<bool> enabled { false };
     std::atomic<double> duration { 0.0 };
+    std::atomic<double> offsetSeconds { 0.0 };
 };
 } // namespace ml

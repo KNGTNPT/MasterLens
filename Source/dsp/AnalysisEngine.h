@@ -80,6 +80,12 @@ struct Stats
     std::atomic<float>  monoLowRetainPct { 100.0f };    // same, below 150 Hz
     std::atomic<float>  subSharePct      { 0.0f };      // < 40 Hz share of total energy
     std::atomic<float>  flatTopPct       { 0.0f };      // % of samples on a flat top
+
+    // --- v2.0 beta2: independent mid / side loudness ---------------------
+    std::atomic<float>  midLufs          { kSilentDb };
+    std::atomic<float>  sideLufs         { kSilentDb };
+    std::atomic<float>  midShortTerm     { kSilentDb };
+    std::atomic<float>  sideShortTerm    { kSilentDb };
 };
 
 
@@ -168,6 +174,10 @@ struct StatsSnapshot
     float  monoLowRetainPct = 100.0f;
     float  subSharePct = 0.0f;
     float  flatTopPct = 0.0f;
+    float  midLufs = kSilentDb;
+    float  sideLufs = kSilentDb;
+    float  midShortTerm = kSilentDb;
+    float  sideShortTerm = kSilentDb;
 
     // Host timeline / monitoring (v2.0)
     double timeOrigin = 0.0;
@@ -212,6 +222,10 @@ inline StatsSnapshot snapshot (const Stats& s) noexcept
     r.truePeakLeft = s.truePeakLeft.load();
     r.truePeakRight = s.truePeakRight.load();
     r.sideTruePeak = s.sideTruePeak.load();
+    r.midLufs = s.midLufs.load();
+    r.sideLufs = s.sideLufs.load();
+    r.midShortTerm = s.midShortTerm.load();
+    r.sideShortTerm = s.sideShortTerm.load();
     r.psr = s.psr.load();
     r.psrMin = s.psrMin.load();
     r.psrMinTime = s.psrMinTime.load();
@@ -244,6 +258,8 @@ inline void resetStats (Stats& s) noexcept
     s.timeOrigin = 0.0;        s.hostPosition = 0.0;     s.hostLength = 0.0;
     s.coveragePct = 100.0f;    s.monitorTrimDb = 0.0f;
     s.truePeakLeft = kSilentDb; s.truePeakRight = kSilentDb; s.sideTruePeak = kSilentDb;
+    s.midLufs = kSilentDb;      s.sideLufs = kSilentDb;
+    s.midShortTerm = kSilentDb; s.sideShortTerm = kSilentDb;
     s.psr = kSilentDb;         s.psrMin = kSilentDb;     s.psrMinTime = 0.0;
     s.truePeakMaxTime = 0.0f;  s.spikeCount = 0;         s.lastSpikeTime = 0.0;
     s.bandCorrLow = 0.0f;      s.bandCorrMid = 0.0f;     s.bandCorrHigh = 0.0f;
@@ -365,6 +381,7 @@ public:
 private:
     void finishPartialBlock (Stats& stats);
     float computeIntegrated() const;
+    float computeIntegratedHist (const std::atomic<unsigned int>* histogram) const;
     float computeLra() const;
 
     double fs = 48000.0;
@@ -397,6 +414,7 @@ private:
     double sumLR = 0.0, sumL2 = 0.0, sumR2 = 0.0;
     double sumL = 0.0, sumR = 0.0;
     double sumMid = 0.0, sumSide = 0.0;
+    double sumMidK = 0.0, sumSideK = 0.0;
     double sumLowMid = 0.0, sumLowSide = 0.0;
     double sumSubL2 = 0.0, sumSubR2 = 0.0;
 
@@ -433,6 +451,12 @@ private:
     std::atomic<unsigned int> blockHist[histBins] {};
     std::atomic<unsigned int> shortHist[histBins] {};
     std::atomic<unsigned int> shortHistCount { 0 };
+    std::atomic<unsigned int> midBlockHist[histBins] {};
+    std::atomic<unsigned int> sideBlockHist[histBins] {};
+    double midRing[64] {};
+    double sideRing[64] {};
+    int midRingWrite = 0;
+    int sideRingWrite = 0;
 
     float shortCurve[curveSize] {};
     std::atomic<int> curveWrite { 0 };

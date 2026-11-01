@@ -69,7 +69,9 @@ void DetailArea::paint (juce::Graphics& g)
                         : (state.hasReference ? T ("参考: ", "Ref: ") + state.referenceStatus
                                               : T ("无参考 / 专辑基准", "no reference / album basis")))
                  + ml::sep() + T ("谐振 ", "res ") + juce::String ((int) state.resonances.size())
-                 + ml::sep() + "8192 FFT · 60 fps";
+                 + ml::sep() + (state.analyzer != nullptr
+                                   ? T ("频谱 / 频谱图 / 频段热力", "spectrum / waterfall / band heat")
+                                   : T ("8192 FFT · 60 fps", "8192 FFT · 60 fps"));
             break;
 
         case PageId::stereo:

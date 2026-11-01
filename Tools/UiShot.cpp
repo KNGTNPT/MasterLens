@@ -83,6 +83,24 @@ public:
         if (fileQcShot)
             runFileQcDemo (*editor);
 
+        if (commandLine.containsIgnoreCase ("spectrumview1"))
+        {
+            editor->setSpectrumViewForSnapshot (1);
+
+            for (int i = 0; i < 800; ++i)
+                editor->runTimerTickForSnapshot();
+        }
+        else if (commandLine.containsIgnoreCase ("spectrumview2"))
+        {
+            editor->setSpectrumViewForSnapshot (2);
+
+            for (int i = 0; i < 800; ++i)
+                editor->runTimerTickForSnapshot();
+        }
+
+        if (commandLine.containsIgnoreCase ("pdf"))
+            editor->writeReportPdfForSnapshot (juce::File ("/tmp/masterlens-ui.pdf"));
+
         if (commandLine.containsIgnoreCase ("albumcap"))
         {
             editor->runTimerTickForSnapshot();

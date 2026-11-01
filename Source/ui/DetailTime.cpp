@@ -36,6 +36,38 @@ void DetailArea::paintTimeline (juce::Graphics& g)
 
     const double total = timeTotal (state.stats);
 
+    if (region.valid && list.getHeight() > 80)
+    {
+        auto card = list.removeFromTop (juce::jmin (66, list.getHeight() / 2));
+        list.removeFromTop (8);
+
+        g.setColour (theme::accent.withAlpha (0.08f));
+        g.fillRoundedRectangle (card.toFloat(), tokens::radiusControl);
+        g.setColour (theme::accent.withAlpha (0.45f));
+        g.drawRoundedRectangle (card.toFloat().reduced (0.5f), tokens::radiusControl, 1.0f);
+
+        auto inner = card.reduced (10, 6);
+        g.setColour (theme::accent);
+        g.setFont (uiFont (tokens::label, true));
+        g.drawText (region.name, inner.removeFromTop (18), juce::Justification::centredLeft, false);
+
+        g.setColour (theme::text);
+        g.setFont (monoFont (juce::jmin (14.0f, (float) inner.getHeight() * 0.55f), true));
+        g.drawFittedText (num (region.lufs) + " LUFS   "
+                              + T ("M ", "M ") + num (region.midLufs) + " / S "
+                              + num (region.sideLufs) + "   "
+                              + T ("TP ", "TP ") + num (region.truePeak) + " dBTP   "
+                              + "PLR " + num (region.plr) + "   "
+                              + T ("相关 ", "corr ") + sgn (region.correlation, 2),
+                          inner.removeFromTop (18), juce::Justification::centredLeft, 1, 0.7f);
+
+        g.setColour (theme::textFaint);
+        g.setFont (uiFont (tokens::unit));
+        g.drawText (T ("100 ms 包络估算 · 拖动底部时间线选择区域",
+                       "100 ms envelope estimate - drag the bottom timeline to select"),
+                    inner, juce::Justification::centredLeft, false);
+    }
+
     // ---- correlated events (same moment, one attribution) -------------------
     {
         const auto merged = mergeMarkerEvents (state.markers);

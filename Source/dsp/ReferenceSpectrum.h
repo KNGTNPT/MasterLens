@@ -36,6 +36,10 @@ public:
 
     juce::StringArray getFiles() const;
 
+    /** 10-20 Hz loudness envelope of the reference set, for coarse alignment. */
+    std::vector<float> getEnvelopeDb() const;
+    double getEnvelopeHopSeconds() const noexcept { return envelopeHop.load(); }
+
 private:
     void run() override;
 
@@ -45,6 +49,8 @@ private:
 
     mutable juce::SpinLock lock;
     std::vector<float> spectrumDb;
+    std::vector<float> envelopeDb;
+    std::atomic<double> envelopeHop { 0.1 };
     StatsSnapshot refStats;
     std::atomic<bool> ready { false };
     std::atomic<bool> statsReady { false };

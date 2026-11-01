@@ -329,4 +329,188 @@ void BandBalanceDisplay::paint (juce::Graphics& g)
     }
 }
 
+//==============================================================================
+SpectrogramDisplay::SpectrogramDisplay()
+{
+    setOpaque (true);
+}
+
+void SpectrogramDisplay::clear()
+{
+    columns = {};
+    bandColumns = {};
+    writePos = 0;
+    count = 0;
+    repaint();
+}
+
+juce::Colour SpectrogramDisplay::colourFor (float value)
+{
+    value = juce::jlimit (0.0f, 1.0f, value);
+
+    // Dark navy -> blue -> cyan -> warm amber. This is deliberately not a
+    // rainbow: quiet material stays dark and loud bands stand out.
+    const juce::Colour stops[] {
+        juce::Colour (0xff07101d),
+        juce::Colour (0xff173b7a),
+        juce::Colour (0xff1aa6c8),
+        juce::Colour (0xff62d38b),
+        juce::Colour (0xfff0c24a),
+        juce::Colour (0xffef5b4c)
+    };
+
+    const float scaled = value * 5.0f;
+    const int index = juce::jlimit (0, 4, (int) std::floor (scaled));
+    const float t = scaled - (float) index;
+
+    return stops[index].interpolatedWith (stops[index + 1], t);
+}
+
+void SpectrogramDisplay::capture (const SpectrumAnalyzer& analyser)
+{
+    auto& col = columns[(size_t) writePos];
+    auto& bands = bandColumns[(size_t) writePos];
+
+    const double range = std::log (20000.0 / 20.0);
+
+    for (int i = 0; i < numBins; ++i)
+    {
+        const double f = 20.0 * std::exp (range * (double) i / (double) (numBins - 1));
+        const float db = analyser.getMagnitudeAt (f);
+        col[(size_t) i] = juce::jlimit (0.0f, 1.0f, (db + 100.0f) / 100.0f);
+    }
+
+    const auto densities = analyser.getBandDensities();
+
+    for (int i = 0; i < 10; ++i)
+        bands[(size_t) i] = juce::jlimit (0.0f, 1.0f, (densities[(size_t) i] + 80.0f) / 80.0f);
+
+    writePos = (writePos + 1) % maxColumns;
+
+    if (count < maxColumns)
+        ++count;
+
+    repaint();
+}
+
+void SpectrogramDisplay::ensureBackground()
+{
+    const int w = getWidth();
+    const int h = getHeight();
+
+    if (w <= 0 || h <= 0)
+        return;
+
+    const float scale = juce::jmax (1.0f, getDesktopScaleFactor());
+    background = juce::Image (juce::Image::ARGB,
+                              juce::roundToInt ((float) w * scale),
+                              juce::roundToInt ((float) h * scale),
+                              true);
+    juce::Graphics bg (background);
+    bg.addTransform (juce::AffineTransform::scale (scale));
+    bg.fillAll (theme::card);
+    drawGrid (bg);
+
+    backgroundDirty = false;
+    cachedThemeRevision = theme::revision();
+}
+
+void SpectrogramDisplay::drawGrid (juce::Graphics& g)
+{
+    auto area = getLocalBounds().toFloat();
+    auto plot = area.withTrimmedLeft (44.0f).withTrimmedRight (8.0f)
+                    .withTrimmedTop (12.0f).withTrimmedBottom (20.0f);
+
+    if (plot.getWidth() < 20.0f || plot.getHeight() < 20.0f)
+        return;
+
+    g.setColour (theme::borderSoft);
+
+    for (float t = 0.0f; t <= 1.0f; t += 0.25f)
+    {
+        const float x = plot.getX() + t * plot.getWidth();
+        g.drawVerticalLine (juce::roundToInt (x), plot.getY(), plot.getBottom());
+    }
+
+    g.setFont (monoFont (tokens::unit));
+    g.setColour (theme::textFaint);
+
+    if (mode == Mode::bands)
+    {
+        for (int i = 0; i < 10; ++i)
+        {
+            const auto& info = SpectrumAnalyzer::getBandInfo (i);
+            const float y = plot.getBottom() - (float) (i + 1) * plot.getHeight() / 10.0f
+                            + plot.getHeight() / 20.0f;
+            g.drawText (T (info.label, info.labelEn), 0, juce::roundToInt (y) - 6,
+                        40, 12, juce::Justification::centredRight);
+        }
+    }
+    else
+    {
+        const double ticks[] { 20000, 10000, 5000, 2000, 500, 100, 20 };
+
+        for (double f : ticks)
+        {
+            const double y = std::log (f / 20.0) / std::log (20000.0 / 20.0);
+            const float py = plot.getBottom() - (float) y * plot.getHeight();
+            const auto label = f >= 1000.0 ? juce::String (f / 1000.0, 0) + "k"
+                                           : juce::String ((int) f);
+            g.drawText (label, 0, juce::roundToInt (py) - 6, 40, 12,
+                        juce::Justification::centredRight);
+        }
+    }
+
+    g.drawText (T ("时间", "time"), juce::roundToInt (plot.getX()), (int) plot.getBottom() + 4,
+                40, 12, juce::Justification::centredLeft);
+    g.drawText (T ("现在", "now"), juce::roundToInt (plot.getRight() - 40),
+                (int) plot.getBottom() + 4, 40, 12, juce::Justification::centredRight);
+}
+
+void SpectrogramDisplay::paint (juce::Graphics& g)
+{
+    if (backgroundDirty || background.isNull() || cachedThemeRevision != theme::revision())
+        ensureBackground();
+
+    g.drawImage (background, getLocalBounds().toFloat());
+
+    auto area = getLocalBounds().toFloat();
+    auto plot = area.withTrimmedLeft (44.0f).withTrimmedRight (8.0f)
+                    .withTrimmedTop (12.0f).withTrimmedBottom (20.0f);
+
+    if (plot.getWidth() < 20.0f || plot.getHeight() < 20.0f || count <= 0)
+        return;
+
+    const float cellW = plot.getWidth() / (float) maxColumns;
+
+    for (int i = 0; i < count; ++i)
+    {
+        const int index = (writePos - count + i + maxColumns) % maxColumns;
+        const float x = plot.getX() + (float) i * cellW;
+
+        if (mode == Mode::bands)
+        {
+            const float cellH = plot.getHeight() / 10.0f;
+
+            for (int b = 0; b < 10; ++b)
+            {
+                g.setColour (colourFor (bandColumns[(size_t) index][(size_t) b]));
+                g.fillRect (juce::Rectangle<float> (x, plot.getBottom() - (float) (b + 1) * cellH,
+                                                    cellW + 0.8f, cellH));
+            }
+        }
+        else
+        {
+            const float cellH = plot.getHeight() / (float) numBins;
+
+            for (int b = 0; b < numBins; ++b)
+            {
+                g.setColour (colourFor (columns[(size_t) index][(size_t) b]));
+                g.fillRect (juce::Rectangle<float> (x, plot.getBottom() - (float) (b + 1) * cellH,
+                                                    cellW + 0.8f, cellH));
+            }
+        }
+    }
+}
+
 } // namespace ml

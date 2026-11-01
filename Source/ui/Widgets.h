@@ -128,6 +128,49 @@ private:
     int cachedThemeRevision = -1;
 };
 
+/** Time / frequency waterfall and 10-band heat map (2.0 beta2).
+
+    Columns are captured from the already-smoothed SpectrumAnalyzer at ~20 Hz.
+    This is a UI-side history, so the audio thread never pays for it and the
+    display does not require a second FFT.
+*/
+class SpectrogramDisplay : public juce::Component
+{
+public:
+    enum class Mode { spectrogram = 0, bands = 1 };
+
+    SpectrogramDisplay();
+
+    void setMode (Mode m) { mode = m; backgroundDirty = true; repaint(); }
+    Mode getMode() const noexcept { return mode; }
+
+    /** Push one column from the current analyser frame. */
+    void capture (const SpectrumAnalyzer& analyser);
+    void clear();
+
+    void paint (juce::Graphics&) override;
+    void resized() override { backgroundDirty = true; }
+    void refreshLanguage() { backgroundDirty = true; repaint(); }
+    void invalidateBackground() { backgroundDirty = true; repaint(); }
+
+private:
+    static constexpr int maxColumns = 256;
+    static constexpr int numBins = 64;
+
+    void ensureBackground();
+    void drawGrid (juce::Graphics&);
+    static juce::Colour colourFor (float value);
+
+    Mode mode = Mode::spectrogram;
+    std::array<std::array<float, numBins>, maxColumns> columns {};
+    std::array<std::array<float, 10>, maxColumns> bandColumns {};
+    int writePos = 0;
+    int count = 0;
+    juce::Image background;
+    bool backgroundDirty = true;
+    int cachedThemeRevision = -1;
+};
+
 /** Ten band tonal balance deviation bars (pink-noise / octave reference). */
 class BandBalanceDisplay : public juce::Component
 {

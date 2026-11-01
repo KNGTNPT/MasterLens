@@ -53,6 +53,8 @@ set(MASTERLENS_SOURCES
     Source/EditorReportTxt.cpp
     Source/EditorJson.cpp
     Source/EditorCsv.cpp
+    Source/EditorPdf.cpp
+    Source/EditorSeries.cpp
     Source/dsp/AnalysisEngine.cpp
     Source/dsp/SpectrumAnalyzer.cpp
     Source/dsp/ReferenceSpectrum.cpp
@@ -137,6 +139,37 @@ target_link_libraries(MasterLensDspTest
     PRIVATE
         juce::juce_audio_basics
         juce::juce_audio_formats
+        juce::juce_dsp
+    PUBLIC
+        juce::juce_recommended_config_flags
+)
+
+# ---------------------------------------------------------------------------
+# Headless CLI (batch / CI / scriptable file QC)
+# ---------------------------------------------------------------------------
+juce_add_console_app(MasterLensCli PRODUCT_NAME "MasterLensCli")
+
+target_sources(MasterLensCli PRIVATE
+    Source/cli/main.cpp
+    Source/dsp/AnalysisEngine.cpp
+    Source/dsp/SpectrumAnalyzer.cpp
+    Source/dsp/DefectAnalyzer.cpp
+    Source/file/FileAnalyzer.cpp
+)
+
+target_include_directories(MasterLensCli PRIVATE Source)
+
+target_compile_definitions(MasterLensCli PRIVATE
+    JUCE_WEB_BROWSER=0
+    JUCE_USE_CURL=0
+    JUCE_STANDALONE_APPLICATION=1
+)
+
+target_link_libraries(MasterLensCli
+    PRIVATE
+        juce::juce_audio_basics
+        juce::juce_audio_formats
+        juce::juce_core
         juce::juce_dsp
     PUBLIC
         juce::juce_recommended_config_flags

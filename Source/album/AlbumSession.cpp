@@ -51,6 +51,10 @@ namespace
         o->setProperty ("monoLowRetainPct", s.monoLowRetainPct);
         o->setProperty ("subSharePct", s.subSharePct);
         o->setProperty ("flatTopPct", s.flatTopPct);
+        o->setProperty ("midLufs", s.midLufs);
+        o->setProperty ("sideLufs", s.sideLufs);
+        o->setProperty ("midShortTerm", s.midShortTerm);
+        o->setProperty ("sideShortTerm", s.sideShortTerm);
         o->setProperty ("timeOrigin", s.timeOrigin);
         o->setProperty ("hostPosition", s.hostPosition);
         o->setProperty ("hostLength", s.hostLength);
@@ -109,6 +113,10 @@ namespace
             s.monoLowRetainPct = get ("monoLowRetainPct", 100.0);
             s.subSharePct = get ("subSharePct", 0.0);
             s.flatTopPct = get ("flatTopPct", 0.0);
+            s.midLufs = get ("midLufs", -100.0);
+            s.sideLufs = get ("sideLufs", -100.0);
+            s.midShortTerm = get ("midShortTerm", -100.0);
+            s.sideShortTerm = get ("sideShortTerm", -100.0);
             s.timeOrigin = get ("timeOrigin", 0.0);
             s.hostPosition = get ("hostPosition", 0.0);
             s.hostLength = get ("hostLength", 0.0);

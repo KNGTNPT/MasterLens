@@ -24,6 +24,8 @@ juce::String MasterLensAudioProcessorEditor::buildReportJson() const
     loud->setProperty ("momentaryLufs", stats.momentary);
     loud->setProperty ("lra", stats.lra);
     loud->setProperty ("plr", stats.getPlr());
+    loud->setProperty ("midIntegratedLufs", stats.midLufs);
+    loud->setProperty ("sideIntegratedLufs", stats.sideLufs);
     loud->setProperty ("psr", stats.psr);
     loud->setProperty ("psrMin", stats.psrMin);
     loud->setProperty ("psrMinTime", stats.psrMinTime);
@@ -68,6 +70,29 @@ juce::String MasterLensAudioProcessorEditor::buildReportJson() const
 
     album->setProperty ("reasons", albumReasons);
     root->setProperty ("album", album);
+
+    if (lastRegion.valid)
+    {
+        auto* regionObj = new juce::DynamicObject();
+        regionObj->setProperty ("name", lastRegion.name);
+        regionObj->setProperty ("start", lastRegion.start);
+        regionObj->setProperty ("end", lastRegion.end);
+        regionObj->setProperty ("integratedLufs", lastRegion.lufs);
+        regionObj->setProperty ("midLufs", lastRegion.midLufs);
+        regionObj->setProperty ("sideLufs", lastRegion.sideLufs);
+        regionObj->setProperty ("truePeakDbtp", lastRegion.truePeak);
+        regionObj->setProperty ("plrDb", lastRegion.plr);
+        regionObj->setProperty ("correlation", lastRegion.correlation);
+        regionObj->setProperty ("widthPct", lastRegion.widthPct);
+
+        juce::Array<juce::var> regionBands;
+
+        for (float b : lastRegion.bands)
+            regionBands.add (b);
+
+        regionObj->setProperty ("bandsDb", regionBands);
+        root->setProperty ("region", juce::var (regionObj));
+    }
 
     auto* peak = new juce::DynamicObject();
     peak->setProperty ("truePeakDbtp", stats.truePeakDb);

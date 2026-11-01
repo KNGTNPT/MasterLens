@@ -51,6 +51,23 @@ struct MergedMarkerEvent
 std::vector<MergedMarkerEvent> mergeMarkerEvents (const std::vector<Marker>& markers,
                                                   double windowSeconds = 0.8);
 
+/** A measured timeline region (100 ms envelope estimate). */
+struct RegionMeasurement
+{
+    bool valid = false;
+    double start = 0.0;
+    double end = 0.0;
+    float lufs = kSilentDb;
+    float midLufs = kSilentDb;
+    float sideLufs = kSilentDb;
+    float truePeak = kSilentDb;
+    float plr = 0.0f;
+    float correlation = 0.0f;
+    float widthPct = 0.0f;
+    std::array<float, 10> bands {};
+    juce::String name { "Region" };
+};
+
 struct UiState
 {
     StatsSnapshot stats;
@@ -138,8 +155,12 @@ public:
     void setPlayhead (double seconds);
 
     std::function<void (double)> onDoubleClick;
+    std::function<void (double, double)> onSelectionChanged;
 
     void paint (juce::Graphics&) override;
+    void mouseDown (const juce::MouseEvent&) override;
+    void mouseDrag (const juce::MouseEvent&) override;
+    void mouseUp (const juce::MouseEvent&) override;
     void mouseDoubleClick (const juce::MouseEvent&) override;
 
 private:
@@ -149,6 +170,9 @@ private:
     std::vector<Marker> markers;
     double total = 60.0;
     double playhead = 0.0;
+    double selectionStart = 0.0;
+    double selectionEnd = 0.0;
+    bool draggingSelection = false;
 };
 
 //==============================================================================
@@ -167,12 +191,16 @@ public:
     void expandFirstIssueForSnapshot();
     void setReferenceInfo (bool hasRef, const juce::String& status);
     void setReferencePlaybackState (bool playing, const juce::String& status);
+    void setSpectrumView (int view);   // 0 spectrum, 1 spectrogram, 2 band heat map
+    int getSpectrumView() const noexcept { return spectrumView; }
+    void setRegionMeasurement (const RegionMeasurement& r) { region = r; repaint(); }
     void refreshTexts();
     void invalidateDisplays();
 
     std::function<void()> onImportReference;
     std::function<void()> onClearReference;
     std::function<void()> onToggleReferencePlayback;
+    std::function<void()> onAutoAlignReference;
     std::function<void()> onExportReport;
     std::function<void()> onAddMarkerNow;
     std::function<void (double)> onAddMarkerAt;
@@ -246,11 +274,15 @@ private:
     LevelMeters levelBars;
     HistoryGraph history;
     SpectrumDisplay spectrum;
+    SpectrogramDisplay spectrogram;
     BandBalanceDisplay bands;
+    std::array<juce::TextButton, 3> spectrumViewButtons;
+    int spectrumView = 0;
+    RegionMeasurement region;
     StereoMeters meters;
     IssueList issues;
 
-    juce::TextButton refImport, refClear, refPlay, reportButton, markButton;
+    juce::TextButton refImport, refClear, refPlay, refAlign, reportButton, markButton;
     bool refPlaying = false;
     juce::TextButton markerExport, markerImport;
     juce::TextButton albumCapture, albumProof, albumImport, albumClearButton;

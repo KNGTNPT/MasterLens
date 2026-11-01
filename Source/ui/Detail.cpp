@@ -13,12 +13,26 @@ DetailArea::DetailArea()
     addChildComponent (levelBars);
     addChildComponent (history);
     addChildComponent (spectrum);
+    addChildComponent (spectrogram);
     addChildComponent (bands);
+
+    for (int i = 0; i < (int) spectrumViewButtons.size(); ++i)
+    {
+        auto& b = spectrumViewButtons[(size_t) i];
+        b.setClickingTogglesState (true);
+        b.setRadioGroupId (8811);
+        b.onClick = [this, i]
+        {
+            setSpectrumView (i);
+        };
+        addChildComponent (b);
+    }
     addChildComponent (meters);
     addChildComponent (issues);
     addChildComponent (refImport);
     addChildComponent (refClear);
     addChildComponent (refPlay);
+    addChildComponent (refAlign);
     addChildComponent (reportButton);
     addChildComponent (markButton);
     addChildComponent (markerExport);
@@ -81,6 +95,7 @@ DetailArea::DetailArea()
     refImport.onClick = [this] { if (onImportReference != nullptr) onImportReference(); };
     refClear.onClick = [this] { if (onClearReference != nullptr) onClearReference(); };
     refPlay.onClick = [this] { if (onToggleReferencePlayback != nullptr) onToggleReferencePlayback(); };
+    refAlign.onClick = [this] { if (onAutoAlignReference != nullptr) onAutoAlignReference(); };
     reportButton.onClick = [this] { if (onExportReport != nullptr) onExportReport(); };
     markButton.onClick = [this] { if (onAddMarkerNow != nullptr) onAddMarkerNow(); };
     markerExport.onClick = [this] { if (onExportMarkers != nullptr) onExportMarkers(); };
@@ -132,6 +147,15 @@ void DetailArea::refreshTexts()
                                       : T ("参考 A/B", "Ref A/B"));
     refPlay.setTooltip (T ("在插件内按宿主播放头播放参考轨；与等响监听一起构成 A/B",
                             "Play the reference inside the plug-in at the host playhead; pair with loudness matching"));
+    refAlign.setButtonText (T ("粗略对齐", "Auto align"));
+    refAlign.setTooltip (T ("用最近 30 s 短时响度包络做粗略自动对齐；不是采样级同步",
+                             "Coarse envelope alignment over the last 30 s; not sample-accurate"));
+
+    spectrumViewButtons[0].setButtonText (T ("频谱", "Spectrum"));
+    spectrumViewButtons[1].setButtonText (T ("频谱图", "Waterfall"));
+    spectrumViewButtons[2].setButtonText (T ("频段热力", "Band heat"));
+    spectrumViewButtons[(size_t) spectrumView].setToggleState (true, juce::dontSendNotification);
+
     reportButton.setButtonText (T ("导出报告", "Export report"));
     markButton.setButtonText (T ("+ 打标记", "+ Marker"));
     markerExport.setButtonText (T ("导出标记 CSV", "Export markers"));
@@ -193,12 +217,17 @@ void DetailArea::hideAllChildren()
     levelBars.setVisible (false);
     history.setVisible (false);
     spectrum.setVisible (false);
+    spectrogram.setVisible (false);
     bands.setVisible (false);
+
+    for (auto& b : spectrumViewButtons)
+        b.setVisible (false);
     meters.setVisible (false);
     issues.setVisible (false);
     refImport.setVisible (false);
     refClear.setVisible (false);
     refPlay.setVisible (false);
+    refAlign.setVisible (false);
     reportButton.setVisible (false);
     markButton.setVisible (false);
     markerExport.setVisible (false);
@@ -270,6 +299,27 @@ void DetailArea::setReferenceInfo (bool hasRef, const juce::String& status)
 
     refReady = hasRef;
     refStatus = status;
+    repaint();
+}
+
+void DetailArea::setSpectrumView (int view)
+{
+    spectrumView = juce::jlimit (0, 2, view);
+
+    for (int i = 0; i < (int) spectrumViewButtons.size(); ++i)
+        spectrumViewButtons[(size_t) i].setToggleState (i == spectrumView,
+                                                         juce::dontSendNotification);
+
+    if (spectrumView == 0)
+        spectrum.setVisible (true);
+    else
+        spectrum.setVisible (false);
+
+    spectrogram.setMode (spectrumView == 2 ? SpectrogramDisplay::Mode::bands
+                                           : SpectrogramDisplay::Mode::spectrogram);
+    spectrogram.setVisible (spectrumView != 0);
+    bands.setVisible (true);
+    resized();
     repaint();
 }
 
@@ -388,7 +438,12 @@ void DetailArea::setState (UiState s)
 
         case PageId::spectrum:
             if (state.analyzer != nullptr)
+            {
                 spectrum.setAnalyzer (state.analyzer);
+
+                if (spectrumView != 0 && (tick % 3) == 0)
+                    spectrogram.capture (*state.analyzer);
+            }
 
             spectrum.repaint();
 
@@ -493,21 +548,36 @@ void DetailArea::resized()
             auto chipRow = footer.removeFromBottom (28);
 
             spectrum.setBounds (area);
+            spectrogram.setBounds (area);
             bands.setBounds (footer);
             juce::ignoreUnused (chipRow);
 
             auto row = buttons.withTrimmedRight (4);
-            refClear.setBounds (row.removeFromRight (72));
-            row.removeFromRight (8);
-            refImport.setBounds (row.removeFromRight (118));
-            row.removeFromRight (8);
-            refPlay.setBounds (row.removeFromRight (96));
+            refClear.setBounds (row.removeFromRight (58));
+            row.removeFromRight (5);
+            refAlign.setBounds (row.removeFromRight (66));
+            row.removeFromRight (5);
+            refImport.setBounds (row.removeFromRight (102));
+            row.removeFromRight (5);
+            refPlay.setBounds (row.removeFromRight (84));
 
-            spectrum.setVisible (true);
+            auto modes = row.withTrimmedRight (8);
+            const int modeW = juce::jlimit (54, 76, (modes.getWidth() - 10) / 3);
+
+            for (auto& b : spectrumViewButtons)
+            {
+                b.setBounds (modes.removeFromLeft (modeW).withSizeKeepingCentre (modeW, 28));
+                modes.removeFromLeft (5);
+                b.setVisible (true);
+            }
+
+            spectrum.setVisible (spectrumView == 0);
+            spectrogram.setVisible (spectrumView != 0);
             bands.setVisible (true);
             refImport.setVisible (true);
             refClear.setVisible (true);
             refPlay.setVisible (true);
+            refAlign.setVisible (true);
             break;
         }
 

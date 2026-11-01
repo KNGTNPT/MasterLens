@@ -6,7 +6,7 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 CMAKE_BIN="$ROOT/.tools/cmake-4.4.5-macos-universal/CMake.app/Contents/bin/cmake"
 BUILD="${BUILD_DIR:-$ROOT/build-universal}"
 ARCHS="${ARCHS:-arm64;x86_64}"
-VERSION="$(grep -oE '[0-9]+\.[0-9]+\.[0-9]+' "$ROOT/Source/Version.h" | head -1)"
+VERSION="$(grep -oE '\"[0-9]+\.[0-9]+\.[0-9]+[^\"]*\"' "$ROOT/Source/Version.h" | head -1 | tr -d '\"')"
 DIST="$ROOT/dist"
 STAGE="$DIST/stage"
 
@@ -25,6 +25,9 @@ mkdir -p "$STAGE"
 cp -R "$BUILD/MasterLens_artefacts/Release/VST3/MasterLens.vst3" "$STAGE/"
 cp -R "$BUILD/MasterLens_artefacts/Release/AU/MasterLens.component" "$STAGE/"
 cp -R "$BUILD/MasterLens_artefacts/Release/Standalone/MasterLens.app" "$STAGE/"
+if [ -x "$BUILD/MasterLensCli_artefacts/Release/MasterLensCli" ]; then
+    cp "$BUILD/MasterLensCli_artefacts/Release/MasterLensCli" "$STAGE/MasterLensCli"
+fi
 cp "$ROOT/packaging/Install.command" "$STAGE/安装 Install.command"
 cp "$ROOT/packaging/Uninstall.command" "$STAGE/卸载 Uninstall.command"
 cp "$ROOT/packaging/README-DMG.txt" "$STAGE/使用说明 README.txt"

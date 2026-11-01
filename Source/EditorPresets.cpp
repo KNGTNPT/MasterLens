@@ -526,6 +526,7 @@ void MasterLensAudioProcessorEditor::resetAnalysis()
     advisor.reset();
 
     curve.clear();
+    resetRawSeries();
     stats = ml::StatsSnapshot {};
     markers.clear();
     tpEvents.clear();
@@ -588,6 +589,133 @@ void MasterLensAudioProcessorEditor::clearReference()
     detail.setReferencePlaybackState (false, {});
 }
 
+void MasterLensAudioProcessorEditor::autoAlignReference()
+{
+    const auto envelope = reference.getEnvelopeDb();
+    const double hop = reference.getEnvelopeHopSeconds();
+
+    if (! reference.isReady() || envelope.size() < 20 || hop <= 0.0)
+    {
+        footerStatusText = T ("先导入并等待参考轨载入完成", "Import a reference and wait for it to load");
+        footerStatusColour = ml::theme::warn;
+        repaint();
+        return;
+    }
+
+    std::vector<float> current;
+
+    for (float v : curve)
+        if (v > -90.0f)
+            current.push_back (v);
+
+    if (current.size() < 60)
+    {
+        footerStatusText = T ("当前音频太短，至少播放 10 s 再对齐",
+                              "Play at least 10 s before aligning");
+        footerStatusColour = ml::theme::warn;
+        repaint();
+        return;
+    }
+
+    // Use at most 30 s of the recent short-term envelope. Both envelopes are
+    // mean-removed before correlation, so overall level does not matter.
+    const int n = (int) juce::jmin ((size_t) 300, current.size());
+    const int first = (int) current.size() - n;
+    const double currentStart = timelineNow() - (double) n * 0.1;
+    const double envDuration = (double) envelope.size() * hop;
+    const double currentDuration = (double) n * 0.1;
+
+    auto refAt = [&] (double seconds)
+    {
+        const double x = seconds / hop;
+        const int i = (int) std::floor (x);
+
+        if (i < 0 || i + 1 >= (int) envelope.size())
+            return -100.0f;
+
+        const float t = (float) (x - (double) i);
+        return envelope[(size_t) i] * (1.0f - t) + envelope[(size_t) i + 1] * t;
+    };
+
+    double currentMean = 0.0;
+
+    for (int i = 0; i < n; ++i)
+        currentMean += current[(size_t) (first + i)];
+
+    currentMean /= (double) n;
+
+    double bestScore = -1.0e30;
+    double bestOffset = 0.0;
+
+    const double step = 0.25;
+
+    for (double candidate = 0.0; candidate + currentDuration <= envDuration; candidate += step)
+    {
+        double refMean = 0.0;
+        int valid = 0;
+
+        for (int i = 0; i < n; i += 5)
+        {
+            const float r = refAt (candidate + (double) i * 0.1);
+
+            if (r > -90.0f)
+            {
+                refMean += r;
+                ++valid;
+            }
+        }
+
+        if (valid < 8)
+            continue;
+
+        refMean /= (double) valid;
+
+        double dot = 0.0, a = 0.0, b = 0.0;
+
+        for (int i = 0; i < n; i += 5)
+        {
+            const float r = refAt (candidate + (double) i * 0.1);
+
+            if (r <= -90.0f)
+                continue;
+
+            const double x = (double) current[(size_t) (first + i)] - currentMean;
+            const double y = (double) r - refMean;
+            dot += x * y;
+            a += x * x;
+            b += y * y;
+        }
+
+        if (a > 1.0e-9 && b > 1.0e-9)
+        {
+            const double score = dot / std::sqrt (a * b);
+
+            if (score > bestScore)
+            {
+                bestScore = score;
+                bestOffset = candidate - currentStart;
+            }
+        }
+    }
+
+    if (bestScore < 0.15)
+    {
+        footerStatusText = T ("没有找到可靠的参考段落，保持 0 偏移",
+                              "No reliable reference match; keeping zero offset");
+        footerStatusColour = ml::theme::warn;
+        repaint();
+        return;
+    }
+
+    processor.referencePlayer.setOffsetSeconds (bestOffset);
+    footerStatusText = T ("参考粗略对齐 ", "Reference coarse align ")
+                       + ml::sgn ((float) bestOffset, 2) + " s"
+                       + T ("（包络相关 ", " (envelope corr ")
+                       + ml::num ((float) bestScore, 2) + ")";
+    footerStatusColour = ml::theme::good;
+    repaint();
+}
+
 void MasterLensAudioProcessorEditor::toggleReferencePlayback()
 {
     auto& player = processor.referencePlayer;
@@ -633,5 +761,11 @@ void MasterLensAudioProcessorEditor::exportReport()
                                   file.replaceWithText (buildReport());
                                   file.withFileExtension (".json").replaceWithText (buildReportJson());
                                   file.withFileExtension (".csv").replaceWithText (buildReportCsv());
+                                  file.withFileExtension (".timeseries.csv")
+                                      .replaceWithText (buildRawTimeSeriesCsv());
+
+                                  const auto pdf = buildReportPdf();
+                                  file.withFileExtension (".pdf")
+                                      .replaceWithData (pdf.getData(), pdf.getSize());
                               });
 }

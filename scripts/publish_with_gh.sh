@@ -9,8 +9,8 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 GH="$ROOT/.tools/gh-bin/gh"
 REPO_NAME="${1:-MasterLens}"
 VISIBILITY="${2:---public}"
-VERSION="2.0.0"
-TAG="${TAG:-v2.0.0-beta.1}"
+VERSION="2.0.0-beta.2"
+TAG="${TAG:-v2.0.0-beta.2}"
 DMG="$ROOT/dist/MasterLens-$VERSION-macOS.dmg"
 
 if [ ! -x "$GH" ]; then
@@ -58,7 +58,7 @@ if [ -f "$DMG" ]; then
         "$GH" release upload "$TAG" "$DMG" --clobber
     else
         "$GH" release create "$TAG" "$DMG" \
-              --title "MasterLens $VERSION-beta" \
+              --title "MasterLens $VERSION" \
               --notes "Universal (arm64 + x86_64) VST3 / AU / Standalone for macOS 11+.
 Open the DMG and run 安装 Install.command, then restart your DAW and insert MasterLens on the master bus."
     fi

@@ -123,7 +123,7 @@ void StereoMeters::paint (juce::Graphics& g)
     if (cursor.getHeight() >= 58)
     {
         auto info = cursor.removeFromTop (juce::jmin (76, cursor.getHeight()));
-        const int w = (info.getWidth() - tokens::gap * 3) / 4;
+        const int w = (info.getWidth() - tokens::gap * 5) / 6;
         auto cells = info;
 
         const auto tile = [&g, &cells, w] (const juce::String& label,
@@ -145,8 +145,9 @@ void StereoMeters::paint (juce::Graphics& g)
             g.drawText (label, inner.removeFromTop (14), juce::Justification::centredLeft, false);
 
             g.setColour (colour);
-            g.setFont (monoFont (juce::jmin (22.0f, (float) inner.getHeight() * 0.7f), true));
-            g.drawText (value, inner.removeFromTop (22), juce::Justification::centredLeft, false);
+            g.setFont (monoFont (juce::jmin (20.0f, (float) inner.getHeight() * 0.66f), true));
+            g.drawFittedText (value, inner.removeFromTop (22),
+                              juce::Justification::centredLeft, 1, 0.62f);
 
             g.setColour (theme::textFaint);
             g.setFont (uiFont (tokens::unit));
@@ -154,6 +155,13 @@ void StereoMeters::paint (juce::Graphics& g)
         };
 
         const bool stereo = stats.stereo;
+        tile (T ("M 综合", "M integrated"),
+              fmtDb (stats.midLufs) + " LUFS",
+              T ("K 加权中声道", "K-weighted mid"), theme::text);
+        tile (T ("S 综合", "S integrated"),
+              fmtDb (stats.sideLufs) + " LUFS",
+              T ("K 加权侧声道", "K-weighted side"), theme::text);
+
         tile (T ("左声道真峰值", "L true peak"),
               stereo ? fmtDb (stats.truePeakLeft) + " dBTP" : noValue(),
               T ("独立于总 TP", "separate from total"), theme::text);

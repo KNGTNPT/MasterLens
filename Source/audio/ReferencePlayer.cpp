@@ -61,6 +61,7 @@ void ReferencePlayer::clear()
     busy.store (false, std::memory_order_release);
     enabled.store (false, std::memory_order_release);
     duration.store (0.0, std::memory_order_relaxed);
+    offsetSeconds.store (0.0, std::memory_order_relaxed);
 }
 
 juce::String ReferencePlayer::getStatus() const
@@ -100,7 +101,7 @@ bool ReferencePlayer::render (juce::AudioBuffer<float>& output, double hostSecon
         return true;
 
     const double ratio = d->sourceRate / juce::jmax (1.0, targetRate.load (std::memory_order_relaxed));
-    double pos = hostSeconds * d->sourceRate;
+    double pos = (hostSeconds + offsetSeconds.load (std::memory_order_relaxed)) * d->sourceRate;
     const float gain = juce::Decibels::decibelsToGain (extraGainDb, -60.0f);
 
     for (int i = 0; i < output.getNumSamples(); ++i)

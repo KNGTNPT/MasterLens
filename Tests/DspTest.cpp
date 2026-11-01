@@ -73,6 +73,8 @@ int main()
         check ("width %", s.widthPct, 0.0, 0.5);
         check ("LRA (steady tone)", s.lra, 0.0, 0.3);
         check ("PLR (dual mono sine)", s.getPlr(), 0.0, 0.3);
+        check ("M integrated (dual mono)", s.midLufs, -23.0, 0.5);
+        check ("S integrated (dual mono)", s.sideLufs, -100.0, 1.0);
         check ("clip events", (double) s.clipEvents, 0.0, 0.0);
     }
 
@@ -167,6 +169,8 @@ int main()
 
         check ("correlation (inverted)", s.correlation, -1.0, 0.05);
         check ("width % (inverted)", s.widthPct, 200.0, 0.5);
+        check ("M integrated (inverted)", s.midLufs, -100.0, 1.0);
+        check ("S integrated (inverted)", s.sideLufs, -23.0, 0.6);
     }
 
     // ---------------------------------------------------------------------

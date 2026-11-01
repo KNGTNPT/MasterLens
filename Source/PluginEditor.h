@@ -48,6 +48,13 @@ public:
         captureAlbum();
     }
     void runTimerTickForSnapshot() { timerCallback(); }
+    void setSpectrumViewForSnapshot (int view) { detail.setSpectrumView (view); }
+
+    void writeReportPdfForSnapshot (const juce::File& file)
+    {
+        const auto pdf = buildReportPdf();
+        file.replaceWithData (pdf.getData(), pdf.getSize());
+    }
 
 private:
     void timerCallback() override;
@@ -79,6 +86,7 @@ private:
     void importReference();
     void clearReference();
     void toggleReferencePlayback();
+    void autoAlignReference();
     void chooseFiles();
     void chooseFolder();
     void startFileAnalysis (const juce::StringArray& paths);
@@ -86,9 +94,14 @@ private:
     void addFileResultToAlbum (const ml::FileAnalysisResult& result);
     void addFileResultsToAlbum();
     void clearFileResults();
+    void captureRawSeries();
+    void resetRawSeries();
+    void measureRegion (double start, double end);
     juce::String buildReport() const;
     juce::String buildReportJson() const;
     juce::String buildReportCsv() const;
+    juce::MemoryBlock buildReportPdf() const;
+    juce::String buildRawTimeSeriesCsv() const;
     void setParameter (const char* id, float value);
     void setHold (bool shouldHold, bool fromKeyboard);
     void setPage (int index);
@@ -135,6 +148,25 @@ private:
     std::vector<ml::FileAnalysisResult> fileResults;
     juce::String fileAnalysisStatus;
     juce::String pendingAlbumName;
+
+    struct RawSeriesPoint
+    {
+        double time = 0.0;
+        float momentary = 0.0f;
+        float shortTerm = 0.0f;
+        float integrated = 0.0f;
+        float lra = 0.0f;
+        float truePeak = 0.0f;
+        float correlation = 0.0f;
+        float width = 0.0f;
+        float midShortTerm = 0.0f;
+        float sideShortTerm = 0.0f;
+        std::array<float, 10> bands {};
+    };
+
+    std::vector<RawSeriesPoint> rawSeries;
+    double lastRawSeriesTime = -1.0;
+    ml::RegionMeasurement lastRegion;
 
     std::vector<float> curve;
     ml::StatsSnapshot stats;
