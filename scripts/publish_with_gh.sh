@@ -9,8 +9,8 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 GH="$ROOT/.tools/gh-bin/gh"
 REPO_NAME="${1:-MasterLens}"
 VISIBILITY="${2:---public}"
-VERSION="2.0.0-beta.2"
-TAG="${TAG:-v2.0.0-beta.2}"
+VERSION="2.0.0"
+TAG="${TAG:-v2.0.0}"
 DMG="$ROOT/dist/MasterLens-$VERSION-macOS.dmg"
 
 if [ ! -x "$GH" ]; then

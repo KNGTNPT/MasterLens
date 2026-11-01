@@ -14,7 +14,7 @@ concurrency:
 
 env:
   JUCE_TAG: "8.0.15"
-  APP_VERSION: "2.0.0-beta.2"
+  APP_VERSION: "2.0.0"
 
 jobs:
   macos:

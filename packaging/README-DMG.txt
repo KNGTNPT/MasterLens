@@ -1,4 +1,4 @@
-MasterLens 2.0.0-beta.2 —— 频谱图 · 选区测量 · M/S LUFS · CLI（macOS · VST3 / AU / 独立版）
+MasterLens 2.0.0 —— 频谱图 · 选区测量 · M/S LUFS · CLI（macOS · VST3 / AU / 独立版）
 by BerryStudio · 开发者 KNGTNPT
 =====================================================================
 
@@ -16,7 +16,7 @@ by BerryStudio · 开发者 KNGTNPT
   「等响监听」或「参考 A/B」时，输出才会临时改变。信号卡片实时跟随 DAW；
   问题时间戳循环指定片段。Esc 停止。
 
-【2.0 beta2 新增：频谱图 / 选区 / M/S / PDF / CLI】
+【2.0 新增：频谱图 / 选区 / M/S / PDF / CLI】
   · 频谱页新增「频谱 / 频谱图 / 频段热力」三种视图。
   · 拖动底部整曲时间线选择一段；时间线页显示该段 LUFS / M / S / TP / PLR /
     相关性 / 宽度，并写入报告。
@@ -25,7 +25,7 @@ by BerryStudio · 开发者 KNGTNPT
   · DMG 内含 MasterLensCli：MasterLensCli analyze <文件或文件夹> --json out.json。
   · 参考 A/B 新增「粗略对齐」，用短时响度包络找参考段落；非采样级同步。
 
-【2.0 beta 新增：文件 QC / 等响 A/B / 宿主时间线】
+【2.0 新增：文件 QC / 等响 A/B / 宿主时间线】
   · 「文件 QC」页（快捷键 F）：拖入 WAV / AIFF / FLAC 或专辑文件夹，后台按
     文件原生采样率分析，自动写入专辑表与门禁；12 首 × 4 分钟不再实时等。
   · 底栏「等响监听」：按目标 / 参考 LUFS 自动 trim；频谱页「参考 A/B」：

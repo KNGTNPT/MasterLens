@@ -1,6 +1,6 @@
-# MasterLens 2.0.0-beta.2 — file QC, waterfall, regions, M/S, CLI
+# MasterLens 2.0.0 — file QC, waterfall, regions, M/S, CLI
 
-This beta turns the live inspector into a pre-delivery workflow. It is not a
+Version 2.0 turns the live inspector into a pre-delivery workflow. It is not a
 replacement for listening; it is the fast path between "the mix is done" and
 "the files are actually ready to send".
 
@@ -35,7 +35,7 @@ replacement for listening; it is the fast path between "the mix is done" and
   tighter, the stereo page no longer centres a fixed-height block, and the
   signal cards fill the available height.
 
-## Beta2 additions
+## 2.0 additions
 
 - **Waterfall / band heat**: UI-side 20 Hz columns captured from the already
   smoothed `SpectrumAnalyzer`; 256 columns ≈ 12.8 s. No second FFT and no audio
@@ -62,7 +62,7 @@ replacement for listening; it is the fast path between "the mix is done" and
   - out-of-range audition rejected, not silently substituted;
   - M/S integrated loudness: dual-mono mid −23 LUFS, side silent;
   - reference player renders at the requested host position.
-- `auval` passes; VST3 vendor `BerryStudio`, display version `2.0.0-beta.2`.
+- `auval` passes; VST3 vendor `BerryStudio`, display version `2.0.0`.
 - Offscreen snapshots: 100 % 880×560 and 1280×820.
 
 ## Reproduce
@@ -83,7 +83,7 @@ MasterLensUiShot fileqc
   alignment.
 - Live coverage needs a manually entered total length; without it the reading is
   recorded as 100 % of the measured span.
-- AAX / ARA2 / DDP / codec preview are not in this beta; they need external
+- AAX / ARA2 / DDP / codec preview are not in 2.0; they need external
   SDKs / encoders that are not in the repository.
 - macOS notarization / Windows signing remain credential-dependent; the current
   builds are ad-hoc signed and CI-compiled.

@@ -2,14 +2,16 @@
 
 <img src="docs/logo.svg" width="96" align="right" alt="MasterLens by BerryStudio" />
 
-**母带响度 · 文件 QC · 频谱图 · 选区测量 · M/S · CLI**<br>
+**母带响度 / 文件 QC / 频谱图 / 选区 / M/S / CLI**<br>
 by **BerryStudio** · developer **KNGTNPT**<br>
 macOS / Windows 音频总线插件（VST3 / AU / 独立版），C++17 + JUCE 8。<br>
-当前测试版：**2.0.0-beta.2**
+当前版本：**2.0.0**（正式版）
 
-插件插在总线 / 母带链最后一级，默认**零延迟、逐位旁路**，不碰你的音频；只有你主动点“试听”、开启“等响监听”或“参考 A/B”时，才会临时改变输出。它不负责替你把歌变好听（这个还是得你来），它负责在你觉得“应该差不多了吧”的时候，把响度、平台后果、信号损伤和专辑一致性摊开给你看。
+MasterLens 是插在总线或母带链最后一级的检查器。它默认零延迟、逐位旁路，不碰你的音频；只有你主动点试听、开等响监听或切到参考 A/B 时，输出才会临时改变。
 
-2.0 beta 的重点不是再加一排数字，而是把“实时仪表”补成“交付前真的能用的检查工具”：**把整张专辑拖进来离线跑完**、**按宿主播放头对齐时间**、**用参考轨做等响 A/B**，再把 100% 界面的字和留白重新收拾了一遍。beta2 继续补上了**频谱图 / 频段热力、时间线选区、M/S 独立响度、原始 100 ms 序列、PDF 和 CLI**。
+它不负责把歌变好听，这件事还是得你来。它负责在你觉得“应该差不多了”的时候，把响度、平台会怎么处理、信号有没有受伤、整张专辑是否一致摊开给你看。
+
+2.0 之前，它更像一块实时表。2.0 把几件真正影响交付的事接上了：整张专辑可以离线跑完、参考轨可以按宿主位置播放、时间戳跟宿主走、报告能直接交给客户或存档。
 
 ![MasterLens 2.0 界面](docs/screenshot-2.0.png)
 
@@ -23,209 +25,173 @@ macOS / Windows 音频总线插件（VST3 / AU / 独立版），C++17 + JUCE 8�
 
 ---
 
-## 三秒看懂：它到底能干嘛
+## 它检查什么
 
-- 🎧 **响度 / 动态**：综合响度、瞬时、短时、LRA、PLR、4× 过采样真峰值，按 ITU-R BS.1770-4 / EBU R128 来。
-- 📂 **离线文件 QC（2.0 新增）**：把 WAV / AIFF / FLAC 或整个专辑文件夹拖进来，后台按文件自己的采样率跑完整分析，秒级出报告并自动写入专辑门禁；12 首 × 4 分钟不用再实时等 48 分钟。
-- 📉 **平台归一化后果**：Spotify、Apple Music、YouTube、Tidal、Amazon、SoundCloud、播客、俱乐部，分别告诉你“平台会给你加多少、砍多少、限多少、浪费多少响度”。
-- 🫧 **信号健康**：失真 / 互调、混叠、超低堆积、瞬态、单声道折叠、中频掩蔽，六层风险 + 联动归因；点卡片就从当前总线实时 solo。
-- 🎚️ **等响监听 / 参考 A/B（2.0 新增）**：按参考 LUFS 自动衰减或提升监听电平；导入参考轨后可以按宿主播放头在插件内部直接 A/B 切换，默认仍然逐位旁路；频谱页支持粗略包络自动对齐。
-- 🌈 **频谱图 / 频段热力（beta2）**：频谱页可在「频谱 / 频谱图 / 频段热力」之间切换，用 20 Hz 历史列看时间方向上的能量堆叠。
-- ⏱️ **时间线选区测量（beta2）**：拖动底部时间线选择一段，时间线页显示该段 LUFS / M / S / TP / PLR / 相关性 / 宽度，并自动写入报告。
-- 🎛️ **M/S 独立响度（beta2）**：输出 M 与 S 各自的综合响度，配合 Side 真峰值和单声道折叠判断兼容性。
-- 🧾 **原始序列 / PDF / CLI（beta2）**：导出 100 ms CSV 原始序列、PDF 摘要；`MasterLensCli` 可以对文件 / 文件夹做脚本化 QC。
-- 🧾 **专辑统一 / 交付门禁**：逐首采集，和专辑中位比 LUFS / LRA / PLR / TP / 频段，排风险、看 diff、导可复现的 JSON + TXT 证明；专辑会话会随工程保存。
-- 🎯 **曲风目标 / 平台交付**：36 组曲风参照 + “响度战争参与度”滑块，旁边直接列各平台交付要求，包括 Apple 曲尾静音检查。
-- 🖱️ **问题定位**：宿主播放头时间戳、问题区域、时间线标记、CSV 导入 / 导出、A/B 快照、TXT / JSON / CSV 报告。
-- 🪟 **界面不再松垮（2.0 重排）**：100% 下字号更清楚、行高与卡片更紧、统计页填满高度；默认 1120×700，最小 880×560。
+**响度和动态**：综合响度、瞬时、短时、LRA、PLR、4× 过采样真峰值，按 ITU-R BS.1770-4 / EBU R128 计算。M 和 S 也有各自独立的响度。
+
+**平台归一化后果**：Spotify、Apple Music、YouTube、Tidal、Amazon、SoundCloud、播客和俱乐部，各自会加多少、砍多少、限掉多少、浪费多少响度，都列出来。它不会把某个固定 LUFS 当成所有人的合格线。
+
+**信号健康**：失真 / 互调、混叠、超低堆积、瞬态、单声道折叠、中频掩蔽，六层风险会合并归因。点卡片可以实时 solo 当前总线，点时间戳可以回听问题片段。
+
+**专辑和交付门禁**：把每首歌的 LUFS、LRA、PLR、真峰值、频段和相关性放到同一张表里，和专辑中位比较，按风险排序。规则可以开关，门禁结果和证据哈希可以导出。
+
+**文件 QC**：不用实时播放整张专辑。拖入 WAV / AIFF / FLAC 或整个文件夹，后台按每个文件自己的采样率分析，结果自动进入专辑表。12 首 × 4 分钟不再需要等 48 分钟。
+
+**参考和试听**：等响监听按参考或目标 LUFS 自动 trim；导入参考轨后可以在插件里按宿主播放头做 A/B，并做一次粗略的包络对齐。
+
+**频谱和定位**：实时频谱、频谱图、10 段频段热力，三种看法各有用途。时间线可以拖选区，快速看某一段的响度、动态和声场。
+
+**报告和自动化**：TXT / JSON / CSV / PDF，外加 100 ms 原始序列；`MasterLensCli` 可以直接对文件或文件夹做批量 QC。
 
 ---
 
-## 简易实用教程（5 分钟上手）
+## 五分钟上手
 
-> 教程最后更新：**2.0.0-beta.2**。之后每个版本都会在这里补上当前界面的实际用法。
+教程随版本更新，当前对应 **2.0.0**。
 
-### 0. 先装好，再插在总线最后
+### 装好并插到总线
 
-1. **macOS**：打开 DMG → 双击「安装 Install.command」→ 重启 DAW。Gatekeeper 拦截时右键 → 打开。
-2. **Windows**：运行 `MasterLens-2.0.0-Windows-*.exe` → 重启 DAW。
-3. 在 DAW 的 **Master / Stereo Out** 最后一级插入 MasterLens（VST3 / AU / 独立版都行）。
-4. 确认插件没有被宿主 **bypass / mute**，然后播放音频。默认是零延迟、逐位旁路，只测量，不改声音。
+macOS 打开 DMG，双击「安装 Install.command」，然后重启 DAW。Windows 运行 `MasterLens-2.0.0-Windows-*.exe`，同样重启 DAW。
 
-### 1. 先做一次单曲快速检查
+把 MasterLens 插在 **Master / Stereo Out** 最后一级，确认没有被宿主 bypass 或 mute。播放音频，它就会开始测量。
 
-1. **从头播放**，让它跑 20–30 秒；综合响度需要时间稳定。
-2. 看首页四张卡：
-   - **综合响度**：当前响度 + 平台归一化会砍 / 加多少
-   - **真峰值**：是否超过顶部「真峰值上限」
-   - **LRA**：动态范围是不是被压得太扁
-   - **PLR**：瞬态还剩多少
-3. 如果数值停在上一版，点 **清零统计（R）**，再重新播放当前版本。
-4. 想对比修改前后：点底部 **A / B** 存快照，再点一次切换；右键清除。
-5. 点「信号健康」里的六张卡，会 **实时 solo 当前总线**；点带时间戳的问题区域，会循环那 2 秒；**Esc** 停止。
+### 先看一首歌
 
-### 1.1 频谱页：三种看法 + 选区
+从头播放 20–30 秒，等综合响度稳定。首页四张卡分别看综合响度、真峰值、LRA 和 PLR：
 
-1. 按 **3** 打开频谱页；底部左侧切换 **频谱 / 频谱图 / 频段热力**。
-2. **频谱图**：横轴是最近约 12.8 s 的时间，纵轴是 20 Hz–20 kHz；颜色越暖能量越强。适合找“什么时候开始刺 / 什么时候低频堆起来”。
-3. **频段热力**：把 10 个 QC 频段压成 10 条横向热力带，适合看整段副歌的平衡变化。
-4. 拖动底部 **整曲时间线** 的蓝色时间条选择一段；切到「时间线」页，会显示该段的 **LUFS / M / S / TP / PLR / 相关 / 宽度**。
-5. 选区是 **100 ms 包络估算**，用于快速定位；需要精确结果请用文件 QC 或完整播放。
+- 真峰值有没有超过顶部的「真峰值上限」；
+- LRA 是不是被压得太扁；
+- PLR 还剩多少瞬态；
+- 平台归一化会带来多少衰减或浪费。
 
-### 2. 整张专辑：优先用「文件 QC」
+如果读数是上一版留下的，点「清零统计」或按 R，再重新播放当前版本。想比较修改前后，点底部 A / B 存快照，再点一次切换，右键清空。
 
-> 这是 2.0 最省时间的功能：不用实时播放整张专辑。
+信号健康里的六张卡可以点。卡片是当前总线的实时 solo；下面的时间戳会循环那 2 秒的问题区域。Esc 停止。
 
-1. 按 **F** 打开「文件 QC」页。
-2. 把 **WAV / AIFF / FLAC** 或整个专辑文件夹拖进来；也可以点「选择文件 / 选择文件夹」。
-3. 等右上角从 `Analysing` 变成 `Done`。每个文件会显示采样率 / 位深、时长、LUFS、TP、LRA、风险。
-4. 成功结果会 **自动写入专辑表**，自动重算中位和门禁。
-5. 按 **5** 打开「专辑统一 / 交付门禁」：
-   - 确认「专辑名」和每首「曲目名」
-   - 文件 QC 的覆盖度是 100%，不需要填总长
-   - 看右侧风险排序和规则开关
-6. 点「导出证明」，得到 JSON + TXT：每首快照、中位、规则、门禁、diff 和哈希。
+### 频谱页的三种看法
 
-> 注意：文件 QC 是加入**当前专辑**；如果上一张专辑没清空，会和新结果并列。先清空或换一个专辑名。
+按 3 打开频谱页，左下角切换：
 
-### 3. 实时采集一首歌（不用文件 QC 时）
+- **频谱**：当下这一刻，20 Hz–20 kHz 的曲线和峰值保持；
+- **频谱图**：最近约 12.8 秒的时间 × 频率能量，适合找“什么时候开始刺、低频什么时候堆起来”；
+- **频段热力**：把 10 个 QC 频段压成横向色带，适合看整段副歌的平衡变化。
 
-1. 在专辑页填写「曲目名」和「总长 s」（例如 `3:42` 就填 `222`）。
-2. 从曲目开头播放，让覆盖度到 95% 以上。
-3. 点「采集本曲」；每首重复一次。
-4. 覆盖度不足时门禁会阻断，不会假装通过。
+频谱图的历史列是界面层按 20 Hz 采集的，不占音频线程。
 
-### 4. 参考轨 + 等响 A/B
+### 整张专辑：用文件 QC
 
-1. 按 **3** 打开频谱页，点「导入参考轨」，选 1–4 条参考（第一条用于内部 A/B）。
-2. 等参考载入完成；点「参考 A/B」，插件会按 **宿主播放头** 播放参考文件，和当前曲目同一位置切换。
-3. 先播放本曲至少 10 s，点「粗略对齐」：会用最近 30 s 的短时响度包络找参考里最像的段落，并给出偏移秒数。
-4. 再点一次回到本曲；本曲的实时试听仍可用 **Esc** 停止。
-5. 底栏「等响监听」会按目标 LUFS 自动 trim，让 A/B 尽量同一电平。
-6. 这两个功能默认关闭；关闭时输出逐位不变。参考 A/B 开启时输出会被参考文件替代，这是正常行为。
-7. 自动对齐是包络级粗略对齐，不是采样级同步；复杂编曲仍建议手动找段落。
+按 F 打开「文件 QC」，把 WAV / AIFF / FLAC 或整个专辑文件夹拖进来。也可以点「选择文件」或「选择文件夹」。
 
-### 5. 导出与交付
+等右上角从 Analysing 变成 Done。每个文件会显示采样率、位深、时长、LUFS、TP、LRA 和风险。成功的结果会自动写入当前专辑，并重算中位和门禁。
 
-- **单曲报告**：底部「导出报告」或 **Cmd+E**，会以你选的文件名生成 `.txt`、`.json`、`.csv`、`.pdf`，以及 `-timeseries.csv` 的 **100 ms 原始序列**（含 M / S / TP / 频段）。
-- **选区**：如果拖过时间线选区，报告的 TXT / JSON / CSV 会额外带上这段的测量值。
-- **专辑证明**：专辑页「导出证明」→ JSON + TXT，含版本、快照、哈希和 diff。
-- **时间线标记**：时间线页「导出标记 CSV」，可给 DAW / 表格使用。
-- 交付前至少确认：TP 不超上限、覆盖度 ≥95%、门禁没有红色阻断项、报告里有当前插件版本。
+然后按 5 看「专辑统一 / 交付门禁」：确认专辑名和曲目名，看右侧风险排序。文件 QC 的覆盖度是 100%，不需要填总长。点「导出证明」会得到 JSON + TXT，里面有每首快照、中位、规则、diff 和哈希。
 
-### 5.1 命令行（可选）
+文件 QC 是加到**当前专辑**里的。如果上一张专辑还没清空，新结果会和旧曲目并列；先清空，或者换一个专辑名。
+
+### 实时采集一首歌
+
+如果不走文件 QC，就在专辑页填「曲目名」和「总长 s」。总长按秒填，3:42 就是 222。
+
+从曲目开头播放，让覆盖度到 95% 以上，再点「采集本曲」。每首重复一次。覆盖度不够时门禁会阻断，不会假装通过。
+
+
+### 参考轨和等响 A/B
+
+按 3 打开频谱页，点「导入参考轨」，选 1–4 条，第一条会用于内部 A/B。等载入完成。
+
+点「参考 A/B」，插件会按宿主播放头播放参考文件；再点一次回到本曲。先播放本曲 10 秒以上，可以点「粗略对齐」，它会用最近 30 秒的短时响度包络找参考里最像的段落，给出偏移。这个对齐是段落级的，不是采样级同步。
+
+底栏「等响监听」会按目标 LUFS 自动 trim，让 A/B 尽量在同一电平。两个功能默认关闭，关闭时逐位旁路。
+
+### 选区和报告
+
+拖动底部整曲时间线里的蓝色时间条，可以选一段。切到「时间线」页，会看到这一段的 LUFS、M、S、TP、PLR、相关性和宽度。选区数据也会写进报告。
+
+选区是 **100 ms 包络估算**，适合快速定位；要精确逐段结果，请用文件 QC 或完整播放。
+
+底部「导出报告」或 Cmd+E 会生成：
+
+- `.txt`：完整中文报告；
+- `.json`：结构化测量和专辑门禁；
+- `.csv`：便于表格 / 脚本；
+- `.pdf`：英文 ASCII 摘要；
+- `-timeseries.csv`：100 ms 原始序列，含 M / S / TP 和 10 段频段。
+
+### 命令行
+
+DMG 根目录和 Windows 安装目录里都有 `MasterLensCli`：
 
 ```bash
 MasterLensCli analyze /path/to/album --json report.json
-MasterLensCli analyze /path/to/track.wav --csv
+MasterLensCli analyze track.wav --csv
 ```
 
-- 支持 WAV / AIFF / FLAC，文件夹会递归展开。
-- 输出与插件相同的 LUFS / TP / LRA / PLR / M / S / 频段 / 风险。
-- 适合 CI、批量 QC 或把结果接进自己的脚本。
+支持 WAV / AIFF / FLAC，文件夹会递归展开。适合批量 QC、CI，或者把结果接进自己的脚本。
 
-### 6. 推荐的两条工作流
+### 常见问题
 
-**A. 快速交付检查（推荐）**
-
-`文件 QC 拖文件夹` → `专辑页看门禁` → `修正文件后重新分析` → `导出证明`
-
-**B. 单曲精修**
-
-`平台归一化基准` → `播放并清零统计` → `四张卡 / 信号健康` → `参考 A/B + 等响` → `A/B 快照` → `导出报告`
-
-### 7. 常见问题
-
-| 现象 | 先检查 |
+| 现象 | 先看什么 |
 | --- | --- |
-| 没有读数 / 一直“等待信号” | 插件是否在 Master 最后一级；宿主是否播放；是否 bypass / mute |
-| 文件 QC 没结果 | 只支持 WAV / AIFF / FLAC；文件夹是否有读取权限；是否等到 `Done` |
-| 参考 A/B 没声音 | 宿主是否在播放；参考轨是否载入完成；再点一次是否已切回本曲 |
-| 覆盖度低于 95% | 专辑页填「总长 s」，从开头重新播放；文件 QC 不受影响 |
-| 门禁阻断但不知道先改哪 | 看专辑页右侧风险排序，先处理红色前 3 项 |
-| macOS 提示无法打开 | 右键 → 打开，或按 DMG 说明处理 Gatekeeper |
-| 窗口太大 / 字太小 | 设置里选 100% / 125% / 150%；100% 已是 2.0 的紧凑布局 |
+| 没有读数、一直等待信号 | 插件是否在 Master 最后一级；宿主是否在播放；是否 bypass / mute |
+| 文件 QC 没结果 | 只支持 WAV / AIFF / FLAC；文件夹是否有读取权限；是否等到 Done |
+| 参考 A/B 没声音 | 宿主是否播放；参考轨是否载入完成；是不是已经切回本曲 |
+| 覆盖度低于 95% | 专辑页填「总长 s」，从开头重播；文件 QC 不受影响 |
+| 门禁阻断 | 看专辑页右侧风险排序，先处理红色前几项 |
+| macOS 提示无法打开 | 右键 → 打开，或按 DMG 里的说明处理 Gatekeeper |
+| 窗口太大或字太小 | 设置里选 100 / 125 / 150%；2.0 的 100% 已经比 1.x 紧 |
 
-### 8. 快捷键
+### 快捷键
 
-`Space` 按住保持 · `R` 清零 · `1–9` 模块 · `0` 曲风目标 · `F` 文件 QC · `Esc` 停止 / 关闭 · `Cmd+E` 导出
+空格按住保持，R 清零，1–9 切换模块，0 曲风目标，F 文件 QC，Esc 停止或关闭，Cmd+E 导出。
+
+---
+
+## ARA 与总线
+
+MasterLens 不会做总线 ARA。原因不复杂：ARA 在大多数宿主里只开放给音频轨，而且常常要求插在第一个槽；主总线或编组一般拿不到 ARA。MasterLens 是总线分析器，ARA 解决不了“整张混音离线分析”，那件事用文件 QC 更快、更直接。
+
+如果以后做一个“按轨分析”的变体，ARA 才有意义：它能直接拿到 clip / track 名、完整音频和时间范围，省掉手动改名和对时间。2.0 不做，是因为它不该硬塞进总线插件里。
 
 ---
 
 ## English summary
 
-- **Loudness (ITU-R BS.1770-4 / EBU R128)**: gated integrated, momentary, short-term, LRA (EBU Tech 3342), PLR, 4× oversampled true peak, per-channel / Side true peak, and independent K-weighted Mid / Side integrated loudness.
-- **Offline file QC (2.0)**: drag WAV / AIFF / FLAC files or an album folder; a worker thread analyses each file at its native sample rate, returns the full report in seconds, and fills the album gate automatically.
-- **Platform normalisation**: eight destinations modelled as they behave — gain applied, predicted true peak before / after the service limiter, service limiting, and wasted loudness. Reference-track comparison covers LUFS, LRA, PLR, low-side and sub share.
-- **Signal integrity**: harmonic / IMD excess above a local spectral floor, flat-top density, alias risk, sub build-up, transient score, true mono-fold loss and mid-masking risk, plus a correlation layer that merges simultaneous anomalies into one cause.
-- **Mix diagnostics**: sample clipping, inter-sample overs, clicks, DC offset, correlation, width, low-end mono check, and a 10-band tonal balance compared **only** with a reference track or album median — never a built-in absolute curve.
-- **Basis, not fixed genre pass/fail**: platform consequence, reference tracks, album median or manual reference. Genre targets live in their own module and are never silently applied.
-- **Equal-loudness monitor / reference A/B (2.0)**: trims monitoring to the reference LUFS; an imported reference can be played inside the plug-in, synced to the host playhead. Off by default and bit-transparent.
-- **Host timeline (2.0)**: event timestamps use the host playhead, coverage is checked against a user-supplied track length, and the album gate blocks incomplete measurements. Album snapshots persist with the project (APVTS) plus a named sidecar.
-- **Region / reports (beta2)**: drag a timeline region for a 100 ms-envelope estimate; exports include a 100 ms series CSV and an ASCII PDF summary.
-- **CLI (beta2)**: `MasterLensCli analyze <file-or-folder> --json out.json` for batch QC and CI.
-- **Audition**: signal cards follow the live DAW bus; timestamped problem regions can be looped explicitly; out-of-range timestamps are rejected with a message instead of silently playing the wrong slice.
-- **Visuals**: 8192-point FFT, 60 fps spectrum page, waterfall / band-heat history, fractional-octave smoothing, 3-minute short-term history, correlation / width / low-end meters, per-channel / Side true peak, M/S loudness.
-- **UI**: dark theme (light included), bilingual Chinese / English, 11 modules, A/B snapshots, keyboard shortcuts, TXT / JSON / CSV export, denser 100 % layout with an 880×560 minimum.
-- **Verified**: `auval` passes; **73** offline DSP assertions pass, including file analysis at 44.1 / 48 / 88.2 / 96 kHz, reference resampling, host-time timestamps, range rejection, M/S integrated loudness and the in-plugin reference player.
-- **Beta2 extras**: waterfall / band heat views, timeline region estimates, 100 ms time-series CSV, PDF summary and a headless `MasterLensCli`.
+MasterLens 2.0 is a mastering bus inspector for macOS and Windows (VST3, AU, Standalone). It is bit-transparent by default and only changes the output when you explicitly audition, enable loudness matching, or switch to the reference player.
 
-Build: `./scripts/make_dmg.sh` (universal binary, ad-hoc signed).<br>
-Performance / architecture notes: `docs/performance-2.0.0.md` (2.0 beta); `docs/performance-1.5.1.md` remains the 1.5.1 baseline.
+It measures integrated / momentary / short-term loudness, LRA, PLR, 4× true peak, independent Mid / Side loudness, per-channel and Side true peak. It models eight platform-normalisation destinations, checks signal integrity, compares against reference tracks or an album median, and keeps a versioned album gate with JSON / TXT proof.
+
+The 2.0 release adds offline file and folder QC at native sample rates, host-playhead timestamps with coverage checks, equal-loudness monitoring, an in-plugin reference A/B player, spectrogram and band-heat views, timeline region estimates, 100 ms series export, PDF summaries, and a headless `MasterLensCli`.
+
+There is no bus ARA. Most hosts expose ARA only on audio tracks, usually as the first insert; a bus analyser cannot rely on it. A per-track ARA variant is a possible future product, not part of 2.0.
+
+**Verified:** 73 offline DSP assertions, `auval`, and CI on macOS, Windows x64 and Windows ARM64.
 
 ---
 
-## 2.0.0-beta.2 更新：频谱图、选区、M/S、报告与 CLI
+## 2.0 正式版：把实时检查和交付接起来
 
-beta2 继续把“还没做”的清单往外清。能在这台机器上真实跑通、能验证的，都落到代码里；需要外部 SDK / 证书的，不假装已经完成。
+2.0 是从 1.5 的实时表长出来的。最明显的变化是文件 QC：以前检查一张专辑要按顺序播放，现在可以把整个文件夹拖进来，后台按每个文件自己的采样率跑完，结果直接进专辑表。它不替代试听，但能在你开始听之前，先把明显的问题排掉。
 
-### 新增
+参考轨的采样率也修了。以前 96 kHz 的参考会被当成工程采样率读，频谱和响度都会偏；现在先重采样到工程采样率再分析，44.1 / 48 / 88.2 / 96 kHz 都有回归测试。
 
-- **频谱图 / 瀑布图 / 频段热力**：频谱页新增「频谱 / 频谱图 / 频段热力」三档。频谱图显示最近约 12.8 s 的时间 × 对数频率能量，频段热力把 10 个 QC 频段压成横向热力带；数据来自 UI 侧 20 Hz 历史列，不额外占用音频线程。
-- **时间线选区测量**：拖动底部整曲时间线的蓝色条选择一段；时间线页显示该段 **LUFS / M / S / TP / PLR / 相关性 / 宽度**，并写入 TXT / JSON / CSV 报告。选区的数字来自 **100 ms 包络估算**，不是重新离线分析，界面上已明确标注。
-- **M/S 独立响度**：新增 K 加权 Mid / Side 各自的综合响度与短时响度；立体声页显示 M / S 综合 LUFS，报告和 CLI 同步输出。
-- **原始 100 ms 时间序列**：导出报告时额外生成 `-timeseries.csv`，含 `time_s`、M / S / integrated / LRA / TP / correlation / width / 10 段频段密度，schema 版本 2。
-- **PDF 报告**：导出报告时额外生成 `.pdf`；内置 ASCII 摘要（英文测量项 + 平台表 + 专辑门禁），不需要外部 PDF 库。中文完整内容仍以 TXT / JSON 为准。
-- **CLI**：新增 `MasterLensCli`：
-  ```bash
-  MasterLensCli analyze /path/to/album --json report.json
-  MasterLensCli analyze track.wav --csv
-  ```
-  复用同一个 `FileAnalyzer`，适合批量 QC、CI 和脚本。
-- **参考粗略自动对齐**：频谱页「粗略对齐」用最近 30 s 的短时响度包络与参考轨包络做归一化相关，给出偏移秒数并设到参考播放器；这是段落级近似，不是采样级同步。
-- **验证**：**73** 项离线 DSP 断言通过（新增 dual-mono / 反相 M/S 独立响度）；`auval` 通过；macOS / Windows CI 全绿。
+等响监听和参考 A/B 是另一个空洞。导入参考后，插件可以按宿主播放头播放参考文件，和本曲同一位置切换；等响监听负责把两边拉到接近的电平。参考播放器只载入第一条参考轨，自动对齐是包络级的粗略对齐，不是采样级同步。
 
-### 仍然需要外部条件的部分
+时间戳现在跟宿主 playhead 走。专辑页填了总长之后，覆盖度低于 95% 会阻断门禁。宿主没有统一的曲目长度 API，这个字段只能手动填；没填时按已测时长记录。专辑快照会写进 APVTS，同时保留 album.json 和 Album_<name>.json。
 
-- **AAX / ARA2**：需要 Avid / ARA SDK，当前仓库没有这些 SDK，不能在本 beta 里编译或测试。
-- **DDP / PQ 检查**：需要 DDP 镜像 / cue 解析器和实体发行规格输入，属于独立模块，尚未实现。
-- **编码预演（AAC / MP3 / Opus）**：需要外部编码器或内置 libopus；本 beta 不把“能调 ffmpeg”当作已交付功能。
-- **macOS 公证 / Windows 代码签名**：需要开发者证书与 Apple notary 凭据；当前仍是 ad-hoc 签名，Windows 由 CI 编译验证，不是实机签名验证。
+2.0 还补了频谱图、频段热力、M/S 独立响度、时间线选区、100 ms 原始序列、PDF 和 CLI。选区和自动对齐都标了“估算 / 粗略”，没有把近似结果说成离线重算。
 
-这些不是“忘了做”，而是没有相应 SDK / 证书时不能诚实地宣称完成；后续有凭据后再补。
+界面也重排过。100% 下字号比 1.x 大一点，行高、卡片和边距收紧，统计页填满高度，立体声页不再把固定高度块垂直居中。默认 1120×700，最小 880×560。
 
----
+### 2.0 没有做的部分
 
-## 2.0.0-beta.1 更新：从“实时仪表”到“交付前真的能用”
+- **AAX / AudioSuite**：需要 Avid SDK，当前仓库没有，不能编译或测试。
+- **ARA2**：原因见上面的「ARA 与总线」，总线插件不做。
+- **DDP / PQ 检查**：需要 DDP / cue 解析和实体发行规格，尚未实现。
+- **编码预演**：需要外部编码器或内置 libopus；不把“能调 ffmpeg”算成已完成。
+- **macOS 公证 / Windows 代码签名**：需要证书和 notary 凭据；当前仍是 ad-hoc 签名，Windows 由 CI 编译验证。
+- **Windows 实机验证**：目前只有 CI 编译和安装包生成，没有在实体机器上的 DAW 回归。
 
-这一版是 2.0 的第一个 beta。不是把 1.5.1 换皮，而是把母带棚真正会用的几条链路接起来：**文件 QC → 专辑门禁 → 等响 A/B → 可复核时间线**。
-
-### P0：先把“实用”从 demo 级拉起来
-
-- **离线文件 / 文件夹 QC（新增页，快捷键 F）**：把 WAV / AIFF / FLAC 或整个专辑文件夹拖进插件，后台线程按每个文件自己的采样率跑完整分析，输出 LUFS / TP / LRA / PLR / 频段 / 风险，并自动写入专辑表、自动算中位、直接出门禁。12 首 × 4 分钟不再需要实时等 48 分钟。
-- **参考文件采样率修复**：参考轨会先重采样到工程采样率再做 FFT 与响度统计；44.1 / 48 / 88.2 / 96 kHz 都有离线回归测试，不再把 96 kHz 文件当 48 kHz 读。
-- **等响监听 + 内部参考 A/B**：底栏「等响监听」按目标 / 参考 LUFS 自动衰减或提升监听电平；导入参考轨后，频谱页的「参考 A/B」会让插件按宿主播放头直接播放参考文件，和本曲同一位置来回切。默认关闭，关闭时逐位旁路。
-- **宿主时间基准 + 覆盖度**：事件时间戳改用宿主 playhead，问题区域 / 时间线 / CSV / 报告统一；专辑页新增「总长 s」输入（宿主没有统一的曲目长度 API），覆盖度低于 95% 直接阻断门禁。
-- **专辑会话随工程保存**：专辑快照写进 APVTS state，`album.json` 仍作为“最近一次”缓存；另外保存 `Album_<name>.json` sidecar。每首曲目记录源文件名、时长、采样率、位深、覆盖度与插件版本。
-- **旧时间戳不再静默播错**：请求超出 12 s 历史环时，不替换成最近 1.5 s，而是明确提示「该段已超出可回听范围，请从该位置重播」。
-- **100% 界面重排**：基础字号整体上调 1–2 px，行高 / 卡片 / 边距收紧，统计页纵向填满；立体声页不再把固定高度块垂直居中，并新增 L / R / Side 真峰值与单声道折叠卡片。100% 下终于不是“字很小、界面很散”。
-
-### 2.0 beta 的能力边界（不藏）
-
-- 内部参考播放器目前载入**第一条参考轨**到内存，按宿主位置同步播放；不会自动做段落对齐。
-- 宿主长度需要手动填「总长 s」；没填时只能按已测时长记录，覆盖度显示 100%，这是 API 限制，不是 PASS 的借口。
-- 仍然是 VST3 / AU / 独立版；AAX、ARA2、DDP、编码预演不在这个 beta 里。
-- 离线分析是“文件 QC”，不替代监听；它负责快速把明显问题摊开，最后的审美判断仍然要耳朵。
+这些不是忘了写，而是没有外部 SDK / 证书时不能诚实地宣称完成。以后有这些条件，再补。
 
 ---
 
@@ -562,11 +528,11 @@ build/MasterLensCli_artefacts/Release/MasterLensCli
 ./scripts/make_dmg.sh
 ```
 
-输出 `dist/MasterLens-2.0.0-beta.2-macOS.dmg`，并复制一份到桌面；内含 VST3、AU、独立版、`MasterLensCli`、安装 / 卸载脚本与说明。
+输出 `dist/MasterLens-2.0.0-macOS.dmg`，并复制一份到桌面；内含 VST3、AU、独立版、`MasterLensCli`、安装 / 卸载脚本与说明。
 
 ### Windows
 
-Windows x64 / ARM64 安装包由 GitHub Actions 的 MSVC + NSIS 矩阵生成；推送 `v*` 标签即可产出 `MasterLens-2.0.0-beta.2-Windows-x64.exe` 与 `-ARM64.exe`，安装目录内包含 `MasterLensCli.exe`。
+Windows x64 / ARM64 安装包由 GitHub Actions 的 MSVC + NSIS 矩阵生成；推送 `v*` 标签即可产出 `MasterLens-2.0.0-Windows-x64.exe` 与 `-ARM64.exe`，安装目录内包含 `MasterLensCli.exe`。
 
 ---
 
@@ -615,7 +581,7 @@ Windows x64 / ARM64 安装包由 GitHub Actions 的 MSVC + NSIS 矩阵生成；�
 auval -v aufx Maln OrcA
 ```
 
-VST3 moduleinfo：Version **2.0.0**，Vendor **BerryStudio**；显示版本 **2.0.0-beta.2**，AU Bundle ID `com.berrystudio.masterlens`。
+VST3 moduleinfo：Version **2.0.0**，Vendor **BerryStudio**；显示版本 **2.0.0**，AU Bundle ID `com.berrystudio.masterlens`。
 
 ---
 
@@ -673,17 +639,17 @@ scripts/                    DMG / 发布 / logo 工具
 - 平台要求是静态交付参照，不是 Apple / Spotify 认证；最终以发行商当前规范为准。插件无法从实时总线验证 24-bit 源文件。
 - VST3 / AU 没有跨宿主标记写回 API，DAW 标记仍使用 CSV 交换。
 - 曲风目标是参照，不是自动合格线；平台归一化模式仍是默认。
-- 2.0 beta：宿主长度需手动填「总长 s」才能做严格覆盖度门禁；参考 A/B 只载入第一条参考轨，自动对齐是包络级近似。
+- 2.0：宿主长度需手动填「总长 s」才能做严格覆盖度门禁；参考 A/B 只载入第一条参考轨，自动对齐是包络级近似。
 - 时间线选区是 100 ms 包络估算，不是重新离线分析；需要精确逐段结果时请用文件 QC 或完整播放。
-- AAX / ARA2 / DDP / 编码预演需要外部 SDK / 编码器；macOS 公证与 Windows 代码签名需要证书。本 beta 没有假装完成这些外部依赖项。
-- 2.0 beta：文件 QC 自动写入当前专辑快照；如果上一张专辑还没清空，会与原曲目并列，请先清空专辑或换一个专辑名。
+- AAX / ARA2 / DDP / 编码预演需要外部 SDK / 编码器；macOS 公证与 Windows 代码签名需要证书。2.0 没有假装完成这些外部依赖项。
+- 2.0：文件 QC 自动写入当前专辑快照；如果上一张专辑还没清空，会与原曲目并列，请先清空专辑或换一个专辑名。
 
 ---
 
 ## 发布 / 仓库
 
 - 仓库：<https://github.com/KNGTNPT/MasterLens>
-- 最新 beta Release：<https://github.com/KNGTNPT/MasterLens/releases/tag/v2.0.0-beta.2>
+- 最新 Release：<https://github.com/KNGTNPT/MasterLens/releases/tag/v2.0.0>
 - 安装包：macOS DMG、Windows x64 / ARM64 EXE
 - 历史版本：`v1.5.0` … `v1.0.0`，每个 tag 都可以单独 checkout；本 README 的版本段落保留了它们的功能脉络。
 
