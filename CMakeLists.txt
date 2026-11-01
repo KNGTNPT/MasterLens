@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.22)
 
-project(MasterLens VERSION 1.5.1 LANGUAGES C CXX)
+project(MasterLens VERSION 2.0.0 LANGUAGES C CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -14,7 +14,7 @@ endif()
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/.tools/JUCE ${CMAKE_BINARY_DIR}/JUCE EXCLUDE_FROM_ALL)
 
 juce_add_plugin(MasterLens
-    VERSION 1.5.1
+    VERSION 2.0.0
     COMPANY_NAME "BerryStudio"
     BUNDLE_ID "com.berrystudio.masterlens"
     PLUGIN_MANUFACTURER_CODE OrcA
@@ -39,7 +39,10 @@ set(MASTERLENS_SOURCES
     Source/PluginEditor.cpp
     Source/album/AlbumSession.cpp
     Source/audio/AuditionEngine.cpp
+    Source/audio/ReferencePlayer.cpp
+    Source/file/FileAnalyzer.cpp
     Source/EditorControls.cpp
+    Source/EditorFiles.cpp
     Source/EditorPaint.cpp
     Source/EditorLayout.cpp
     Source/EditorTimer.cpp
@@ -74,6 +77,7 @@ set(MASTERLENS_SOURCES
     Source/ui/DetailAlbum.cpp
     Source/ui/DetailSignal.cpp
     Source/ui/DetailTarget.cpp
+    Source/ui/DetailFiles.cpp
     Source/ui/DetailDiag.cpp
     Source/ui/DetailTime.cpp
     Source/ui/EventMerge.cpp
@@ -115,7 +119,10 @@ target_sources(MasterLensDspTest PRIVATE
     Source/dsp/AnalysisEngine.cpp
     Source/dsp/SpectrumAnalyzer.cpp
     Source/dsp/DefectAnalyzer.cpp
+    Source/dsp/ReferenceSpectrum.cpp
     Source/audio/AuditionEngine.cpp
+    Source/audio/ReferencePlayer.cpp
+    Source/file/FileAnalyzer.cpp
 )
 
 target_include_directories(MasterLensDspTest PRIVATE Source)
@@ -129,6 +136,7 @@ target_compile_definitions(MasterLensDspTest PRIVATE
 target_link_libraries(MasterLensDspTest
     PRIVATE
         juce::juce_audio_basics
+        juce::juce_audio_formats
         juce::juce_dsp
     PUBLIC
         juce::juce_recommended_config_flags

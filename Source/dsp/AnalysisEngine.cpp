@@ -80,6 +80,11 @@ void AnalysisEngine::prepare (double sampleRate, int numChannels)
     fs = sampleRate > 0.0 ? sampleRate : 48000.0;
     channels = juce::jlimit (1, 2, numChannels);
 
+    for (auto& tp : truePeak)
+        tp.prepare (fs);
+
+    sideTruePeakDetector.prepare (fs);
+
     partialLength = juce::jmax (16, (int) std::round (fs * 0.1));
 
     // --- ITU-R BS.1770-4 K-weighting (libebur128 coefficient derivation) ------
@@ -156,6 +161,8 @@ void AnalysisEngine::reset()
         truePeak[ch].reset();
     }
 
+    sideTruePeakDetector.reset();
+
     for (int b = 0; b < 3; ++b)
         bandL2[b] = bandR2[b] = bandLR[b] = bandMid[b] = bandSide[b] = 0.0;
 
@@ -182,8 +189,12 @@ void AnalysisEngine::reset()
     sumLR = sumL2 = sumR2 = 0.0;
     sumMid = sumSide = 0.0;
     partialMaxTruePeak = 0.0;
+    partialMaxTruePeakL = 0.0;
+    partialMaxTruePeakR = 0.0;
+    partialMaxSideTruePeak = 0.0;
     partialMaxSamplePeak = 0.0;
     sumL = sumR = 0.0;
+    timeOrigin = 0.0;
 
     for (int i = 0; i < 40; ++i)
     {
@@ -244,12 +255,16 @@ void AnalysisEngine::process (const juce::AudioBuffer<float>& buffer, Stats& sta
         sumWeightedK += isStereo ? (double) kl * kl + (double) kr * kr
                                  : (double) kl * kl;
 
-        // --- true peak, 4x oversampled ---------------------------------------
-        float tp = truePeak[0].process (l);
-        if (isStereo)
-            tp = juce::jmax (tp, truePeak[1].process (r));
+        // --- true peak, 4x oversampled (per channel + side) ------------------
+        const float tpL = truePeak[0].process (l);
+        const float tpR = isStereo ? truePeak[1].process (r) : tpL;
+        const float tp = juce::jmax (tpL, tpR);
+        const float tpSide = sideTruePeakDetector.process (0.5f * (l - r));
 
         partialMaxTruePeak = juce::jmax (partialMaxTruePeak, (double) tp);
+        partialMaxTruePeakL = juce::jmax (partialMaxTruePeakL, (double) tpL);
+        partialMaxTruePeakR = juce::jmax (partialMaxTruePeakR, (double) tpR);
+        partialMaxSideTruePeak = juce::jmax (partialMaxSideTruePeak, (double) tpSide);
 
         const float sp = isStereo ? juce::jmax (std::abs (l), std::abs (r))
                                   : std::abs (l);
@@ -337,6 +352,8 @@ void AnalysisEngine::process (const juce::AudioBuffer<float>& buffer, Stats& sta
     partialProcessed += numSamples;
     elapsedSamples += (juce::uint32) numSamples;
     stats.elapsed = (double) elapsedSamples / fs;
+    stats.timeOrigin = timeOrigin;
+    stats.hostPosition = timeOrigin + stats.elapsed.load();
 
     if (blockPeak < 0.001f)
         stats.tailSilenceSeconds = juce::jmin (3600.0f,
@@ -345,6 +362,12 @@ void AnalysisEngine::process (const juce::AudioBuffer<float>& buffer, Stats& sta
         stats.tailSilenceSeconds = 0.0f;
 
     if (partialSamples >= partialLength)
+        finishPartialBlock (stats);
+}
+
+void AnalysisEngine::finish (Stats& stats)
+{
+    if (partialSamples > 0)
         finishPartialBlock (stats);
 }
 
@@ -461,7 +484,7 @@ void AnalysisEngine::finishPartialBlock (Stats& stats)
         if (tpDb > stats.truePeakDb.load())
         {
             stats.truePeakDb = tpDb;
-            stats.truePeakMaxTime = (float) stats.elapsed.load();
+            stats.truePeakMaxTime = (float) (timeOrigin + stats.elapsed.load());
         }
 
         if (partialMaxTruePeak > 1.0f)
@@ -469,7 +492,7 @@ void AnalysisEngine::finishPartialBlock (Stats& stats)
             stats.oversCount.fetch_add (1);
 
             TpEvent e;
-            e.time = stats.elapsed.load();
+            e.time = timeOrigin + stats.elapsed.load();
             e.overshootDb = tpDb;              // dB above 0 dBTP (only the over-limit part)
             e.overshootDb = juce::jmax (0.05f, e.overshootDb);
 
@@ -488,6 +511,19 @@ void AnalysisEngine::finishPartialBlock (Stats& stats)
         if (spDb > stats.samplePeakDb.load())
             stats.samplePeakDb = spDb;
     }
+
+    const float tpLDb = juce::Decibels::gainToDecibels ((float) partialMaxTruePeakL, -100.0f);
+    const float tpRDb = juce::Decibels::gainToDecibels ((float) partialMaxTruePeakR, -100.0f);
+    const float tpSideDb = juce::Decibels::gainToDecibels ((float) partialMaxSideTruePeak, -100.0f);
+
+    if (tpLDb > stats.truePeakLeft.load())
+        stats.truePeakLeft = tpLDb;
+
+    if (tpRDb > stats.truePeakRight.load())
+        stats.truePeakRight = tpRDb;
+
+    if (tpSideDb > stats.sideTruePeak.load())
+        stats.sideTruePeak = tpSideDb;
 
     // --- PSR: 3 s sample peak vs short-term loudness -------------------------
     {
@@ -510,7 +546,7 @@ void AnalysisEngine::finishPartialBlock (Stats& stats)
             if (psr < stats.psrMin.load())
             {
                 stats.psrMin = psr;
-                stats.psrMinTime = stats.elapsed.load();
+                stats.psrMinTime = timeOrigin + stats.elapsed.load();
             }
         }
     }
@@ -521,7 +557,7 @@ void AnalysisEngine::finishPartialBlock (Stats& stats)
     {
         lastSpikeSecond = stats.elapsed.load();
         stats.spikeCount.fetch_add (1);
-        stats.lastSpikeTime = lastSpikeSecond;
+        stats.lastSpikeTime = timeOrigin + lastSpikeSecond;
     }
 
     // --- gated histograms ----------------------------------------------------
@@ -605,6 +641,9 @@ void AnalysisEngine::finishPartialBlock (Stats& stats)
     bandL2[2] = bandR2[2] = bandLR[2] = bandMid[2] = bandSide[2] = 0.0;
     sumL = sumR = 0.0;
     partialMaxTruePeak = 0.0;
+    partialMaxTruePeakL = 0.0;
+    partialMaxTruePeakR = 0.0;
+    partialMaxSideTruePeak = 0.0;
     partialMaxSamplePeak = 0.0;
 }
 

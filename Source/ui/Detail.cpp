@@ -18,6 +18,7 @@ DetailArea::DetailArea()
     addChildComponent (issues);
     addChildComponent (refImport);
     addChildComponent (refClear);
+    addChildComponent (refPlay);
     addChildComponent (reportButton);
     addChildComponent (markButton);
     addChildComponent (markerExport);
@@ -30,6 +31,14 @@ DetailArea::DetailArea()
     addChildComponent (albumImportMarkers);
     addChildComponent (albumTrackName);
     addChildComponent (albumNameEditor);
+    addChildComponent (albumTrackLength);
+
+    albumTrackLength.setInputRestrictions (7, "0123456789.");
+    albumTrackLength.onTextChange = [this]
+    {
+        if (onTrackLengthChanged != nullptr)
+            onTrackLengthChanged (albumTrackLength.getText().getDoubleValue());
+    };
 
     addChildComponent (genreBox);
     addChildComponent (warSlider);
@@ -58,11 +67,20 @@ DetailArea::DetailArea()
             onApplyTargetPlan();
     };
 
+    for (auto* b : { &fileChoose, &fileFolder, &fileAddAlbum, &fileClear })
+        addChildComponent (*b);
+
+    fileChoose.onClick = [this] { if (onChooseFiles != nullptr) onChooseFiles(); };
+    fileFolder.onClick = [this] { if (onChooseFolder != nullptr) onChooseFolder(); };
+    fileAddAlbum.onClick = [this] { if (onAddFileResultsToAlbum != nullptr) onAddFileResultsToAlbum(); };
+    fileClear.onClick = [this] { if (onClearFileResults != nullptr) onClearFileResults(); };
+
     for (auto& b : albumRuleButtons)
         addChildComponent (b);
 
     refImport.onClick = [this] { if (onImportReference != nullptr) onImportReference(); };
     refClear.onClick = [this] { if (onClearReference != nullptr) onClearReference(); };
+    refPlay.onClick = [this] { if (onToggleReferencePlayback != nullptr) onToggleReferencePlayback(); };
     reportButton.onClick = [this] { if (onExportReport != nullptr) onExportReport(); };
     markButton.onClick = [this] { if (onAddMarkerNow != nullptr) onAddMarkerNow(); };
     markerExport.onClick = [this] { if (onExportMarkers != nullptr) onExportMarkers(); };
@@ -99,6 +117,9 @@ DetailArea::DetailArea()
 
     albumNameEditor.setTextToShowWhenEmpty (T ("专辑名", "Album name"), theme::textFaint);
     albumTrackName.setTextToShowWhenEmpty (T ("曲目名", "Track name"), theme::textFaint);
+    albumTrackLength.setTextToShowWhenEmpty (T ("总长 s", "Length s"), theme::textFaint);
+    albumTrackLength.setTooltip (T ("宿主没有统一的曲目长度 API；在这里填整首时长，用于覆盖度门禁",
+                                    "Hosts do not expose a universal track length; enter it here for coverage"));
 
     refreshTexts();
 }
@@ -107,6 +128,10 @@ void DetailArea::refreshTexts()
 {
     refImport.setButtonText (T ("导入参考轨", "Import reference"));
     refClear.setButtonText (T ("清除", "Clear"));
+    refPlay.setButtonText (refPlaying ? T ("参考 A/B 开", "Ref A/B on")
+                                      : T ("参考 A/B", "Ref A/B"));
+    refPlay.setTooltip (T ("在插件内按宿主播放头播放参考轨；与等响监听一起构成 A/B",
+                            "Play the reference inside the plug-in at the host playhead; pair with loudness matching"));
     reportButton.setButtonText (T ("导出报告", "Export report"));
     markButton.setButtonText (T ("+ 打标记", "+ Marker"));
     markerExport.setButtonText (T ("导出标记 CSV", "Export markers"));
@@ -130,6 +155,17 @@ void DetailArea::refreshTexts()
                             "Genre reference from the static table; use the slider to set loudness-war participation."));
 
     applyTarget.setButtonText (T ("应用为目标", "Apply as target"));
+
+    fileChoose.setButtonText (T ("选择文件", "Choose files"));
+    fileFolder.setButtonText (T ("选择文件夹", "Choose folder"));
+    fileAddAlbum.setButtonText (T ("加入专辑", "Add to album"));
+    fileClear.setButtonText (T ("清空结果", "Clear results"));
+    fileChoose.setTooltip (T ("离线分析 WAV / AIFF / FLAC，秒级出完整报告",
+                               "Offline analysis of WAV / AIFF / FLAC in seconds"));
+    fileFolder.setTooltip (T ("递归分析整个专辑文件夹，并自动填入门禁表",
+                              "Recursively analyse an album folder and fill the gate table"));
+    fileAddAlbum.setTooltip (T ("把当前文件结果重新写入专辑快照",
+                                "Write the current file results to the album snapshot"));
 
     const juce::String ruleLabels[5] {
         T ("平台限幅", "Platform"),
@@ -162,6 +198,7 @@ void DetailArea::hideAllChildren()
     issues.setVisible (false);
     refImport.setVisible (false);
     refClear.setVisible (false);
+    refPlay.setVisible (false);
     reportButton.setVisible (false);
     markButton.setVisible (false);
     markerExport.setVisible (false);
@@ -174,9 +211,15 @@ void DetailArea::hideAllChildren()
     albumImportMarkers.setVisible (false);
     albumTrackName.setVisible (false);
     albumNameEditor.setVisible (false);
+    albumTrackLength.setVisible (false);
     genreBox.setVisible (false);
     warSlider.setVisible (false);
     applyTarget.setVisible (false);
+
+    fileChoose.setVisible (false);
+    fileFolder.setVisible (false);
+    fileAddAlbum.setVisible (false);
+    fileClear.setVisible (false);
 
     for (auto& b : albumRuleButtons)
         b.setVisible (false);
@@ -227,6 +270,27 @@ void DetailArea::setReferenceInfo (bool hasRef, const juce::String& status)
 
     refReady = hasRef;
     refStatus = status;
+    repaint();
+}
+
+void DetailArea::setReferencePlaybackState (bool playing, const juce::String&)
+{
+    refPlaying = playing;
+    refPlay.setButtonText (refPlaying ? T ("参考 A/B 开", "Ref A/B on")
+                                      : T ("参考 A/B", "Ref A/B"));
+    refPlay.setColour (juce::TextButton::buttonOnColourId,
+                       refPlaying ? theme::accentSoft : theme::cardAlt);
+    repaint();
+}
+
+void DetailArea::setFileResults (std::vector<FileAnalysisResult> results, bool busy,
+                                 int done, int total, const juce::String& status)
+{
+    fileResults = std::move (results);
+    fileBusy = busy;
+    fileDone = done;
+    fileTotal = total;
+    fileStatus = status;
     repaint();
 }
 
@@ -298,7 +362,8 @@ void DetailArea::setState (UiState s)
     state = std::move (s);
     ++tick;
 
-    const bool empty = ! state.stats.hasSignal && page != PageId::album && page != PageId::target;
+    const bool empty = ! state.stats.hasSignal && page != PageId::album
+                       && page != PageId::target && page != PageId::files;
 
     if (empty != emptyMode)
     {
@@ -373,6 +438,11 @@ void DetailArea::setState (UiState s)
             if ((tick % 4) == 0)
                 repaint();
             break;
+
+        case PageId::files:
+            if ((tick % 6) == 0)
+                repaint();
+            break;
     }
 }
 
@@ -383,7 +453,7 @@ void DetailArea::resized()
     auto area = contentArea();
     area.removeFromTop (30);   // page header
 
-    if (emptyMode)
+    if (emptyMode && page != PageId::files && page != PageId::album && page != PageId::target)
         return;
 
     switch (page)
@@ -430,11 +500,14 @@ void DetailArea::resized()
             refClear.setBounds (row.removeFromRight (72));
             row.removeFromRight (8);
             refImport.setBounds (row.removeFromRight (118));
+            row.removeFromRight (8);
+            refPlay.setBounds (row.removeFromRight (96));
 
             spectrum.setVisible (true);
             bands.setVisible (true);
             refImport.setVisible (true);
             refClear.setVisible (true);
+            refPlay.setVisible (true);
             break;
         }
 
@@ -472,10 +545,12 @@ void DetailArea::resized()
             auto bottom = area.removeFromBottom (66);
             auto top = bottom.removeFromTop (32);
 
-            albumNameEditor.setBounds (top.removeFromLeft (150).reduced (0, 2));
-            top.removeFromLeft (6);
-            albumTrackName.setBounds (top.removeFromLeft (130).reduced (0, 2));
-            top.removeFromLeft (6);
+            albumNameEditor.setBounds (top.removeFromLeft (130).reduced (0, 2));
+            top.removeFromLeft (5);
+            albumTrackName.setBounds (top.removeFromLeft (112).reduced (0, 2));
+            top.removeFromLeft (5);
+            albumTrackLength.setBounds (top.removeFromLeft (62).reduced (0, 2));
+            top.removeFromLeft (5);
 
             albumProof.setBounds (top.removeFromRight (88).reduced (0, 1));
             top.removeFromRight (6);
@@ -501,7 +576,8 @@ void DetailArea::resized()
                              static_cast<juce::Component*> (&albumImport),
                              static_cast<juce::Component*> (&albumClearButton),
                              static_cast<juce::Component*> (&albumTrackName),
-                             static_cast<juce::Component*> (&albumNameEditor) })
+                             static_cast<juce::Component*> (&albumNameEditor),
+                             static_cast<juce::Component*> (&albumTrackLength) })
                 c->setVisible (true);
 
             for (auto& b : albumRuleButtons)
@@ -535,6 +611,24 @@ void DetailArea::resized()
                 row.removeFromLeft (chipGap);
             }
 
+            break;
+        }
+
+        case PageId::files:
+        {
+            auto buttons = area.removeFromBottom (34);
+            fileClear.setBounds (buttons.removeFromRight (86).withSizeKeepingCentre (86, 30));
+            buttons.removeFromRight (6);
+            fileAddAlbum.setBounds (buttons.removeFromRight (96).withSizeKeepingCentre (96, 30));
+            buttons.removeFromRight (6);
+            fileFolder.setBounds (buttons.removeFromRight (104).withSizeKeepingCentre (104, 30));
+            buttons.removeFromRight (6);
+            fileChoose.setBounds (buttons.removeFromRight (104).withSizeKeepingCentre (104, 30));
+
+            fileChoose.setVisible (true);
+            fileFolder.setVisible (true);
+            fileAddAlbum.setVisible (true);
+            fileClear.setVisible (true);
             break;
         }
 

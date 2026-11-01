@@ -10,6 +10,7 @@
 #include "../dsp/SpectrumAnalyzer.h"
 #include "../Basis.h"
 #include "../album/AlbumSession.h"
+#include "../file/FileAnalyzer.h"
 #include "Advisor.h"
 #include "Theme.h"
 #include "Widgets.h"
@@ -85,8 +86,8 @@ struct UiState
     bool snapshotValid[2] { false, false };
 };
 
-enum class PageId { loudness = 0, truePeak, spectrum, stereo, delivery, album, signal, diagnostics, timeline, target };
-constexpr int numPages = 10;
+enum class PageId { loudness = 0, truePeak, spectrum, stereo, delivery, album, signal, diagnostics, timeline, target, files };
+constexpr int numPages = 11;
 
 //==============================================================================
 /** Left hand module list: verdict header + one 40 px row per module. */
@@ -165,11 +166,13 @@ public:
     void setHistory (const std::vector<float>& curve, float targetLufs, float lra);
     void expandFirstIssueForSnapshot();
     void setReferenceInfo (bool hasRef, const juce::String& status);
+    void setReferencePlaybackState (bool playing, const juce::String& status);
     void refreshTexts();
     void invalidateDisplays();
 
     std::function<void()> onImportReference;
     std::function<void()> onClearReference;
+    std::function<void()> onToggleReferencePlayback;
     std::function<void()> onExportReport;
     std::function<void()> onAddMarkerNow;
     std::function<void (double)> onAddMarkerAt;
@@ -180,12 +183,21 @@ public:
     std::function<void()> onAlbumImport;
     std::function<void()> onAlbumClear;
     std::function<void (int, bool)> onAlbumRuleChanged;
+    std::function<void (double)> onTrackLengthChanged;
     std::function<void (int)> onAuditionSignal;
     std::function<void (int, double, double)> onAuditionSignalRegion;
     std::function<void (const juce::String&)> onAuditionRiskDetail;
     std::function<void (int)> onTargetGenreChanged;
     std::function<void (float)> onTargetWarChanged;
     std::function<void()> onApplyTargetPlan;
+
+    std::function<void()> onChooseFiles;
+    std::function<void()> onChooseFolder;
+    std::function<void()> onAddFileResultsToAlbum;
+    std::function<void()> onClearFileResults;
+
+    void setFileResults (std::vector<FileAnalysisResult> results, bool busy,
+                         int done, int total, const juce::String& status);
 
     juce::TextButton& getImportButton() noexcept { return refImport; }
     juce::TextButton& getClearButton() noexcept { return refClear; }
@@ -196,6 +208,8 @@ public:
     void setAlbumTrackLabel (const juce::String& label) { albumTrackName.setText (label, false); }
     juce::String getAlbumName() const { return albumNameEditor.getText().trim(); }
     void setAlbumName (const juce::String& name) { albumNameEditor.setText (name, false); }
+    juce::String getTrackLengthText() const { return albumTrackLength.getText().trim(); }
+    void setTrackLengthText (const juce::String& text) { albumTrackLength.setText (text, false); }
 
     void paint (juce::Graphics&) override;
     void resized() override;
@@ -218,6 +232,7 @@ private:
     void paintDiagnostics (juce::Graphics&);
     void paintTimeline (juce::Graphics&);
     void paintTarget (juce::Graphics&);
+    void paintFiles (juce::Graphics&);
     void paintReferenceBar (juce::Graphics&, juce::Rectangle<int>);
 
     PageId page = PageId::loudness;
@@ -235,16 +250,23 @@ private:
     StereoMeters meters;
     IssueList issues;
 
-    juce::TextButton refImport, refClear, reportButton, markButton;
+    juce::TextButton refImport, refClear, refPlay, reportButton, markButton;
+    bool refPlaying = false;
     juce::TextButton markerExport, markerImport;
     juce::TextButton albumCapture, albumProof, albumImport, albumClearButton;
     juce::TextButton albumExportMarkers, albumImportMarkers;
     std::array<juce::TextButton, 5> albumRuleButtons;
-    juce::TextEditor albumTrackName, albumNameEditor;
+    juce::TextEditor albumTrackName, albumNameEditor, albumTrackLength;
 
     juce::ComboBox genreBox;
     juce::Slider warSlider;
     juce::TextButton applyTarget;
+
+    juce::TextButton fileChoose, fileFolder, fileAddAlbum, fileClear;
+    std::vector<FileAnalysisResult> fileResults;
+    juce::String fileStatus;
+    bool fileBusy = false;
+    int fileDone = 0, fileTotal = 0;
 
     juce::Rectangle<int> signalProblemRowBounds, signalAttributionBounds, signalGridBounds;
     std::array<juce::Rectangle<int>, 4> signalChipBounds;

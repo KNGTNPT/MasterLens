@@ -39,6 +39,7 @@ public:
         snapShot = commandLine.containsIgnoreCase ("snap");
         genreShot = commandLine.containsIgnoreCase ("info");
         settingsShot = commandLine.containsIgnoreCase ("settings");
+        fileQcShot = commandLine.containsIgnoreCase ("fileqc");
         benchMode = commandLine.containsIgnoreCase ("bench");
 
         const int outTag = commandLine.indexOfIgnoreCase ("out=");
@@ -78,6 +79,9 @@ public:
 
         if (pageShot >= 0)
             editor->setPageForSnapshot (pageShot);
+
+        if (fileQcShot)
+            runFileQcDemo (*editor);
 
         if (commandLine.containsIgnoreCase ("albumcap"))
         {
@@ -135,6 +139,61 @@ public:
     void systemRequestedQuit() override { quit(); }
 
 private:
+    void runFileQcDemo (MasterLensAudioProcessorEditor& target)
+    {
+        const auto folder = juce::File::getSpecialLocation (juce::File::tempDirectory)
+                                .getChildFile ("MasterLens-FileQC-Demo");
+        folder.createDirectory();
+        folder.deleteRecursively();
+        folder.createDirectory();
+
+        juce::StringArray paths;
+        const double rates[] { 44100.0, 48000.0 };
+        const char* names[] { "01-first-track.wav", "02-second-track.wav" };
+
+        for (int f = 0; f < 2; ++f)
+        {
+            const auto file = folder.getChildFile (names[f]);
+            const int n = (int) (rates[f] * 4.0);
+            juce::AudioBuffer<float> buffer (2, n);
+
+            for (int i = 0; i < n; ++i)
+            {
+                const double t = (double) i / rates[f];
+                const float v = (float) (0.085 * std::sin (2.0 * juce::MathConstants<double>::pi * 110.0 * t)
+                                         + 0.025 * std::sin (2.0 * juce::MathConstants<double>::pi * 997.0 * t));
+                buffer.setSample (0, i, v);
+                buffer.setSample (1, i, v * 0.92f);
+            }
+
+            if (auto out = file.createOutputStream())
+            {
+                juce::WavAudioFormat wav;
+                std::unique_ptr<juce::AudioFormatWriter> writer (
+                    wav.createWriterFor (out.release(), rates[f], 2, 24, {}, 0));
+
+                if (writer != nullptr)
+                {
+                    writer->writeFromAudioSampleBuffer (buffer, 0, n);
+                    writer.reset();
+                }
+            }
+
+            paths.add (file.getFullPathName());
+        }
+
+        target.filesDropped (paths, 0, 0);
+
+        for (int i = 0; i < 240; ++i)
+        {
+            target.runTimerTickForSnapshot();
+            juce::Thread::sleep (20);
+        }
+
+        target.setPageForSnapshot (10);
+        target.runTimerTickForSnapshot();
+    }
+
     void feedTestAudio (double seconds)
     {
         constexpr int blockSize = 512;
@@ -309,6 +368,7 @@ private:
     bool emptyShot = false;
     bool snapShot = false;
     bool settingsShot = false;
+    bool fileQcShot = false;
     bool benchMode = false;
     std::clock_t benchCpuStart = 0;
     double benchWallStart = 0.0;

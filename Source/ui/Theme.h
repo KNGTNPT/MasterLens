@@ -17,20 +17,23 @@ namespace ml
 namespace tokens
 {
 inline constexpr float display = 32.0f;   // hero reading (true peak page)
-inline constexpr float value   = 26.0f;   // metric card reading
-inline constexpr float section = 13.0f;   // section title
-inline constexpr float label   = 12.0f;   // control label
-inline constexpr float aux     = 11.0f;   // secondary copy
-inline constexpr float unit    = 10.0f;   // units, axis labels, time codes
+inline constexpr float value   = 28.0f;   // metric card reading
+inline constexpr float section = 14.0f;   // section title
+inline constexpr float label   = 13.0f;   // control label
+inline constexpr float aux     = 12.0f;   // secondary copy
+inline constexpr float unit    = 11.0f;   // units, axis labels, time codes
 
-inline constexpr float radiusCard    = 10.0f;
-inline constexpr float radiusControl = 6.0f;
+inline constexpr float radiusCard    = 9.0f;
+inline constexpr float radiusControl = 5.0f;
 
-inline constexpr int rowHeight     = 40;
-inline constexpr int controlHeight = 32;
-inline constexpr int cardHeight    = 104;
-inline constexpr int gap           = 12;
-inline constexpr int margin        = 16;
+// 2.0 density pass: the old 100 % layout had generous 40 / 104 px rows and
+// 12 px gaps around 10-11 px type. At native scale that wasted vertical space
+// and made the interface feel spread out even though the glyphs were small.
+inline constexpr int rowHeight     = 34;
+inline constexpr int controlHeight = 30;
+inline constexpr int cardHeight    = 96;
+inline constexpr int gap           = 8;
+inline constexpr int margin        = 12;
 } // namespace tokens
 
 /** Runtime interface zoom (1.0 - 2.0).

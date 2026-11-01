@@ -11,8 +11,8 @@ ModuleRail::ModuleRail()
 
 juce::Rectangle<int> ModuleRail::rowBounds (int index) const
 {
-    const int top = 76;
-    const int rowH = juce::jlimit (26, 40, (getHeight() - top - 12) / juce::jmax (1, numPages));
+    const int top = 68;
+    const int rowH = juce::jlimit (24, 36, (getHeight() - top - 8) / juce::jmax (1, numPages));
     return { 0, top + index * rowH, getWidth(), rowH };
 }
 
@@ -50,7 +50,7 @@ void ModuleRail::paint (juce::Graphics& g)
 
     // ---- overall verdict -----------------------------------------------------
     {
-        auto card = juce::Rectangle<int> (12, 12, getWidth() - 24, 52);
+        auto card = juce::Rectangle<int> (10, 10, getWidth() - 20, 48);
 
         g.setColour (theme::cardAlt);
         g.fillRoundedRectangle (card.toFloat(), tokens::radiusCard);
@@ -127,7 +127,8 @@ static const char* moduleHintZh (int index)
         case 6: return "失真、混叠、超低堆积、瞬态、单声道折叠、中频掩蔽与联动归因";
         case 7: return "全部静态阈值检查清单，可逐条核对";
         case 8: return "超限与谐振事件的时间位置；双击底部时间线可加标记";
-        default: return "曲风标准响度 + 响度战争参与度滑块；各平台交付规范与尾部静音检查";
+        case 9: return "曲风标准响度 + 响度战争参与度滑块；各平台交付规范与尾部静音检查";
+        default: return "拖入 WAV / AIFF / FLAC 或专辑文件夹，后台秒级分析并写入专辑门禁";
     }
 }
 
@@ -144,7 +145,8 @@ static const char* moduleHintEn (int index)
         case 6: return "THD/IMD, aliasing, sub build-up, transients, mono fold, mid masking and attribution";
         case 7: return "Full checklist of every static threshold";
         case 8: return "Over-limit and resonance positions; double-click the strip to add a marker";
-        default: return "Genre reference loudness + loudness-war participation; platform delivery specs and tail-silence check";
+        case 9: return "Genre reference loudness + loudness-war participation; platform delivery specs and tail-silence check";
+        default: return "Drop WAV / AIFF / FLAC files or an album folder for fast offline analysis and gate fill";
     }
 }
 

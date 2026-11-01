@@ -51,6 +51,13 @@ namespace
         o->setProperty ("monoLowRetainPct", s.monoLowRetainPct);
         o->setProperty ("subSharePct", s.subSharePct);
         o->setProperty ("flatTopPct", s.flatTopPct);
+        o->setProperty ("timeOrigin", s.timeOrigin);
+        o->setProperty ("hostPosition", s.hostPosition);
+        o->setProperty ("hostLength", s.hostLength);
+        o->setProperty ("coveragePct", s.coveragePct);
+        o->setProperty ("truePeakLeft", s.truePeakLeft);
+        o->setProperty ("truePeakRight", s.truePeakRight);
+        o->setProperty ("sideTruePeak", s.sideTruePeak);
 
         return juce::var (o);
     }
@@ -102,6 +109,13 @@ namespace
             s.monoLowRetainPct = get ("monoLowRetainPct", 100.0);
             s.subSharePct = get ("subSharePct", 0.0);
             s.flatTopPct = get ("flatTopPct", 0.0);
+            s.timeOrigin = get ("timeOrigin", 0.0);
+            s.hostPosition = get ("hostPosition", 0.0);
+            s.hostLength = get ("hostLength", 0.0);
+            s.coveragePct = get ("coveragePct", 100.0);
+            s.truePeakLeft = get ("truePeakLeft", -100.0);
+            s.truePeakRight = get ("truePeakRight", -100.0);
+            s.sideTruePeak = get ("sideTruePeak", -100.0);
         }
 
         return s;
@@ -209,6 +223,12 @@ namespace
         o->setProperty ("platformLimitedDb", t.platformLimitedDb);
         o->setProperty ("wastedLoudnessDb", t.wastedLoudnessDb);
         o->setProperty ("tpCeiling", t.tpCeiling);
+        o->setProperty ("sourceFile", t.sourceFile);
+        o->setProperty ("pluginVersion", t.pluginVersion);
+        o->setProperty ("durationSeconds", t.durationSeconds);
+        o->setProperty ("sampleRate", t.sampleRate);
+        o->setProperty ("bitDepth", t.bitDepth);
+        o->setProperty ("coveragePct", t.coveragePct);
 
         juce::Array<juce::var> issueArray;
 
@@ -244,6 +264,12 @@ namespace
             t.platformLimitedDb = (float) (double) o->getProperty ("platformLimitedDb");
             t.wastedLoudnessDb = (float) (double) o->getProperty ("wastedLoudnessDb");
             t.tpCeiling = (float) (double) o->getProperty ("tpCeiling");
+            t.sourceFile = o->getProperty ("sourceFile").toString();
+            t.pluginVersion = o->getProperty ("pluginVersion").toString();
+            t.durationSeconds = (double) o->getProperty ("durationSeconds");
+            t.sampleRate = (double) o->getProperty ("sampleRate");
+            t.bitDepth = (int) o->getProperty ("bitDepth");
+            t.coveragePct = (float) (double) o->getProperty ("coveragePct");
 
             if (auto* issues = o->getProperty ("issues").getArray())
                 for (const auto& item : *issues)
@@ -525,6 +551,14 @@ void Session::save (Snapshot& s)
     const auto file = albumFile();
     file.replaceWithText (toJson (s, true));
 
+    // Named sidecar for backups / project hand-off. The global album.json stays
+    // the "most recent" cache, exactly as the 1.5 session did.
+    auto safeName = s.albumName.retainCharacters ("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_ ");
+    safeName = safeName.trim().replaceCharacter (' ', '_');
+
+    if (safeName.isNotEmpty())
+        file.getSiblingFile ("Album_" + safeName + ".json").replaceWithText (toJson (s, true));
+
     const juce::ScopedLock sl (lock);
     cached = s;
     cachedStamp = file.existsAsFile() ? file.getLastModificationTime().toMilliseconds() : 0;
@@ -657,6 +691,12 @@ GateResult Session::evaluate (const Snapshot& input)
                                       : formatSeconds (t.issues.back().first);
             gate.risks.push_back (std::move (r));
         };
+
+        if (t.durationSeconds > 0.0 && t.coveragePct > 0.0f && t.coveragePct < 95.0f)
+            add (2, 120.0f + (95.0f - t.coveragePct),
+                 T ("测量覆盖度", "measurement coverage"),
+                 T ("仅覆盖 ", "only ") + juce::String (t.coveragePct, 1)
+                     + T ("% 曲目；未覆盖全程不允许通过", "% of the track; no pass without full coverage"));
 
         if (t.platformOverCount > 0 || t.platformLimitedDb > 0.05f)
             add (s.rules.blockPlatform ? 2 : 1,
@@ -909,6 +949,26 @@ juce::String Session::buildEvidenceJson (const Snapshot& s, const GateResult& ga
     return juce::JSON::toString (rootVar, false);
 }
 
+juce::String Session::serializeState() const
+{
+    const auto s = const_cast<Session*> (this)->snapshot();
+    return toJson (s, true);
+}
+
+bool Session::restoreState (const juce::String& json)
+{
+    Snapshot restored;
+
+    if (! fromJson (json, restored))
+        return false;
+
+    if (restored.tracks.empty())
+        return false;
+
+    save (restored);
+    return true;
+}
+
 juce::String Session::exportProofJson() const
 {
     const auto s = const_cast<Session*> (this)->snapshot();
@@ -933,9 +993,20 @@ juce::String Session::exportProofText() const
     text << "TRACKS\n";
 
     for (const auto& t : s.tracks)
+    {
         text << "  " << t.label << "  " << juce::String (t.stats.integrated, 1) << " LUFS  "
              << juce::String (t.stats.lra, 1) << " LU  " << juce::String (t.stats.getPlr(), 1) << " PLR  "
-             << juce::String (t.stats.truePeakDb, 1) << " dBTP\n";
+             << juce::String (t.stats.truePeakDb, 1) << " dBTP";
+
+        if (t.durationSeconds > 0.0)
+            text << "  " << formatSeconds (t.durationSeconds) << "  "
+                 << "cov " << juce::String (t.coveragePct, 1) << "%";
+
+        if (t.sourceFile.isNotEmpty())
+            text << "  [" << t.sourceFile << "]";
+
+        text << "\n";
+    }
 
     if (s.hasMedian)
         text << "\nAlbum median: " << juce::String (s.medianStats.integrated, 1) << " LUFS  "

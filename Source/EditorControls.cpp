@@ -40,6 +40,12 @@ void MasterLensAudioProcessorEditor::buildControls()
     ceilingAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment> (
         processor.apvts, "tpCeiling", ceilingSlider);
 
+    monitorButton.setClickingTogglesState (true);
+    monitorButton.setColour (juce::TextButton::buttonOnColourId, ml::theme::accentSoft);
+    monitorAttachment = std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment> (
+        processor.apvts, "monitorMatch", monitorButton);
+    addAndMakeVisible (monitorButton);
+
     targetSlider.onValueChange = [this] { syncPresetToParameters(); };
     ceilingSlider.onValueChange = [this] { syncPresetToParameters(); };
 

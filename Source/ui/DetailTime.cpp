@@ -5,6 +5,19 @@ namespace ml
 static constexpr int kTimelineStripHeight = 96;
 static constexpr int kTimelineButtonRow  = 34;
 
+static double timeNow (const StatsSnapshot& s) noexcept
+{
+    return s.hostPosition > 0.0 ? s.hostPosition : s.elapsed;
+}
+
+static double timeTotal (const StatsSnapshot& s) noexcept
+{
+    if (s.hostLength > 0.0)
+        return juce::jmax (s.hostLength, timeNow (s));
+
+    return juce::jmax (1.0, timeNow (s));
+}
+
 /** Strip rect in local coordinates: pinned to the bottom of the content area. */
 static juce::Rectangle<int> timelineStripArea (juce::Rectangle<int> content)
 {
@@ -21,7 +34,7 @@ void DetailArea::paintTimeline (juce::Graphics& g)
     auto list = juce::Rectangle<int> (content.getX(), listTop, content.getWidth(),
                                       juce::jmax (0, strip.getY() - 12 - listTop));
 
-    const double total = juce::jmax (1.0, state.stats.elapsed);
+    const double total = timeTotal (state.stats);
 
     // ---- correlated events (same moment, one attribution) -------------------
     {
@@ -137,7 +150,7 @@ void DetailArea::paintTimeline (juce::Graphics& g)
     }
 
     g.setColour (theme::accent);
-    g.fillRoundedRectangle (xFor (state.stats.elapsed) - 1.0f, y - 18.0f, 2.0f, 36.0f, 1.0f);
+    g.fillRoundedRectangle (xFor (timeNow (state.stats)) - 1.0f, y - 18.0f, 2.0f, 36.0f, 1.0f);
 
     g.setColour (theme::textFaint);
     g.setFont (monoFont (tokens::unit));
@@ -157,7 +170,7 @@ void DetailArea::mouseDoubleClick (const juce::MouseEvent& e)
     if (! strip.contains (e.getPosition()))
         return;
 
-    const double total = juce::jmax (1.0, state.stats.elapsed);
+    const double total = timeTotal (state.stats);
     const auto inner = strip.reduced (14, 10);
     const double t = (double) juce::jlimit (0.0f, 1.0f,
         (float) (e.x - inner.getX()) / juce::jmax (1.0f, (float) inner.getWidth())) * total;

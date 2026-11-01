@@ -12,6 +12,7 @@
 #include "ui/Widgets.h"
 
 class MasterLensAudioProcessorEditor : public juce::AudioProcessorEditor,
+                                      public juce::FileDragAndDropTarget,
                                       private juce::Timer,
                                       private juce::KeyListener
 {
@@ -21,6 +22,9 @@ public:
 
     void paint (juce::Graphics&) override;
     void resized() override;
+
+    bool isInterestedInFileDrag (const juce::StringArray&) override;
+    void filesDropped (const juce::StringArray&, int, int) override;
 
     bool keyPressed (const juce::KeyPress&) override;
     bool keyPressed (const juce::KeyPress&, juce::Component*) override;
@@ -66,12 +70,22 @@ private:
     void setTargetWar (float percent);
     void applyTargetPlan();
     void updateSignalProblems();
+    double timelineNow() const;
+    double timelineTotal() const;
     ml::BasisContext currentBasis() const;
     std::vector<float> currentBandDevs() const;
     void resetAnalysis();
     void exportReport();
     void importReference();
     void clearReference();
+    void toggleReferencePlayback();
+    void chooseFiles();
+    void chooseFolder();
+    void startFileAnalysis (const juce::StringArray& paths);
+    void pollFileAnalysis();
+    void addFileResultToAlbum (const ml::FileAnalysisResult& result);
+    void addFileResultsToAlbum();
+    void clearFileResults();
     juce::String buildReport() const;
     juce::String buildReportJson() const;
     juce::String buildReportCsv() const;
@@ -102,6 +116,7 @@ private:
     juce::Label targetCaption, ceilingCaption;
     juce::Slider targetSlider, ceilingSlider;
     juce::TextButton holdButton, clearButton, languageButton, aboutButton, themeButton, exportButton, settingsButton;
+    juce::TextButton monitorButton;
 
     ml::ModuleRail rail;
     ml::DetailArea detail;
@@ -115,6 +130,11 @@ private:
     ml::SpectrumAnalyzer analyzer;
     ml::Advisor advisor;
     ml::ReferenceSpectrum reference;
+    ml::FileAnalyzer fileAnalyzer;
+
+    std::vector<ml::FileAnalysisResult> fileResults;
+    juce::String fileAnalysisStatus;
+    juce::String pendingAlbumName;
 
     std::vector<float> curve;
     ml::StatsSnapshot stats;
@@ -158,6 +178,7 @@ private:
 
     std::unique_ptr<juce::FileChooser> fileChooser;
     std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> targetAttachment, ceilingAttachment;
+    std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment> monitorAttachment;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MasterLensAudioProcessorEditor)
 };

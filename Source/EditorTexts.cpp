@@ -16,6 +16,13 @@ void MasterLensAudioProcessorEditor::updateTexts()
     languageButton.setButtonText (en ? juce::String::fromUTF8 ("中文") : juce::String ("EN"));
     exportButton.setButtonText (T ("导出报告", "Export"));
 
+    const float trim = processor.getMonitorTrimDb();
+    monitorButton.setButtonText (processor.isMonitorMatch()
+                                     ? T ("等响 ", "match ") + ml::sgn (trim) + " dB"
+                                     : T ("等响监听", "Loudness match"));
+    monitorButton.setTooltip (T ("等响监听：按参考 LUFS 自动衰减 / 提升监听电平；关闭时输出逐位不变",
+                                 "Loudness-matched monitor: trim to the reference LUFS; bypassed when off"));
+
     targetCaption.setText (basisMode == ml::BasisMode::manual
                                ? T ("手动参考 LUFS", "Manual reference LUFS")
                                : T ("参考响度（不设固定目标）", "Reference level (no fixed target)"),
@@ -123,6 +130,12 @@ bool MasterLensAudioProcessorEditor::keyPressed (const juce::KeyPress& key)
     if (c == '0')
     {
         setPage ((int) ml::PageId::target);
+        return true;
+    }
+
+    if (c == 'f' || c == 'F')
+    {
+        setPage ((int) ml::PageId::files);
         return true;
     }
 

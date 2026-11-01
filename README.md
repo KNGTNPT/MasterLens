@@ -2,15 +2,18 @@
 
 <img src="docs/logo.svg" width="96" align="right" alt="MasterLens by BerryStudio" />
 
-**母带响度 · 平台归一化 · 信号健康**<br>
+**母带响度 · 离线文件 QC · 等响 A/B · 信号健康**<br>
 by **BerryStudio** · developer **KNGTNPT**<br>
-macOS / Windows 音频总线插件（VST3 / AU / 独立版），C++17 + JUCE 8。
+macOS / Windows 音频总线插件（VST3 / AU / 独立版），C++17 + JUCE 8。<br>
+当前测试版：**2.0.0-beta.1**
 
-> 语气说明：本 README 含约 **10% 药娘发言成分**，用来把技术讲得软一点、好读一点；LUFS、dBTP、阈值和交付标准仍然是 100% 认真的。会小声“呜呜”，但不会在数字上乱来。
+插件插在总线 / 母带链最后一级，默认**零延迟、逐位旁路**，不碰你的音频；只有你主动点“试听”、开启“等响监听”或“参考 A/B”时，才会临时改变输出。它不负责替你把歌变好听（这个还是得你来），它负责在你觉得“应该差不多了吧”的时候，把响度、平台后果、信号损伤和专辑一致性摊开给你看。
 
-插件插在总线 / 母带链最后一级，默认**零延迟、逐位旁路**，不碰你的音频；只有你主动点“试听”时，才会临时把输出换成所选频段或问题片段。它不负责替你把歌变好听（这个还是得你来），它负责在你觉得“应该差不多了吧”的时候，把响度、平台后果、信号损伤和专辑一致性摊开给你看。
+2.0 beta 的重点不是再加一排数字，而是把“实时仪表”补成“交付前真的能用的检查工具”：**把整张专辑拖进来离线跑完**、**按宿主播放头对齐时间**、**用参考轨做等响 A/B**，再把 100% 界面的字和留白重新收拾了一遍。
 
-![MasterLens 界面](docs/screenshot.png)
+![MasterLens 2.0 界面](docs/screenshot-2.0.png)
+
+![文件 QC / 离线批量分析](docs/fileqc-2.0.png)
 
 ![专辑统一与交付门禁](docs/album-1.5.png)
 
@@ -21,31 +24,57 @@ macOS / Windows 音频总线插件（VST3 / AU / 独立版），C++17 + JUCE 8�
 ## 三秒看懂：它到底能干嘛
 
 - 🎧 **响度 / 动态**：综合响度、瞬时、短时、LRA、PLR、4× 过采样真峰值，按 ITU-R BS.1770-4 / EBU R128 来。
+- 📂 **离线文件 QC（2.0 新增）**：把 WAV / AIFF / FLAC 或整个专辑文件夹拖进来，后台按文件自己的采样率跑完整分析，秒级出报告并自动写入专辑门禁；12 首 × 4 分钟不用再实时等 48 分钟。
 - 📉 **平台归一化后果**：Spotify、Apple Music、YouTube、Tidal、Amazon、SoundCloud、播客、俱乐部，分别告诉你“平台会给你加多少、砍多少、限多少、浪费多少响度”。
 - 🫧 **信号健康**：失真 / 互调、混叠、超低堆积、瞬态、单声道折叠、中频掩蔽，六层风险 + 联动归因；点卡片就从当前总线实时 solo。
-- 🧾 **专辑统一 / 交付门禁**：逐首采集，和专辑中位比 LUFS / LRA / PLR / TP / 频段，排风险、看 diff、导可复现的 JSON + TXT 证明。
+- 🎚️ **等响监听 / 参考 A/B（2.0 新增）**：按参考 LUFS 自动衰减或提升监听电平；导入参考轨后可以按宿主播放头在插件内部直接 A/B 切换，默认仍然逐位旁路。
+- 🧾 **专辑统一 / 交付门禁**：逐首采集，和专辑中位比 LUFS / LRA / PLR / TP / 频段，排风险、看 diff、导可复现的 JSON + TXT 证明；专辑会话会随工程保存。
 - 🎯 **曲风目标 / 平台交付**：36 组曲风参照 + “响度战争参与度”滑块，旁边直接列各平台交付要求，包括 Apple 曲尾静音检查。
-- 🖱️ **问题定位**：时间戳问题区域、时间线标记、CSV 导入 / 导出、A/B 快照、TXT / JSON / CSV 报告。
-- 🪟 **不挤爆小屏**：默认 1120×700，最小 880×560；MacBook Air 默认 DPI 也能好好坐下。
+- 🖱️ **问题定位**：宿主播放头时间戳、问题区域、时间线标记、CSV 导入 / 导出、A/B 快照、TXT / JSON / CSV 报告。
+- 🪟 **界面不再松垮（2.0 重排）**：100% 下字号更清楚、行高与卡片更紧、统计页填满高度；默认 1120×700，最小 880×560。
 
 ---
 
 ## English summary
 
-- **Loudness (ITU-R BS.1770-4 / EBU R128)**: gated integrated, momentary, short-term, LRA (EBU Tech 3342), PLR, and 4× oversampled true peak.
+- **Loudness (ITU-R BS.1770-4 / EBU R128)**: gated integrated, momentary, short-term, LRA (EBU Tech 3342), PLR, and 4× oversampled true peak, including per-channel and Side true peak.
+- **Offline file QC (2.0)**: drag WAV / AIFF / FLAC files or an album folder; a worker thread analyses each file at its native sample rate, returns the full report in seconds, and fills the album gate automatically.
 - **Platform normalisation**: eight destinations modelled as they behave — gain applied, predicted true peak before / after the service limiter, service limiting, and wasted loudness. Reference-track comparison covers LUFS, LRA, PLR, low-side and sub share.
 - **Signal integrity**: harmonic / IMD excess above a local spectral floor, flat-top density, alias risk, sub build-up, transient score, true mono-fold loss and mid-masking risk, plus a correlation layer that merges simultaneous anomalies into one cause.
 - **Mix diagnostics**: sample clipping, inter-sample overs, clicks, DC offset, correlation, width, low-end mono check, and a 10-band tonal balance compared **only** with a reference track or album median — never a built-in absolute curve.
 - **Basis, not fixed genre pass/fail**: platform consequence, reference tracks, album median or manual reference. Genre targets live in their own module and are never silently applied.
-- **Album session / release gate**: shared versioned snapshot, per-track deltas, ranked risks, configurable blocking rules, reproducible JSON + TXT proof with hashes and previous-revision diff.
-- **Audition**: signal cards follow the live DAW bus; timestamped problem regions can be looped explicitly; inactive output stays bit-transparent.
-- **Visuals**: 8192-point FFT, 60 fps spectrum page, fractional-octave smoothing, 3-minute short-term history, correlation / width / low-end meters.
-- **UI**: dark theme (light included), bilingual Chinese / English, A/B snapshots, keyboard shortcuts, TXT / JSON / CSV export, compact 880×560 minimum layout.
-- **Verified**: `auval` passes; **50** offline DSP assertions pass; 1.5.1 offscreen load ≈1.3 % loudness / 3.0 % spectrum (60 fps) / 1.5 % signal / 1.4 % genre-target page of one core.
-- A roughly **10% playful soft tone**; the measurements are 100% serious.
+- **Equal-loudness monitor / reference A/B (2.0)**: trims monitoring to the reference LUFS; an imported reference can be played inside the plug-in, synced to the host playhead. Off by default and bit-transparent.
+- **Host timeline (2.0)**: event timestamps use the host playhead, coverage is checked against a user-supplied track length, and the album gate blocks incomplete measurements. Album snapshots persist with the project (APVTS) plus a named sidecar.
+- **Audition**: signal cards follow the live DAW bus; timestamped problem regions can be looped explicitly; out-of-range timestamps are rejected with a message instead of silently playing the wrong slice.
+- **Visuals**: 8192-point FFT, 60 fps spectrum page, fractional-octave smoothing, 3-minute short-term history, correlation / width / low-end meters, per-channel / Side true peak.
+- **UI**: dark theme (light included), bilingual Chinese / English, 11 modules, A/B snapshots, keyboard shortcuts, TXT / JSON / CSV export, denser 100 % layout with an 880×560 minimum.
+- **Verified**: `auval` passes; **69** offline DSP assertions pass, including file analysis at 44.1 / 48 / 88.2 / 96 kHz, reference resampling, host-time timestamps, range rejection and the in-plugin reference player.
 
 Build: `./scripts/make_dmg.sh` (universal binary, ad-hoc signed).<br>
-Performance / architecture notes: `docs/performance-1.5.1.md`.
+Performance / architecture notes: `docs/performance-2.0.0.md` (2.0 beta); `docs/performance-1.5.1.md` remains the 1.5.1 baseline.
+
+---
+
+## 2.0.0-beta.1 更新：从“实时仪表”到“交付前真的能用”
+
+这一版是 2.0 的第一个 beta。不是把 1.5.1 换皮，而是把母带棚真正会用的几条链路接起来：**文件 QC → 专辑门禁 → 等响 A/B → 可复核时间线**。
+
+### P0：先把“实用”从 demo 级拉起来
+
+- **离线文件 / 文件夹 QC（新增页，快捷键 F）**：把 WAV / AIFF / FLAC 或整个专辑文件夹拖进插件，后台线程按每个文件自己的采样率跑完整分析，输出 LUFS / TP / LRA / PLR / 频段 / 风险，并自动写入专辑表、自动算中位、直接出门禁。12 首 × 4 分钟不再需要实时等 48 分钟。
+- **参考文件采样率修复**：参考轨会先重采样到工程采样率再做 FFT 与响度统计；44.1 / 48 / 88.2 / 96 kHz 都有离线回归测试，不再把 96 kHz 文件当 48 kHz 读。
+- **等响监听 + 内部参考 A/B**：底栏「等响监听」按目标 / 参考 LUFS 自动衰减或提升监听电平；导入参考轨后，频谱页的「参考 A/B」会让插件按宿主播放头直接播放参考文件，和本曲同一位置来回切。默认关闭，关闭时逐位旁路。
+- **宿主时间基准 + 覆盖度**：事件时间戳改用宿主 playhead，问题区域 / 时间线 / CSV / 报告统一；专辑页新增「总长 s」输入（宿主没有统一的曲目长度 API），覆盖度低于 95% 直接阻断门禁。
+- **专辑会话随工程保存**：专辑快照写进 APVTS state，`album.json` 仍作为“最近一次”缓存；另外保存 `Album_<name>.json` sidecar。每首曲目记录源文件名、时长、采样率、位深、覆盖度与插件版本。
+- **旧时间戳不再静默播错**：请求超出 12 s 历史环时，不替换成最近 1.5 s，而是明确提示「该段已超出可回听范围，请从该位置重播」。
+- **100% 界面重排**：基础字号整体上调 1–2 px，行高 / 卡片 / 边距收紧，统计页纵向填满；立体声页不再把固定高度块垂直居中，并新增 L / R / Side 真峰值与单声道折叠卡片。100% 下终于不是“字很小、界面很散”。
+
+### 2.0 beta 的能力边界（不藏）
+
+- 内部参考播放器目前载入**第一条参考轨**到内存，按宿主位置同步播放；不会自动做段落对齐。
+- 宿主长度需要手动填「总长 s」；没填时只能按已测时长记录，覆盖度显示 100%，这是 API 限制，不是 PASS 的借口。
+- 仍然是 VST3 / AU / 独立版；AAX、ARA2、DDP、编码预演不在这个 beta 里。
+- 离线分析是“文件 QC”，不替代监听；它负责快速把明显问题摊开，最后的审美判断仍然要耳朵。
 
 ---
 
@@ -191,7 +220,7 @@ Performance / architecture notes: `docs/performance-1.5.1.md`.
 
 ---
 
-## 功能细节（认真模式，药娘浓度降到 3%）
+## 功能细节
 
 ### 母带响度
 
@@ -255,6 +284,26 @@ Performance / architecture notes: `docs/performance-1.5.1.md`.
 - 保存上一版快照并自动 diff，只高亮新增或恶化项。
 - 「导出证明」输出 JSON + TXT：schema / 版本 / 修订号、每首快照、中位、规则、门禁、风险、diff、SHA-256 快照哈希与证据哈希（证据哈希不含生成时间，可复算）。
 
+### 文件 QC / 离线批量分析（2.0）
+
+- 文件页接受 **WAV / AIFF / FLAC** 单文件或多个文件；拖入文件夹会递归展开并按文件名自然排序。
+- 每个文件在后台线程用自己的采样率跑 `AnalysisEngine`（K 加权、门限、LRA、TP、相关 / 宽度 / DC / 削波 / 单声道 / 超低）与 8192 FFT 长期谱，输出 10 段频段密度与信号缺陷。
+- 结果表显示采样率 / 位深、时长、LUFS、TP、LRA、最高风险；成功结果自动写入当前专辑快照，自动重算中位与门禁。
+- 文件分析是离线、非实时的：不会占用音频线程，也不会改变当前监听。
+
+### 宿主时间 / 覆盖度 / 专辑持久化（2.0）
+
+- 事件时间戳 = `timeOrigin + 已播时长`，`timeOrigin` 在 reset / 首次处理时从宿主 playhead 读取；时间线、问题区域、CSV / JSON / TXT 统一使用宿主时间。
+- 专辑页「总长 s」写入曲目总长后，`coveragePct = 已测时长 / 总长`；低于 95% 生成阻断项。宿主没有统一的曲目长度 API，所以这个字段必须手动填才能做严格门禁。
+- 专辑快照同时写入 APVTS state、`album.json`（最近一次缓存）和 `Album_<name>.json`（命名 sidecar）；TrackRecord 含源文件名、时长、采样率、位深、覆盖度与插件版本。
+- 时间戳试听超出 12 s 历史环时直接拒绝并提示，不再静默替换为最近 1.5 s。
+
+### 等响监听 / 参考 A/B（2.0）
+
+- 「等响监听」按 `目标 LUFS − 当前综合响度` 计算 trim，范围 −24 到 +12 dB；关闭时输出逐位不变。
+- 「参考 A/B」把第一条参考文件解码到内存，按宿主 playhead 在插件输出端播放，按文件 / 工程采样率做线性插值；与等响监听共用同一 trim。
+- 参考载入仍在后台线程；参考文件缺失或越界时输出静音而不是播放错误片段。
+
 ### 可视化
 
 - 实时频谱：8192 点 FFT、频谱页 **60 fps**（其他页低负载刷新）、对数频率轴、功率域分数倍频程平滑（≤250 Hz 1/3 oct、≤4 kHz 1/6、更高 1/12）、峰值保持、三次曲线绘制。
@@ -265,9 +314,10 @@ Performance / architecture notes: `docs/performance-1.5.1.md`.
 ### 界面
 
 - 深色专业主题（可切浅色）；界面缩放 100–200%，字号、行高、卡片与窗口一起等比放大且不截字。
-- 1.5.1 基准布局：**880×560 – 1900×1400**，默认 **1120×700**；小屏会自动降低过大的旧缩放。
+- 2.0 基准布局：**880×560 – 1900×1400**，默认 **1120×700**；100% 采用更紧的字号 / 行高 / 卡片令牌，统计页纵向填满。
 - **中英双语**：右上角 `EN / 中文` 一键切换；界面、诊断、报告同步；语言保存在插件状态。
-- 10 个模块：响度、真峰值、频谱、立体声、平台归一化、专辑、信号健康、诊断、时间线、曲风目标；快捷键 1–9 + 0。
+- 11 个模块：响度、真峰值、频谱、立体声、平台归一化、专辑、信号健康、诊断、时间线、曲风目标、文件 QC；快捷键 1–9 + 0 + F。
+- **等响监听 / 参考 A/B**：底栏「等响监听」按目标 LUFS 自动 trim；频谱页「参考 A/B」在插件内按宿主 playhead 播放参考文件。
 
 | 中文 | English |
 | --- | --- |
@@ -285,9 +335,9 @@ Performance / architecture notes: `docs/performance-1.5.1.md`.
 | --- | --- |
 | ![settings](docs/screenshot-settings.png) | ![target](docs/target-1.5.1.png) |
 
-| 联动事件（同一时间点合并归因） / Linked events |
-| --- |
-| ![timeline](docs/screenshot-timeline.png) |
+| 联动事件（同一时间点合并归因） / Linked events | 立体声 / L·R·Side 真峰值 |
+| --- | --- |
+| ![timeline](docs/screenshot-timeline.png) | ![stereo](docs/stereo-2.0.png) |
 
 
 ---
@@ -360,11 +410,11 @@ build/MasterLens_artefacts/Release/Standalone/MasterLens.app
 ./scripts/make_dmg.sh
 ```
 
-输出 `dist/MasterLens-1.5.1-macOS.dmg`，并复制一份到桌面；内含 VST3、AU、独立版、安装 / 卸载脚本与说明。
+输出 `dist/MasterLens-2.0.0-macOS.dmg`，并复制一份到桌面；内含 VST3、AU、独立版、安装 / 卸载脚本与说明。
 
 ### Windows
 
-Windows x64 / ARM64 安装包由 GitHub Actions 的 MSVC + NSIS 矩阵生成；推送 `v*` 标签即可产出 `MasterLens-1.5.1-Windows-x64.exe` 与 `-ARM64.exe`。
+Windows x64 / ARM64 安装包由 GitHub Actions 的 MSVC + NSIS 矩阵生成；推送 `v*` 标签即可产出 `MasterLens-2.0.0-Windows-x64.exe` 与 `-ARM64.exe`。
 
 ---
 
@@ -398,9 +448,12 @@ Windows x64 / ARM64 安装包由 GitHub Actions 的 MSVC + NSIS 矩阵生成；�
 - 直流偏移：+0.01 偏移 → −40.00 dBFS；55 Hz 低音 → −81 dBFS（无误报）。
 - 频谱标定：满幅 1 kHz 正弦 → 峰值 0 dBFS ±1.5 dB、频点误差 <15 Hz。
 - 单声道折叠、超低占比、平顶密度、失真 / 混叠检测器、试听旁路 / 实时跟随 / 停止静音、尾部静音测量。
+- 文件分析：44.1 / 48 / 88.2 / 96 kHz 的 997 Hz 正弦都回到 −23.00 LUFS，源采样率与 100% 覆盖度正确。
+- 参考重采样：96 kHz 参考载入 48 kHz 工程后仍是 −23.00 LUFS；参考 A/B 播放器能按宿主位置出声。
+- 宿主时间：time origin 83.25 s 后事件时间戳落在宿主时间；越界试听被拒绝且不静默播最近片段。
 - CPU 基准：60 s 立体声 48 kHz 处理耗时。
 
-当前：**50 项断言全部通过**；`auval -v aufx Maln OrcA` 通过。
+当前：**69 项断言全部通过**（含 44.1 / 48 / 88.2 / 96 kHz 文件分析、参考重采样、宿主时间戳、越界拒绝与参考播放器）；`auval -v aufx Maln OrcA` 通过。
 
 ### 插件格式
 
@@ -408,7 +461,7 @@ Windows x64 / ARM64 安装包由 GitHub Actions 的 MSVC + NSIS 矩阵生成；�
 auval -v aufx Maln OrcA
 ```
 
-VST3 moduleinfo：Version **1.5.1**，Vendor **BerryStudio**；AU Bundle ID `com.berrystudio.masterlens`。
+VST3 moduleinfo：Version **2.0.0**，Vendor **BerryStudio**；显示版本 **2.0.0-beta.1**，AU Bundle ID `com.berrystudio.masterlens`。
 
 ---
 
@@ -417,13 +470,16 @@ VST3 moduleinfo：Version **1.5.1**，Vendor **BerryStudio**；AU Bundle ID `com
 ```
 CMakeLists.txt              JUCE 插件 / DSP 自检 / 离屏截图三个目标
 Source/
-  PluginProcessor.*         参数、总线、分析引擎、试听引擎、状态
-  PluginEditor.*            布局、60 fps 定时器、报告导出
+  PluginProcessor.*         参数、总线、分析引擎、试听 / 参考播放、状态
+  PluginEditor.*            布局、60 fps 定时器、文件拖放、报告导出
+  EditorFiles.cpp           离线文件 QC 的 UI / 后台结果轮询
   Basis.h                   四种基准 / 平台摘要
   Delivery.h                8 个平台后果模型 + 交付要求
   Presets.h / GenreWar.h    36 组曲风参照 + 响度战争插值
-  album/AlbumSession.*      专辑快照、门禁、风险、diff、证据哈希
+  album/AlbumSession.*      专辑快照、门禁、风险、diff、证据哈希、工程持久化
   audio/AuditionEngine.*    实时 live solo + 历史片段循环
+  audio/ReferencePlayer.*   参考 A/B 内部播放器（宿主位置同步）
+  file/FileAnalyzer.*       离线文件 / 文件夹批量分析（原生采样率）
   dsp/
     AnalysisEngine.*        K 加权、门限、LRA、TP、相关性、宽度、DC、爆音、平顶、单声道、超低
     SpectrumAnalyzer.*      8192 FFT、分数倍频程平滑、峰值保持、长期平均谱
@@ -437,10 +493,11 @@ Source/
     History.cpp            历史曲线
     DetailSignal.cpp       信号健康 + 问题区域
     DetailTarget.cpp       曲风目标 / 平台交付要求
+    DetailFiles.cpp        文件 QC 拖放区 / 结果表
     DetailAlbum.cpp        专辑门禁
     Settings.cpp           界面缩放
     Advisor.*              阈值 + 迟滞 + 联动规则
-Tests/DspTest.cpp           50 项离线断言 + CPU 基准
+Tests/DspTest.cpp           69 项离线断言 + CPU 基准
 Tools/UiShot.cpp            离屏截图 / bench 基准
 packaging/                  DMG 安装 / 卸载脚本、图标、说明
 scripts/                    DMG / 发布 / logo 工具
@@ -459,13 +516,15 @@ scripts/                    DMG / 发布 / logo 工具
 - 平台要求是静态交付参照，不是 Apple / Spotify 认证；最终以发行商当前规范为准。插件无法从实时总线验证 24-bit 源文件。
 - VST3 / AU 没有跨宿主标记写回 API，DAW 标记仍使用 CSV 交换。
 - 曲风目标是参照，不是自动合格线；平台归一化模式仍是默认。
+- 2.0 beta：宿主长度需手动填「总长 s」才能做严格覆盖度门禁；参考 A/B 只载入第一条参考轨，不做自动段落对齐。
+- 2.0 beta：文件 QC 自动写入当前专辑快照；如果上一张专辑还没清空，会与原曲目并列，请先清空专辑或换一个专辑名。
 
 ---
 
 ## 发布 / 仓库
 
 - 仓库：<https://github.com/KNGTNPT/MasterLens>
-- 最新 Release：<https://github.com/KNGTNPT/MasterLens/releases/tag/v1.5.1>
+- 最新 beta Release：<https://github.com/KNGTNPT/MasterLens/releases/tag/v2.0.0-beta.1>
 - 安装包：macOS DMG、Windows x64 / ARM64 EXE
 - 历史版本：`v1.5.0` … `v1.0.0`，每个 tag 都可以单独 checkout；本 README 的版本段落保留了它们的功能脉络。
 

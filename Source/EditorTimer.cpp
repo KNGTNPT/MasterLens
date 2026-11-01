@@ -9,6 +9,19 @@ using ml::statusLabel;
 using ml::statusColour;
 
 //==============================================================================
+double MasterLensAudioProcessorEditor::timelineNow() const
+{
+    return stats.hostPosition > 0.0 ? stats.hostPosition : stats.elapsed;
+}
+
+double MasterLensAudioProcessorEditor::timelineTotal() const
+{
+    if (stats.hostLength > 0.0)
+        return juce::jmax (stats.hostLength, timelineNow());
+
+    return juce::jmax (30.0, timelineNow() + 1.0);
+}
+
 void MasterLensAudioProcessorEditor::setPage (int index)
 {
     selectedPage = juce::jlimit (0, ml::numPages - 1, index);
@@ -35,7 +48,7 @@ void MasterLensAudioProcessorEditor::addMarker (double t, int severity, int cate
 
 void MasterLensAudioProcessorEditor::addManualMarker (double time)
 {
-    const auto t = juce::jlimit (0.0, juce::jmax (0.5, (double) stats.elapsed), time);
+    const auto t = juce::jlimit (0.0, juce::jmax (0.5, timelineTotal()), time);
     addMarker (t, 0, 4, T ("手动标记 ", "Manual marker ") + ml::fmtTime (t));
     detail.invalidateDisplays();
     updateRail();
@@ -61,6 +74,27 @@ void MasterLensAudioProcessorEditor::timerCallback()
 
     analyzer.setSmoothing (processor.getSmoothing());
 
+    if ((frameCounter % 6) == 0)
+        pollFileAnalysis();
+
+    if ((frameCounter % 12) == 0)
+        detail.setReferencePlaybackState (processor.referencePlayer.isEnabled()
+                                              && processor.referencePlayer.isReady(),
+                                          processor.referencePlayer.getStatus());
+
+    {
+        double rejectedStart = 0.0;
+
+        if (processor.auditionEngine.consumeRangeRejected (rejectedStart))
+        {
+            footerStatusText = T ("该段已超出 12 s 历史范围，请从该位置重播",
+                                  "Outside the 12 s history - replay from that position");
+            footerStatusColour = ml::theme::warn;
+            lastAuditionIndex = -1;
+            repaint();
+        }
+    }
+
     // 60 fps on the spectrum page, 5 fps band data on other pages, no FFT while
     // Hold is engaged.
     const bool spectrumVisible = selectedPage == (int) ml::PageId::spectrum;
@@ -74,7 +108,7 @@ void MasterLensAudioProcessorEditor::timerCallback()
 
     if (frozen)
     {
-        timeline.setPlayhead (stats.elapsed);
+        timeline.setPlayhead (timelineNow());
         return;
     }
 
@@ -90,6 +124,14 @@ void MasterLensAudioProcessorEditor::timerCallback()
 
     const float manualTarget = processor.getTargetLufs();
     const float ceiling = processor.getCeilingDb();
+
+    if ((frameCounter % 12) == 0)
+    {
+        const float trim = processor.getMonitorTrimDb();
+        monitorButton.setButtonText (processor.isMonitorMatch()
+                                         ? T ("等响 ", "match ") + ml::sgn (trim) + " dB"
+                                         : T ("等响监听", "Loudness match"));
+    }
 
     if ((frameCounter % 30) == 0)
         refreshAlbum();
@@ -133,11 +175,11 @@ void MasterLensAudioProcessorEditor::timerCallback()
         addMarker (stats.lastSpikeTime, 1, 1, T ("响度瞬时尖峰", "Loudness spike"));
 
     if (stats.correlation < 0.0f && stats.elapsed > 1.0)
-        addMarker (std::floor (stats.elapsed), 2, 2, T ("相关性为负", "Negative correlation"));
+        addMarker (std::floor (timelineNow()), 2, 2, T ("相关性为负", "Negative correlation"));
 
     if (stats.elapsed > 3.0)
         for (const auto& r : resos)
-            addMarker (std::floor (stats.elapsed / 5.0) * 5.0, 1, 3,
+            addMarker (std::floor (timelineNow() / 5.0) * 5.0, 1, 3,
                        T ("谐振 ", "Resonance ") + juce::String (juce::roundToInt (r.freq))
                            + " Hz +" + ml::fmt1 (r.excessDb));
 
@@ -193,10 +235,10 @@ void MasterLensAudioProcessorEditor::timerCallback()
         detail.setReferenceInfo (analyzer.hasReference(), reference.getStatus());
 
     if ((frameCounter % 30) == 0)
-        timeline.setMarkers (markers, juce::jmax (30.0, stats.elapsed));
+        timeline.setMarkers (markers, timelineTotal());
 
     if ((frameCounter % 3) == 0)
-        timeline.setPlayhead (stats.elapsed);
+        timeline.setPlayhead (timelineNow());
 
     if ((frameCounter % 6) == 0)
     {

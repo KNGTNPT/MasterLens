@@ -48,8 +48,9 @@ MasterLensAudioProcessorEditor::MasterLensAudioProcessorEditor (MasterLensAudioP
     rail.onSelect = [this] (int index) { setPage (index); };
     detail.onImportReference = [this] { importReference(); };
     detail.onClearReference  = [this] { clearReference(); };
+    detail.onToggleReferencePlayback = [this] { toggleReferencePlayback(); };
     detail.onExportReport    = [this] { exportReport(); };
-    detail.onAddMarkerNow    = [this] { addManualMarker (stats.elapsed); };
+    detail.onAddMarkerNow    = [this] { addManualMarker (timelineNow()); };
     detail.onAddMarkerAt     = [this] (double t) { addManualMarker (t); };
     detail.onExportMarkers   = [this] { exportMarkers(); };
     detail.onImportMarkers   = [this] { importMarkers(); };
@@ -58,12 +59,21 @@ MasterLensAudioProcessorEditor::MasterLensAudioProcessorEditor (MasterLensAudioP
     detail.onAlbumImport     = [this] { importAlbumSnapshot(); };
     detail.onAlbumClear      = [this] { clearAlbum(); };
     detail.onAlbumRuleChanged= [this] (int i, bool on) { setAlbumRule (i, on); };
+    detail.onTrackLengthChanged = [this] (double seconds)
+    {
+        processor.setTrackLengthSeconds (seconds);
+        processor.apvts.state.setProperty ("trackLength", seconds, nullptr);
+    };
     detail.onAuditionSignal  = [this] (int i) { auditionSignal (i); };
     detail.onAuditionSignalRegion = [this] (int i, double s, double e) { auditionSignalRegion (i, s, e); };
     detail.onAuditionRiskDetail = [this] (const juce::String& d) { auditionRiskDetail (d); };
     detail.onTargetGenreChanged = [this] (int index) { setTargetGenre (index); };
     detail.onTargetWarChanged = [this] (float pct) { setTargetWar (pct); };
     detail.onApplyTargetPlan = [this] { applyTargetPlan(); };
+    detail.onChooseFiles = [this] { chooseFiles(); };
+    detail.onChooseFolder = [this] { chooseFolder(); };
+    detail.onAddFileResultsToAlbum = [this] { addFileResultsToAlbum(); };
+    detail.onClearFileResults = [this] { clearFileResults(); };
     timeline.onDoubleClick   = [this] (double t) { addManualMarker (t); };
 
     buildControls();
@@ -74,6 +84,12 @@ MasterLensAudioProcessorEditor::MasterLensAudioProcessorEditor (MasterLensAudioP
 
     lraTargetSetting = (float) processor.apvts.state.getProperty ("lraTarget", 8.0);
     clipAllowSetting = (float) processor.apvts.state.getProperty ("clipAllowance", 0.0);
+
+    const double storedTrackLength = (double) processor.apvts.state.getProperty ("trackLength", 0.0);
+    processor.setTrackLengthSeconds (storedTrackLength);
+
+    if (storedTrackLength > 0.0)
+        detail.setTrackLengthText (juce::String (storedTrackLength, 1));
 
     genrePanel.onClose = [this] { genrePanel.setVisibleAndFocus (false); };
     genrePanel.onSettingsChanged = [this] (float lraTarget, float clipAllow)
@@ -131,6 +147,7 @@ MasterLensAudioProcessorEditor::MasterLensAudioProcessorEditor (MasterLensAudioP
         juce::StringArray files;
         files.addTokens (saved, "|", {});
         reference.load (files, analyzerSampleRate, 13);
+        processor.referencePlayer.load (files, analyzerSampleRate);
     }
 
     attachShortcutListener (*this);

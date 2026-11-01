@@ -50,6 +50,16 @@ struct Stats
     std::atomic<bool>  stereo       { false };
     std::atomic<bool>  hasSignal    { false };
 
+    // --- v2.0 host timeline / monitoring --------------------------------
+    std::atomic<double> timeOrigin   { 0.0 };  // host playhead at reset
+    std::atomic<double> hostPosition { 0.0 };
+    std::atomic<double> hostLength   { 0.0 };
+    std::atomic<float>  coveragePct  { 100.0f };
+    std::atomic<float>  monitorTrimDb { 0.0f };
+    std::atomic<float>  truePeakLeft  { kSilentDb };
+    std::atomic<float>  truePeakRight { kSilentDb };
+    std::atomic<float>  sideTruePeak  { kSilentDb };
+
     // --- v1.2 -----------------------------------------------------------
     std::atomic<float>  psr            { kSilentDb };   // peak-to-short-term ratio
     std::atomic<float>  psrMin         { kSilentDb };
@@ -159,6 +169,16 @@ struct StatsSnapshot
     float  subSharePct = 0.0f;
     float  flatTopPct = 0.0f;
 
+    // Host timeline / monitoring (v2.0)
+    double timeOrigin = 0.0;
+    double hostPosition = 0.0;
+    double hostLength = 0.0;
+    float  coveragePct = 100.0f;
+    float  monitorTrimDb = 0.0f;
+    float  truePeakLeft = kSilentDb;
+    float  truePeakRight = kSilentDb;
+    float  sideTruePeak = kSilentDb;
+
     float getPlr() const noexcept { return integrated > -70.0f ? juce::jmax (0.0f, truePeakDb - integrated) : 0.0f; }
 };
 
@@ -184,6 +204,14 @@ inline StatsSnapshot snapshot (const Stats& s) noexcept
     r.tailSilenceMs = s.tailSilenceSeconds.load() * 1000.0f;
     r.stereo       = s.stereo.load();
     r.hasSignal    = s.hasSignal.load();
+    r.timeOrigin   = s.timeOrigin.load();
+    r.hostPosition = s.hostPosition.load();
+    r.hostLength   = s.hostLength.load();
+    r.coveragePct  = s.coveragePct.load();
+    r.monitorTrimDb = s.monitorTrimDb.load();
+    r.truePeakLeft = s.truePeakLeft.load();
+    r.truePeakRight = s.truePeakRight.load();
+    r.sideTruePeak = s.sideTruePeak.load();
     r.psr = s.psr.load();
     r.psrMin = s.psrMin.load();
     r.psrMinTime = s.psrMinTime.load();
@@ -213,6 +241,9 @@ inline void resetStats (Stats& s) noexcept
     s.dcOffsetDb = kSilentDb;  s.clipEvents = 0;         s.clickEvents = 0;
     s.oversCount = 0;          s.elapsed = 0.0;          s.hasSignal = false;
     s.tailSilenceSeconds = 0.0f;
+    s.timeOrigin = 0.0;        s.hostPosition = 0.0;     s.hostLength = 0.0;
+    s.coveragePct = 100.0f;    s.monitorTrimDb = 0.0f;
+    s.truePeakLeft = kSilentDb; s.truePeakRight = kSilentDb; s.sideTruePeak = kSilentDb;
     s.psr = kSilentDb;         s.psrMin = kSilentDb;     s.psrMinTime = 0.0;
     s.truePeakMaxTime = 0.0f;  s.spikeCount = 0;         s.lastSpikeTime = 0.0;
     s.bandCorrLow = 0.0f;      s.bandCorrMid = 0.0f;     s.bandCorrHigh = 0.0f;
@@ -318,9 +349,13 @@ public:
 
     void prepare (double sampleRate, int numChannels);
     void reset();
+    void setTimeOrigin (double seconds) noexcept { timeOrigin = seconds; }
 
     /** Analyses a block in place. Audio is never modified. */
     void process (const juce::AudioBuffer<float>& buffer, Stats& stats, int numSamples);
+
+    /** Flushes the final partial 100 ms block after an offline file pass. */
+    void finish (Stats& stats);
 
     /** Copies the most recent short-term (3 s) loudness points, oldest first. */
     void copyRecentShortTerm (std::vector<float>& dest, int maxPoints) const;
@@ -342,6 +377,7 @@ private:
     Biquad hp2kA[2], hp2kB[2];            // LR4 high pass @ 2 kHz
     Biquad subLpA[2], subLpB[2];          // LR4 low pass @ 40 Hz (sub-bass share)
     TruePeakDetector truePeak[2];
+    TruePeakDetector sideTruePeakDetector;
 
     // per-band accumulators: 0 = <150 Hz, 1 = 150 Hz..2 kHz, 2 = >2 kHz
     double bandL2[3] {}, bandR2[3] {}, bandLR[3] {}, bandMid[3] {}, bandSide[3] {};
@@ -373,6 +409,9 @@ private:
     float  prevAbsSp = 0.0f;
 
     double partialMaxTruePeak = 0.0;
+    double partialMaxTruePeakL = 0.0;
+    double partialMaxTruePeakR = 0.0;
+    double partialMaxSideTruePeak = 0.0;
     double partialMaxSamplePeak = 0.0;
     float  prevL = 0.0f, prevR = 0.0f;
     float  clickAverage = 0.0f;
@@ -399,5 +438,6 @@ private:
     std::atomic<int> curveWrite { 0 };
 
     juce::uint32 elapsedSamples = 0;
+    double timeOrigin = 0.0;
 };
 } // namespace ml

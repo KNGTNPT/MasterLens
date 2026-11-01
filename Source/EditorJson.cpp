@@ -28,6 +28,11 @@ juce::String MasterLensAudioProcessorEditor::buildReportJson() const
     loud->setProperty ("psrMin", stats.psrMin);
     loud->setProperty ("psrMinTime", stats.psrMinTime);
     loud->setProperty ("targetLufs", processor.getTargetLufs());
+    loud->setProperty ("timeOrigin", stats.timeOrigin);
+    loud->setProperty ("hostPosition", stats.hostPosition);
+    loud->setProperty ("hostLength", stats.hostLength);
+    loud->setProperty ("coveragePct", stats.coveragePct);
+    loud->setProperty ("monitorTrimDb", stats.monitorTrimDb);
     loud->setProperty ("basisMode", (int) currentBasis().mode);
     loud->setProperty ("basisLabel", currentBasis().label());
     loud->setProperty ("platformWorstCutDb", ml::platformSummary (stats).maxCutDb);
@@ -69,6 +74,9 @@ juce::String MasterLensAudioProcessorEditor::buildReportJson() const
     peak->setProperty ("samplePeakDbfs", stats.samplePeakDb);
     peak->setProperty ("truePeakMaxTime", stats.truePeakMaxTime);
     peak->setProperty ("ceilingDbtp", processor.getCeilingDb());
+    peak->setProperty ("truePeakLeftDbtp", stats.truePeakLeft);
+    peak->setProperty ("truePeakRightDbtp", stats.truePeakRight);
+    peak->setProperty ("sideTruePeakDbtp", stats.sideTruePeak);
     peak->setProperty ("oversampling", 4);
     peak->setProperty ("overWindows", stats.oversCount);
 

@@ -23,6 +23,10 @@ juce::String MasterLensAudioProcessorEditor::buildReportCsv() const
     line ("meta", "developer", ml::kDeveloper);
     line ("meta", "organisation", ml::kOrganisation);
     line ("meta", "sampleRate", juce::String (processor.getSampleRateValue(), 0));
+    line ("meta", "timeOrigin", ml::num (stats.timeOrigin, 3));
+    line ("meta", "hostPosition", ml::num (stats.hostPosition, 3));
+    line ("meta", "hostLength", ml::num (stats.hostLength, 3));
+    line ("meta", "coveragePct", ml::num (stats.coveragePct));
 
     line ("loudness", "integratedLufs", ml::num (stats.integrated));
     line ("loudness", "shortTermLufs", ml::num (stats.shortTerm));
@@ -45,6 +49,9 @@ juce::String MasterLensAudioProcessorEditor::buildReportCsv() const
     }
 
     line ("truePeak", "maxDbtp", ml::num (stats.truePeakDb));
+    line ("truePeak", "leftDbtp", ml::num (stats.truePeakLeft));
+    line ("truePeak", "rightDbtp", ml::num (stats.truePeakRight));
+    line ("truePeak", "sideDbtp", ml::num (stats.sideTruePeak));
     line ("truePeak", "ceilingDbtp", ml::num (processor.getCeilingDb()));
     line ("truePeak", "overWindows", juce::String (stats.oversCount));
     line ("truePeak", "maxAt", ml::fmtTime (stats.truePeakMaxTime));

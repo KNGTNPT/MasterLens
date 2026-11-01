@@ -12,7 +12,7 @@ void MasterLensAudioProcessorEditor::paint (juce::Graphics& g)
 
     // ---- header -------------------------------------------------------------
     {
-        auto content = headerArea.reduced (16, 12);
+        auto content = headerArea.reduced (14, 10);
         auto logo = content.removeFromLeft (32).toFloat();
 
         ml::paintLogoMark (g, logo);
@@ -106,14 +106,19 @@ void MasterLensAudioProcessorEditor::paint (juce::Graphics& g)
         g.setColour (ml::theme::border);
         g.drawHorizontalLine (footerArea.getY(), 0.0f, (float) baseBounds().getWidth());
 
-        auto f = footerArea.reduced (16, 6);
+        auto f = footerArea.reduced (14, 4);
 
         g.setColour (ml::theme::textFaint);
         g.setFont (ml::monoFont (ml::tokens::unit));
-        g.drawText (juce::String (processor.getSampleRateValue() / 1000.0, 1) + " kHz"
+        auto tech = juce::String (processor.getSampleRateValue() / 1000.0, 1) + " kHz"
                     + ml::sep() + (stats.stereo ? T ("立体声", "stereo") : T ("单声道", "mono"))
-                    + ml::sep() + juce::String ("4") + ml::times() + " TP",
-                    f.getX(), f.getY(), 330, f.getHeight(), juce::Justification::centredLeft);
+                    + ml::sep() + juce::String ("4") + ml::times() + " TP";
+
+        if (stats.hostLength > 0.0)
+            tech << ml::sep() << T ("覆盖 ", "cov ") << ml::num (stats.coveragePct) << "%";
+
+        g.drawText (tech, f.getX(), f.getY(), 360, f.getHeight(),
+                    juce::Justification::centredLeft);
 
         if (footerStatusText.isNotEmpty())
         {

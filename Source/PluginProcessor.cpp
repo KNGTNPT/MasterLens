@@ -1,6 +1,8 @@
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
 
+#include "album/AlbumSession.h"
+
 namespace
 {
 constexpr auto targetId = "targetLufs";
@@ -10,6 +12,7 @@ constexpr auto autoResetId = "autoResetOnStart";
 constexpr auto autoScanId = "autoScanOnStop";
 constexpr auto autoReportId = "autoReportOnStop";
 constexpr auto commandId = "autoCommand";
+constexpr auto monitorId = "monitorMatch";
 } // namespace
 
 //==============================================================================
@@ -46,6 +49,9 @@ juce::AudioProcessorValueTreeState::ParameterLayout MasterLensAudioProcessor::cr
 
     params.push_back (std::make_unique<juce::AudioParameterBool> (
         juce::ParameterID { autoReportId, 1 }, "Auto export proof on stop", false));
+
+    params.push_back (std::make_unique<juce::AudioParameterBool> (
+        juce::ParameterID { monitorId, 1 }, "Loudness-matched monitor", false));
 
     params.push_back (std::make_unique<juce::AudioParameterChoice> (
         juce::ParameterID { commandId, 1 }, "Automation command",
@@ -95,10 +101,20 @@ void MasterLensAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, j
 
     // Host automation: reset at transport start, queue capture / proof on stop.
     bool playing = false;
+    bool hostValid = false;
+    double hostPosition = 0.0;
 
     if (auto* ph = getPlayHead())
         if (auto pos = ph->getPosition())
+        {
             playing = pos->getIsPlaying();
+
+            if (auto t = pos->getTimeInSeconds())
+            {
+                hostPosition = *t;
+                hostValid = true;
+            }
+        }
 
     if (lastTransportPlaying < 0)
         lastTransportPlaying = playing ? 1 : 0;
@@ -135,9 +151,16 @@ void MasterLensAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, j
     if (resetRequested.exchange (false))
     {
         engine.reset();
+        engine.setTimeOrigin (hostValid ? hostPosition : 0.0);
         ml::resetStats (stats);
         spectrumRing.reset();
         auditionEngine.reset();
+    }
+    else if (hostValid && stats.elapsed.load() <= 0.0)
+    {
+        // First block after prepare: anchor every event timestamp to the host
+        // playhead rather than to the plug-in's private sample counter.
+        engine.setTimeOrigin (hostPosition);
     }
 
     // mono sum for the visualiser
@@ -153,6 +176,34 @@ void MasterLensAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, j
 
     engine.process (buffer, stats, numSamples);
     auditionEngine.process (buffer);
+
+    const double knownLength = trackLengthSeconds.load (std::memory_order_relaxed);
+    stats.hostLength = knownLength;
+
+    if (hostValid)
+        stats.hostPosition = hostPosition;
+
+    stats.coveragePct = knownLength > 0.01
+                            ? (float) juce::jlimit (0.0, 100.0,
+                                  100.0 * stats.elapsed.load() / knownLength)
+                            : 100.0f;
+
+    // Optional loudness-matched monitor. It is deliberately off by default and
+    // only changes the output when the user explicitly engages it; analysis has
+    // already consumed the untouched signal above.
+    float trimDb = 0.0f;
+
+    if (getBool (monitorId) && stats.integrated.load() > -70.0f)
+        trimDb = juce::jlimit (-24.0f, 12.0f, getTargetLufs() - stats.integrated.load());
+
+    stats.monitorTrimDb = trimDb;
+
+    // Reference A/B replaces the bus while engaged (host-position synced) and
+    // receives the same equal-loudness trim. Otherwise the usual monitor trim
+    // is applied to the input only when explicitly enabled.
+    if (! referencePlayer.render (buffer, hostValid ? hostPosition : 0.0, playing, trimDb))
+        if (std::abs (trimDb) > 0.001f)
+            buffer.applyGain (juce::Decibels::decibelsToGain (trimDb));
 
     for (int ch = 2; ch < buffer.getNumChannels(); ++ch)
         buffer.clear (ch, 0, numSamples);
@@ -191,6 +242,11 @@ juce::AudioProcessorEditor* MasterLensAudioProcessor::createEditor()
 
 void MasterLensAudioProcessor::getStateInformation (juce::MemoryBlock& destData)
 {
+    // The shared album.json stays the cross-instance "last used" cache. The
+    // active album is also embedded in the project state so reopening a session
+    // restores its own track list and gate result.
+    apvts.state.setProperty ("albumState", ml::album::Session::get().serializeState(), nullptr);
+
     if (auto xml = apvts.copyState().createXml())
         copyXmlToBinary (*xml, destData);
 }
@@ -200,7 +256,14 @@ void MasterLensAudioProcessor::setStateInformation (const void* data, int sizeIn
     std::unique_ptr<juce::XmlElement> xml (getXmlFromBinary (data, sizeInBytes));
 
     if (xml != nullptr && xml->hasTagName (apvts.state.getType()))
+    {
         apvts.replaceState (juce::ValueTree::fromXml (*xml));
+
+        const auto albumState = apvts.state.getProperty ("albumState").toString();
+
+        if (albumState.isNotEmpty())
+            ml::album::Session::get().restoreState (albumState);
+    }
 }
 
 //==============================================================================

@@ -36,6 +36,23 @@ public:
     void stop();
 
     bool isActive() const noexcept { return active.load (std::memory_order_acquire); }
+
+    /** True when the last timestamp request fell outside the history ring. The
+        caller is expected to tell the user instead of silently playing a
+        different (more recent) slice. */
+    bool consumeRangeRejected (double& requestedStart) noexcept
+    {
+        if (rangeRejected.exchange (0, std::memory_order_acq_rel) == 0)
+            return false;
+
+        requestedStart = rejectedStart.load (std::memory_order_relaxed);
+        return true;
+    }
+
+    double getRingSeconds() const noexcept
+    {
+        return sampleRate > 0.0 ? (double) ringLength / sampleRate : 12.0;
+    }
     bool isLive() const noexcept { return mode.load (std::memory_order_acquire) == (int) Mode::live; }
     bool isLoop() const noexcept { return mode.load (std::memory_order_acquire) == (int) Mode::loop; }
     Mode getMode() const noexcept { return (Mode) mode.load (std::memory_order_acquire); }
@@ -77,6 +94,8 @@ private:
     std::atomic<double> requestedStart { 0.0 }, requestedEnd { 0.0 };
     std::atomic<float> requestedLo { 20.0f }, requestedHi { 20000.0f };
     std::atomic<bool> requestedMono { false };
+    std::atomic<int> rangeRejected { 0 };
+    std::atomic<double> rejectedStart { 0.0 };
 
     int loopStart = 0, loopLength = 0, loopPos = 0;
     int liveFade = 0;

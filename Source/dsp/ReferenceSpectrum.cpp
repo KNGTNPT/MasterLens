@@ -81,7 +81,6 @@ void ReferenceSpectrum::run()
 {
     const int fftSize = 1 << pendingOrder;
     const int numBins = fftSize / 2 + 1;
-    const int hop = fftSize / 2;
 
     std::vector<double> power ((size_t) numBins, 0.0);
     int totalBlocks = 0;
@@ -104,8 +103,6 @@ void ReferenceSpectrum::run()
     resetStats (refEngineStats);
     refEngine.prepare (pendingSampleRate, 2);
 
-    int blockIndex = 0;
-
     for (const auto& path : pendingFiles)
     {
         if (threadShouldExit())
@@ -121,31 +118,52 @@ void ReferenceSpectrum::run()
         if (reader == nullptr)
             continue;
 
-        const int channels = juce::jmax (1, (int) reader->numChannels);
+        const int channels = juce::jlimit (1, 2, (int) reader->numChannels);
+        const double sourceRate = reader->sampleRate > 0.0 ? reader->sampleRate : 48000.0;
         const juce::int64 length = reader->lengthInSamples;
 
-        juce::AudioBuffer<float> readBuffer (channels, fftSize);
+        // Everything is brought to the project sample rate before the FFT and
+        // loudness pass. This makes 44.1 / 48 / 88.2 / 96 kHz references
+        // directly comparable instead of reading 96 kHz samples as if they
+        // were 48 kHz (the 1.5.x behaviour).
+        juce::AudioFormatReaderSource readerSource (reader.get(), false);
+        juce::ResamplingAudioSource resampler (&readerSource, false, channels);
+        resampler.setResamplingRatio (sourceRate / pendingSampleRate);
+        resampler.prepareToPlay (fftSize, pendingSampleRate);
 
-        for (juce::int64 start = 0; start + fftSize <= length; start += hop)
+        juce::AudioBuffer<float> readBuffer (channels, fftSize);
+        const juce::int64 outputLength = (juce::int64) std::ceil ((double) length
+                                                                  * pendingSampleRate / sourceRate);
+
+        for (juce::int64 start = 0; start < outputLength; start += fftSize)
         {
             if (threadShouldExit())
+            {
+                resampler.releaseResources();
                 return;
+            }
 
+            const int n = (int) juce::jmin ((juce::int64) fftSize, outputLength - start);
             readBuffer.clear();
-            reader->read (&readBuffer, 0, fftSize, start, true, true);
+
+            juce::AudioSourceChannelInfo info;
+            info.buffer = &readBuffer;
+            info.startSample = 0;
+            info.numSamples = n;
+            resampler.getNextAudioBlock (info);
 
             std::fill (block.begin(), block.end(), 0.0f);
 
             for (int ch = 0; ch < channels; ++ch)
-                for (int n = 0; n < fftSize; ++n)
-                    block[(size_t) n] += readBuffer.getSample (ch, n);
+                for (int k = 0; k < n; ++k)
+                    block[(size_t) k] += readBuffer.getSample (ch, k);
 
             const float norm = 1.0f / (float) channels;
 
             std::fill (fftData.begin(), fftData.end(), 0.0f);
 
-            for (int n = 0; n < fftSize; ++n)
-                fftData[(size_t) n] = block[(size_t) n] * norm * window[(size_t) n];
+            for (int k = 0; k < n; ++k)
+                fftData[(size_t) k] = block[(size_t) k] * norm * window[(size_t) k];
 
             fft.performFrequencyOnlyForwardTransform (fftData.data(), true);
 
@@ -155,16 +173,14 @@ void ReferenceSpectrum::run()
                 power[(size_t) b] += m * m;
             }
 
-            // Feed every other hop to the loudness engine: hops are half the
-            // window, so this covers the file exactly once without overlap.
-            // One engine for the whole set keeps integrated loudness and LRA
-            // cumulative across the reference tracks.
-            if ((blockIndex++ % 2) == 0)
-                refEngine.process (readBuffer, refEngineStats, fftSize);
-
+            refEngine.process (readBuffer, refEngineStats, n);
             ++totalBlocks;
         }
+
+        resampler.releaseResources();
     }
+
+    refEngine.finish (refEngineStats);
 
     if (totalBlocks < 4)
     {

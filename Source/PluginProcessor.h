@@ -5,6 +5,7 @@
 #include "dsp/AnalysisEngine.h"
 #include "dsp/SpectrumAnalyzer.h"
 #include "audio/AuditionEngine.h"
+#include "audio/ReferencePlayer.h"
 
 class MasterLensAudioProcessor : public juce::AudioProcessor
 {
@@ -41,6 +42,7 @@ public:
     ml::AnalysisEngine engine;
     ml::SpectrumRing spectrumRing;
     ml::AuditionEngine auditionEngine;
+    ml::ReferencePlayer referencePlayer;
 
     ml::StatsSnapshot getStatsSnapshot() const { return ml::snapshot (stats); }
     void requestReset() { resetRequested.store (true); }
@@ -53,6 +55,20 @@ public:
     float getCeilingDb() const;
     float getSmoothing() const;
     double getSampleRateValue() const noexcept { return currentSampleRate; }
+
+    /** Known project/track length for coverage. Zero means "not specified". */
+    void setTrackLengthSeconds (double seconds) noexcept
+    {
+        trackLengthSeconds.store (juce::jmax (0.0, seconds), std::memory_order_relaxed);
+    }
+
+    double getTrackLengthSeconds() const noexcept
+    {
+        return trackLengthSeconds.load (std::memory_order_relaxed);
+    }
+
+    bool isMonitorMatch() const { return getBool ("monitorMatch"); }
+    float getMonitorTrimDb() const { return stats.monitorTrimDb.load(); }
 
     void startAudition (double startSeconds, double endSeconds, float lowHz, float highHz, bool monoFold)
     {
@@ -93,6 +109,7 @@ private:
     static juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout();
 
     std::atomic<bool> resetRequested { false };
+    std::atomic<double> trackLengthSeconds { 0.0 };
     double currentSampleRate = 48000.0;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MasterLensAudioProcessor)

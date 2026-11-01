@@ -169,6 +169,17 @@ void MasterLensAudioProcessorEditor::updateRail()
                     markers.empty() ? statusLabel (-1) : statusLabel (1),
                     markers.empty() ? statusColour (-1) : statusColour (1));
 
+    // 10 offline file QC
+    {
+        const int done = fileResults.size();
+        const bool busy = fileAnalyzer.isBusy();
+        rail.setModule (10, T ("文件 QC", "File QC"),
+                        done > 0 ? juce::String (done) + T (" 首", " files") : ml::noValue(),
+                        busy ? T ("分析中", "analysing") : (done > 0 ? T ("已入专辑", "in album")
+                                                                     : T ("拖入文件", "drop files")),
+                        busy ? ml::theme::cyan : (done > 0 ? ml::theme::good : ml::theme::textFaint));
+    }
+
     // 9 genre loudness target / platform delivery requirements
     {
         const auto target = ml::presets::war::warTargetLufs (targetGenreIndex, targetWarPct);

@@ -40,6 +40,7 @@ void AuditionEngine::prepare (double newSampleRate, int)
     active.store (false, std::memory_order_release);
     pendingStart.store (false, std::memory_order_release);
     mode.store ((int) Mode::off, std::memory_order_release);
+    rangeRejected.store (0, std::memory_order_relaxed);
 
     sampleRate = newSampleRate > 0.0 ? newSampleRate : 48000.0;
     ringLength = juce::jmax (1024, (int) std::round (sampleRate * 12.0));
@@ -58,6 +59,7 @@ void AuditionEngine::reset()
     active.store (false, std::memory_order_release);
     pendingStart.store (false, std::memory_order_release);
     mode.store ((int) Mode::off, std::memory_order_release);
+    rangeRejected.store (0, std::memory_order_relaxed);
     std::fill (left.begin(), left.end(), 0.0f);
     std::fill (right.begin(), right.end(), 0.0f);
     writePos = 0;
@@ -81,6 +83,7 @@ void AuditionEngine::start (double startSeconds, double endSeconds, float low, f
     requestedLo.store (juce::jlimit (20.0f, 20000.0f, low), std::memory_order_relaxed);
     requestedHi.store (juce::jlimit (20.0f, 20000.0f, high), std::memory_order_relaxed);
     requestedMono.store (monoFold, std::memory_order_relaxed);
+    rangeRejected.store (0, std::memory_order_relaxed);
     mode.store ((int) Mode::loop, std::memory_order_relaxed);
     active.store (false, std::memory_order_release);
     pendingStart.store (true, std::memory_order_release);
@@ -167,8 +170,14 @@ void AuditionEngine::process (juce::AudioBuffer<float>& buffer)
 
         if (startSec < oldest || startSec > now - 0.05)
         {
-            startSec = juce::jmax (0.0, now - 1.5);
-            endSec = now;
+            // Do not substitute a different slice. The editor polls this flag and
+            // shows "outside the 12 s history, replay from this position".
+            rangeRejected.store (1, std::memory_order_release);
+            rejectedStart.store (startSec, std::memory_order_relaxed);
+            active.store (false, std::memory_order_release);
+            pendingStart.store (false, std::memory_order_release);
+            mode.store ((int) Mode::off, std::memory_order_release);
+            return;
         }
 
         const double span = juce::jlimit (0.2, 2.0, endSec - startSec);

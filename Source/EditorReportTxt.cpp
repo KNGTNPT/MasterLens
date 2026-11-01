@@ -18,7 +18,8 @@ juce::String MasterLensAudioProcessorEditor::buildReport() const
       << T (" · 母带交付检查报告\n", " - mastering QC report\n");
     r << T ("生成时间：", "Generated: ") << juce::Time::getCurrentTime().toISO8601 (true) << "\n";
     r << T ("采样率：", "Sample rate: ") << (int) processor.getSampleRateValue() << " Hz   "
-      << T ("声道：", "Channels: ") << (s.stereo ? T ("立体声", "stereo") : T ("单声道", "mono")) << "\n\n";
+      << T ("声道：", "Channels: ") << (s.stereo ? T ("立体声", "stereo") : T ("单声道", "mono"))
+      << T ("   覆盖：", "   coverage: ") << ml::fmt1 (s.coveragePct) << "%\n\n";
 
     r << T ("【响度与动态】\n", "[Loudness & dynamics]\n");
     r << "  I            : " << ml::fmtDb (s.integrated) << " LUFS";
@@ -41,6 +42,8 @@ juce::String MasterLensAudioProcessorEditor::buildReport() const
       << T ("（上限 ", " (ceiling ") << ml::num (ceiling) << " dBTP)\n";
     r << T ("  最大值位置   : ", "  Maximum at   : ") << ml::fmtTime (s.truePeakMaxTime) << "\n";
     r << T ("  跨采样过载   : ", "  Over windows : ") << s.oversCount << "\n";
+    r << "  L / R / Side : " << ml::fmtDb (s.truePeakLeft) << " / "
+      << ml::fmtDb (s.truePeakRight) << " / " << ml::fmtDb (s.sideTruePeak) << " dBTP\n";
 
     for (const auto& e : tpEvents)
         r << "    " << ml::fmtTime (e.time) << "  +" << ml::fmt1 (e.overshootDb) << " dB\n";

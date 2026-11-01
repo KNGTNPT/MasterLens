@@ -54,8 +54,9 @@ void StereoMeters::paint (juce::Graphics& g)
                           : (corr < 0.0f ? theme::bad
                           : (corr < 0.15f ? theme::warn : theme::good));
 
-    const int meterH = 44;
     const int scaleH = 14;
+    const int meterH = juce::jlimit (32, 64,
+        (b.getHeight() - 3 * scaleH - 2 * 6 - 40) / 3);
 
     const auto paintScale = [&g] (juce::Rectangle<int> row,
                                   std::initializer_list<std::pair<juce::String, float>> ticks)
@@ -74,8 +75,9 @@ void StereoMeters::paint (juce::Graphics& g)
         }
     };
 
-    const int blockH = 3 * meterH + 3 * scaleH + 2 * 6 + 24;
-    auto cursor = b.withSizeKeepingCentre (b.getWidth(), juce::jmin (b.getHeight(), blockH));
+    // Use the full page height instead of centring a fixed block: on a large
+    // window the old version left huge empty bands above and below the meters.
+    auto cursor = b;
 
     paintMeter (g, cursor.removeFromTop (meterH), T ("声道相关性", "Correlation"),
                 stats.stereo ? sgn (corr, 2) : noValue(),
@@ -115,6 +117,60 @@ void StereoMeters::paint (juce::Graphics& g)
                              "keep low-end side below 35% for safe mono folding"),
                           cursor.removeFromTop (juce::jmin (36, cursor.getHeight())),
                           juce::Justification::centredLeft, 2);
+    }
+
+    // ---- per-channel / side true peak (v2.0) --------------------------------
+    if (cursor.getHeight() >= 58)
+    {
+        auto info = cursor.removeFromTop (juce::jmin (76, cursor.getHeight()));
+        const int w = (info.getWidth() - tokens::gap * 3) / 4;
+        auto cells = info;
+
+        const auto tile = [&g, &cells, w] (const juce::String& label,
+                                           const juce::String& value,
+                                           const juce::String& detail,
+                                           juce::Colour colour)
+        {
+            auto cell = cells.removeFromLeft (w);
+            cells.removeFromLeft (tokens::gap);
+
+            g.setColour (theme::cardAlt);
+            g.fillRoundedRectangle (cell.toFloat(), tokens::radiusControl);
+            g.setColour (theme::border);
+            g.drawRoundedRectangle (cell.toFloat().reduced (0.5f), tokens::radiusControl, 1.0f);
+
+            auto inner = cell.reduced (10, 7);
+            g.setColour (theme::textFaint);
+            g.setFont (uiFont (tokens::unit));
+            g.drawText (label, inner.removeFromTop (14), juce::Justification::centredLeft, false);
+
+            g.setColour (colour);
+            g.setFont (monoFont (juce::jmin (22.0f, (float) inner.getHeight() * 0.7f), true));
+            g.drawText (value, inner.removeFromTop (22), juce::Justification::centredLeft, false);
+
+            g.setColour (theme::textFaint);
+            g.setFont (uiFont (tokens::unit));
+            g.drawText (detail, inner, juce::Justification::centredLeft, false);
+        };
+
+        const bool stereo = stats.stereo;
+        tile (T ("左声道真峰值", "L true peak"),
+              stereo ? fmtDb (stats.truePeakLeft) + " dBTP" : noValue(),
+              T ("独立于总 TP", "separate from total"), theme::text);
+        tile (T ("右声道真峰值", "R true peak"),
+              stereo ? fmtDb (stats.truePeakRight) + " dBTP" : noValue(),
+              T ("独立于总 TP", "separate from total"), theme::text);
+
+        const float side = stats.sideTruePeak;
+        tile (T ("Side 真峰值", "Side true peak"),
+              stereo && side > -99.0f ? fmtDb (side) + " dBTP" : noValue(),
+              T ("单声道兼容隐患", "mono-compat risk"),
+              side > -1.0f ? theme::warn : theme::good);
+
+        tile (T ("单声道折叠", "Mono fold"),
+              fmtDb (stats.monoFoldLossDb) + " dB",
+              T ("保留 ", "retained ") + num (stats.monoRetainPct) + "%",
+              stats.monoFoldLossDb > 1.5f ? theme::warn : theme::good);
     }
 
     // ---- three band correlation table ---------------------------------------

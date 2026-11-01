@@ -208,6 +208,12 @@ void MasterLensAudioProcessorEditor::captureAlbum()
     t.defects = signalDefects;
     t.bandDb = analyzer.getBandDensities();
     t.tpCeiling = processor.getCeilingDb();
+    t.sourceFile = T ("实时母线", "live bus");
+    t.pluginVersion = ml::kVersion;
+    t.durationSeconds = stats.hostLength > 0.0 ? stats.hostLength : stats.elapsed;
+    t.sampleRate = processor.getSampleRateValue();
+    t.bitDepth = 32;
+    t.coveragePct = stats.coveragePct;
 
     const auto platform = ml::platformSummary (stats);
     t.platformOverCount = platform.overCount;
@@ -339,7 +345,7 @@ void MasterLensAudioProcessorEditor::auditionRiskDetail (const juce::String& det
         lo = 20.0f; hi = 20000.0f;
     }
 
-    const double end = juce::jmax (0.5, stats.elapsed);
+    const double end = juce::jmax (0.5, timelineNow());
     processor.startAudition (juce::jmax (0.0, end - 1.5), end, lo, hi, mono);
     lastAuditionIndex = -2;
     footerStatusText = T ("试听风险：", "Audition risk: ") + detail.substring (0, 42);
@@ -436,7 +442,7 @@ void MasterLensAudioProcessorEditor::updateSignalProblems()
         { signalDefects.maskingRisk,    55.0f, "中频掩蔽", "mid masking" }
     };
 
-    const double now = stats.elapsed;
+    const double now = timelineNow();
 
     for (int i = 0; i < 6; ++i)
     {
@@ -566,6 +572,7 @@ void MasterLensAudioProcessorEditor::importReference()
                                       files.add (results[i].getFullPathName());
 
                                   reference.load (files, analyzerSampleRate, 13);
+                                  processor.referencePlayer.load (files, analyzerSampleRate);
                                   processor.apvts.state.setProperty ("referenceFiles", files.joinIntoString ("|"), nullptr);
                                   analyzer.clearReference();
                               });
@@ -574,9 +581,32 @@ void MasterLensAudioProcessorEditor::importReference()
 void MasterLensAudioProcessorEditor::clearReference()
 {
     reference.clear();
+    processor.referencePlayer.clear();
     analyzer.clearReference();
     processor.apvts.state.setProperty ("referenceFiles", juce::String(), nullptr);
     detail.setReferenceInfo (false, {});
+    detail.setReferencePlaybackState (false, {});
+}
+
+void MasterLensAudioProcessorEditor::toggleReferencePlayback()
+{
+    auto& player = processor.referencePlayer;
+
+    if (! player.isReady())
+    {
+        footerStatusText = T ("先导入参考轨，再开启参考 A/B", "Import a reference track first");
+        footerStatusColour = ml::theme::warn;
+        repaint();
+        return;
+    }
+
+    const bool next = ! player.isEnabled();
+    player.setEnabled (next);
+    detail.setReferencePlaybackState (next, player.getStatus());
+    footerStatusText = next ? T ("参考 A/B：播放参考轨", "Reference A/B: playing reference")
+                            : T ("参考 A/B：回到本曲", "Reference A/B: back to mix");
+    footerStatusColour = next ? ml::theme::cyan : ml::theme::textDim;
+    repaint();
 }
 
 //==============================================================================

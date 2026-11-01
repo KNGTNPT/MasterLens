@@ -24,6 +24,14 @@ struct TrackRecord
     float wastedLoudnessDb = 0.0f;
     float tpCeiling = -1.0f;
     std::vector<std::pair<double, juce::String>> issues;
+
+    // v2.0 source / provenance / coverage.
+    juce::String sourceFile;
+    juce::String pluginVersion;
+    double durationSeconds = 0.0;
+    double sampleRate = 0.0;
+    int bitDepth = 0;
+    float coveragePct = 100.0f;
 };
 
 struct Rules
@@ -116,6 +124,12 @@ public:
                        const juce::String& label);
 
     bool importJson (const juce::File& file);
+
+    /** Project-state persistence: the host saves this string inside APVTS, while
+        album.json remains the "last used" cache shared by instances. */
+    juce::String serializeState() const;
+    bool restoreState (const juce::String& json);
+
     juce::String exportProofJson() const;
     juce::String exportProofText() const;
     juce::String buildEvidenceJson (const Snapshot&, const GateResult&, const Diff&) const;

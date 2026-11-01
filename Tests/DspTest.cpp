@@ -5,16 +5,21 @@
 #include "dsp/AnalysisEngine.h"
 #include "dsp/SpectrumAnalyzer.h"
 #include "dsp/DefectAnalyzer.h"
+#include "dsp/ReferenceSpectrum.h"
 #include "audio/AuditionEngine.h"
+#include "audio/ReferencePlayer.h"
+#include "file/FileAnalyzer.h"
 #include "Delivery.h"
+
+#include <juce_audio_formats/juce_audio_formats.h>
 
 static int failures = 0;
 
-static void check (const char* name, double actual, double expected, double tolerance)
+static void check (const juce::String& name, double actual, double expected, double tolerance)
 {
     const bool ok = std::abs (actual - expected) <= tolerance;
     std::printf ("%-28s actual %8.2f  expected %8.2f  tol %.2f  %s\n",
-                 name, actual, expected, tolerance, ok ? "OK" : "FAIL");
+                 name.toRawUTF8(), actual, expected, tolerance, ok ? "OK" : "FAIL");
 
     if (! ok)
         ++failures;
@@ -554,6 +559,145 @@ int main()
 
         const auto s = ml::snapshot (stats);
         check ("tail silence measured", s.tailSilenceMs, 1500.0, 120.0);
+    }
+
+    // ---------------------------------------------------------------------
+    // 9d) host timeline origin + explicit audition range rejection
+    // ---------------------------------------------------------------------
+    {
+        ml::Stats stats;
+        ml::AnalysisEngine engine;
+        engine.prepare (sr, 1);
+        engine.setTimeOrigin (83.25);
+
+        juce::AudioBuffer<float> buffer (1, 512);
+
+        for (int b = 0; b < (int) (sr * 1.0 / 512.0); ++b)
+        {
+            for (int n = 0; n < 512; ++n)
+            {
+                buffer.setSample (0, n, (float) (0.1 * std::sin (2.0 * juce::MathConstants<double>::pi
+                                                                 * 997.0
+                                                                 * (double) (b * 512 + n) / sr)));
+            }
+
+            engine.process (buffer, stats, 512);
+        }
+
+        const auto s = ml::snapshot (stats);
+        check ("time origin", s.timeOrigin, 83.25, 0.001);
+        check ("host position", s.hostPosition, 84.25, 0.05);
+        check ("event timestamps in host time", s.truePeakMaxTime >= 83.2 ? 1.0 : 0.0, 1.0, 0.0);
+
+        ml::AuditionEngine audition;
+        audition.prepare (sr, 2);
+
+        juce::AudioBuffer<float> block (2, 512);
+        block.clear();
+        audition.start (1000.0, 1002.0, 200.0f, 2000.0f, false);
+        audition.process (block);
+
+        double rejected = 0.0;
+        check ("out-of-range audition rejected",
+               audition.consumeRangeRejected (rejected) ? 1.0 : 0.0, 1.0, 0.0);
+        check ("out-of-range audition inactive", audition.isActive() ? 1.0 : 0.0, 0.0, 0.0);
+    }
+
+    // ---------------------------------------------------------------------
+    // 9e) offline file analysis at 44.1 / 48 / 88.2 / 96 kHz
+    // ---------------------------------------------------------------------
+    {
+        const double rates[] { 44100.0, 48000.0, 88200.0, 96000.0 };
+
+        for (double rate : rates)
+        {
+            const auto file = juce::File::getSpecialLocation (juce::File::tempDirectory)
+                                  .getChildFile ("masterlens-test-" + juce::String ((int) rate) + ".wav");
+            file.deleteFile();
+
+            const int n = (int) (rate * 3.0);
+            juce::AudioBuffer<float> buffer (1, n);
+            double phase = 0.0;
+
+            for (int i = 0; i < n; ++i)
+            {
+                buffer.setSample (0, i, (float) (0.1 * std::sin (phase)));
+                phase += 2.0 * juce::MathConstants<double>::pi * 997.0 / rate;
+            }
+
+            auto out = file.createOutputStream();
+
+            if (out != nullptr)
+            {
+                juce::WavAudioFormat wav;
+                std::unique_ptr<juce::AudioFormatWriter> writer (
+                    wav.createWriterFor (out.release(), rate, 1, 24, {}, 0));
+
+                if (writer != nullptr)
+                {
+                    writer->writeFromAudioSampleBuffer (buffer, 0, n);
+                    writer.reset();
+                }
+            }
+
+            ml::FileAnalyzer analyzer;
+            analyzer.analyse ({ file.getFullPathName() });
+
+            for (int wait = 0; wait < 400 && analyzer.isBusy(); ++wait)
+                juce::Thread::sleep (10);
+
+            auto results = analyzer.takeResults();
+
+            if (results.size() == 1)
+            {
+                check ("file LUFS @" + juce::String ((int) rate),
+                       results[0].stats.integrated, -23.0, 0.45);
+                check ("file rate @" + juce::String ((int) rate),
+                       results[0].sampleRate, rate, 0.5);
+                check ("file coverage", results[0].stats.coveragePct, 100.0, 0.01);
+            }
+            else
+            {
+                check ("file result count", (double) results.size(), 1.0, 0.0);
+            }
+
+            // The reference loader must resample the same 96 kHz file to the
+            // 48 kHz project rate rather than misreading its sample rate.
+            if (std::abs (rate - 48000.0) < 0.5)
+            {
+                ml::ReferencePlayer player;
+                player.load ({ file.getFullPathName() }, 48000.0);
+
+                for (int wait = 0; wait < 300 && player.isBusy(); ++wait)
+                    juce::Thread::sleep (10);
+
+                player.setEnabled (true);
+                juce::AudioBuffer<float> out (2, 512);
+                player.render (out, 1.0, true, 0.0f);
+
+                double energy = 0.0;
+
+                for (int i = 0; i < 512; ++i)
+                    energy += (double) out.getSample (0, i) * out.getSample (0, i);
+
+                check ("reference player synced", energy > 1.0e-4 ? 1.0 : 0.0, 1.0, 0.0);
+                player.clear();
+            }
+
+            if (std::abs (rate - 96000.0) < 0.5)
+            {
+                ml::ReferenceSpectrum reference;
+                reference.load ({ file.getFullPathName() }, 48000.0);
+
+                for (int wait = 0; wait < 500 && reference.isBusy(); ++wait)
+                    juce::Thread::sleep (10);
+
+                check ("reference 96k -> 48k", reference.getStats().integrated, -23.0, 0.6);
+                reference.clear();
+            }
+
+            file.deleteFile();
+        }
     }
 
     // ---------------------------------------------------------------------
