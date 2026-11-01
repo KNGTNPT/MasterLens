@@ -5,40 +5,129 @@ namespace ml
 {
 void DetailArea::paintSpectrumExtras (juce::Graphics& g)
 {
-    auto area = contentArea().withTrimmedTop (30);
+    if (spectrumSideArea.isEmpty())
+        return;
 
-    const int footerH = juce::jlimit (86, 118, area.getHeight() / 4);
+    const bool compact = spectrumSideArea.getHeight() < 110;
+    auto area = spectrumSideArea;
 
-    area.removeFromBottom (34);
-    area.removeFromBottom (6);
-    auto footer = area.removeFromBottom (footerH);
-    auto chipRow = footer.removeFromBottom (28);
-
-    const char* names[4] { "20-250 Hz", "250 Hz-2k", "2k-8k", "8k-20k" };
-    const int chipW = (chipRow.getWidth() - tokens::gap * 3) / 4;
-
-    for (int i = 0; i < 4; ++i)
+    const auto average = [this] (int from, int to)
     {
-        auto cell = chipRow.removeFromLeft (chipW);
+        float sum = 0.0f;
+        int n = 0;
 
-        g.setColour (theme::cardAlt);
-        g.fillRoundedRectangle (cell.toFloat(), tokens::radiusControl);
-        g.setColour (theme::border);
-        g.drawRoundedRectangle (cell.toFloat().reduced (0.5f), tokens::radiusControl, 1.0f);
+        for (int i = from; i <= to && i < (int) state.bandDevs.size(); ++i)
+        {
+            sum += state.bandDevs[(size_t) i];
+            ++n;
+        }
 
-        auto inner = cell.reduced (10, 0);
+        return n > 0 ? sum / (float) n : 0.0f;
+    };
 
+    const auto absolute = [this] (int from, int to)
+    {
+        float sum = 0.0f;
+        int n = 0;
+
+        for (int i = from; i <= to && i < (int) state.bandDb.size(); ++i)
+        {
+            sum += state.bandDb[(size_t) i];
+            ++n;
+        }
+
+        return n > 0 ? sum / (float) n : -100.0f;
+    };
+
+    bool compare = false;
+
+    for (float d : state.bandDevs)
+        compare = compare || std::abs (d) > 0.01f;
+
+    const float low = compare ? average (0, 2) : absolute (0, 2);
+    const float mid = compare ? average (3, 6) : absolute (3, 6);
+    const float high = compare ? average (7, 9) : absolute (7, 9);
+
+    auto title = area.removeFromTop (compact ? 0 : 24);
+
+    if (! compact)
+    {
         g.setColour (theme::textFaint);
         g.setFont (uiFont (tokens::unit));
-        g.drawText (names[i], inner.removeFromLeft (inner.getWidth() - 52),
-                    juce::Justification::centredLeft);
+        g.drawText ("03", title.removeFromLeft (24), juce::Justification::centredLeft, false);
+        g.drawText (compare ? T ("频段偏差", "BAND BALANCE")
+                            : T ("频段电平", "BAND LEVEL"),
+                    title, juce::Justification::centredLeft, false);
+        surface::hairlineH (g, (float) area.getX(), (float) area.getRight(),
+                            (float) area.getY() - 6.0f);
+    }
+
+    const auto drawBand = [&] (juce::Rectangle<int> cell, const juce::String& label,
+                               const juce::String& range, float dev)
+    {
+        auto inner = cell;
+
+        g.setColour (theme::textDim);
+        g.setFont (uiFont (tokens::label));
+        g.drawText (label, inner.removeFromTop (15), juce::Justification::centredLeft, false);
+
+        g.setColour (theme::textFaint);
+        g.setFont (monoFont (tokens::unit));
+        g.drawText (range, inner.removeFromTop (12), juce::Justification::centredLeft, false);
 
         g.setColour (theme::text);
-        g.setFont (monoFont (12.0f, true));
-        g.drawText (num (state.ratios[(size_t) i]) + "%", inner, juce::Justification::centredRight);
+        g.setFont (monoFont (13.0f, true));
+        g.drawText (compare ? sgn (dev, 1) + " dB"
+                            : (dev <= -99.0f ? noValue() : num (dev) + " dB"),
+                    inner.removeFromTop (18), juce::Justification::centredLeft, false);
 
-        if (i < 3)
-            chipRow.removeFromLeft (tokens::gap);
+        auto track = inner.removeFromTop (4).toFloat();
+        g.setColour (theme::borderSoft);
+        g.fillRect (track);
+
+        const float centre = track.getCentreX();
+        g.setColour (theme::border);
+        g.fillRect (centre - 0.5f, track.getY() - 2.0f, 1.0f, track.getHeight() + 4.0f);
+
+        const auto colour = compare
+            ? (std::abs (dev) < 3.5f ? theme::accent
+               : (std::abs (dev) < 6.0f ? theme::warn : theme::bad))
+            : theme::accent;
+        const float norm = compare ? juce::jlimit (0.0f, 1.0f, std::abs (dev) / 12.0f)
+                                   : juce::jlimit (0.0f, 1.0f, (dev + 60.0f) / 60.0f);
+        const float w = juce::jmax (2.0f, track.getWidth() * (compare ? 0.5f : 1.0f) * norm);
+
+        g.setColour (colour);
+        if (compare)
+        {
+            if (dev >= 0.0f)
+                g.fillRect (juce::Rectangle<float> (centre, track.getY(), w, track.getHeight()));
+            else
+                g.fillRect (juce::Rectangle<float> (centre - w, track.getY(), w, track.getHeight()));
+        }
+        else
+        {
+            g.fillRect (juce::Rectangle<float> (track.getX(), track.getY(), w, track.getHeight()));
+        }
+    };
+
+    if (compact)
+    {
+        const int w = area.getWidth() / 3;
+        drawBand (area.removeFromLeft (w), T ("低频", "LOW"), "< 150 Hz", low);
+        drawBand (area.removeFromLeft (w), T ("中频", "MID"), "150 Hz - 2 kHz", mid);
+        drawBand (area, T ("高频", "HIGH"), "> 2 kHz", high);
+    }
+    else
+    {
+        const int rowH = juce::jmax (54, area.getHeight() / 3);
+        drawBand (area.removeFromTop (rowH), T ("低频", "LOW"), "< 150 Hz", low);
+        surface::hairlineH (g, (float) area.getX(), (float) area.getRight(),
+                            (float) area.getY() - 4.0f);
+        drawBand (area.removeFromTop (rowH), T ("中频", "MID"), "150 Hz - 2 kHz", mid);
+        surface::hairlineH (g, (float) area.getX(), (float) area.getRight(),
+                            (float) area.getY() - 4.0f);
+        drawBand (area, T ("高频", "HIGH"), "> 2 kHz", high);
     }
 }
 

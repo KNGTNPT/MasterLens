@@ -194,6 +194,7 @@ public:
     void setState (UiState s);
     void setIssues (std::vector<Issue> issues);
     void setHistory (const std::vector<float>& curve, float targetLufs, float lra);
+    void setPlayhead (double seconds, double totalSeconds);
     void expandFirstIssueForSnapshot();
     void setReferenceInfo (bool hasRef, const juce::String& status);
     void setReferencePlaybackState (bool playing, const juce::String& status);
@@ -211,6 +212,7 @@ public:
     std::function<void()> onAddMarkerNow;
     std::function<void (double)> onAddMarkerAt;
     std::function<void (double)> onHistorySeek;
+    std::function<void (double, double)> onHistorySelection;
     std::function<void()> onExportMarkers;
     std::function<void()> onImportMarkers;
     std::function<void()> onAlbumCapture;
@@ -319,6 +321,8 @@ private:
     void handleFileWheel (const juce::MouseWheelDetails&);
 
     juce::Rectangle<int> signalProblemRowBounds, signalAttributionBounds, signalGridBounds;
+    juce::Rectangle<int> loudnessSideArea;
+    juce::Rectangle<int> spectrumSideArea;
     std::array<juce::Rectangle<int>, 4> signalChipBounds;
 
     juce::Image backgroundCache;

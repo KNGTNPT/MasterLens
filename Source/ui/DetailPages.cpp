@@ -21,7 +21,6 @@ void DetailArea::ensureBackground()
     bg.addTransform (juce::AffineTransform::scale ((float) scale));
     const auto b = getLocalBounds().toFloat().reduced (0.5f);
     surface::panel (bg, b);
-    surface::noise (bg, b);
 
     backgroundDirty = false;
     cachedBackgroundRevision = theme::revision();
@@ -162,8 +161,70 @@ void DetailArea::paint (juce::Graphics& g)
 //==============================================================================
 void DetailArea::paintLoudness (juce::Graphics& g)
 {
-    // Snapshot comparison is folded into the page header; nothing else to draw
-    // here because the cards, meters and graph are real components.
-    juce::ignoreUnused (g);
+    if (loudnessSideArea.isEmpty())
+        return;
+
+    const bool compact = loudnessSideArea.getHeight() < 100;
+    auto area = loudnessSideArea;
+
+    const auto drawMetric = [&] (juce::Rectangle<int> cell, const juce::String& label,
+                                 const juce::String& value, float normalised,
+                                 juce::Colour colour)
+    {
+        auto inner = cell;
+
+        g.setColour (theme::textFaint);
+        g.setFont (uiFont (tokens::unit));
+        g.drawText (label, inner.removeFromTop (14), juce::Justification::centredLeft, false);
+
+        g.setColour (theme::text);
+        g.setFont (monoFont (13.0f, true));
+        g.drawText (value, inner.removeFromTop (18), juce::Justification::centredLeft, false);
+
+        auto track = inner.removeFromTop (4).withTrimmedTop (4).toFloat();
+        g.setColour (theme::borderSoft);
+        g.fillRect (track);
+        g.setColour (colour);
+        g.fillRect (track.withWidth (juce::jmax (2.0f, track.getWidth()
+                                                  * juce::jlimit (0.0f, 1.0f, normalised))));
+    };
+
+    const auto corr = state.stats.stereo ? state.stats.correlation : 1.0f;
+    const auto corrNorm = juce::jlimit (0.0f, 1.0f, (corr + 1.0f) * 0.5f);
+    const auto widthNorm = juce::jlimit (0.0f, 1.0f, state.stats.widthPct / 100.0f);
+    const auto lowNorm = juce::jlimit (0.0f, 1.0f, state.stats.lowSidePct / 100.0f);
+
+    if (! compact)
+    {
+        auto top = area.removeFromTop (22);
+        g.setColour (theme::textFaint);
+        g.setFont (uiFont (tokens::unit));
+        g.drawText ("02", top.removeFromLeft (22), juce::Justification::centredLeft, false);
+        g.drawText (T ("相位与宽度", "PHASE & WIDTH"), top, juce::Justification::centredLeft, false);
+        surface::hairlineH (g, (float) area.getX(), (float) area.getRight(), (float) area.getY() - 8.0f);
+
+        const int rowH = juce::jlimit (44, 68, area.getHeight() / 5);
+
+        drawMetric (area.removeFromTop (rowH), T ("相关性", "CORRELATION"),
+                    sgn (corr, 2), corrNorm,
+                    corr < 0.0f ? theme::bad : (corr < 0.15f ? theme::warn : theme::good));
+        drawMetric (area.removeFromTop (rowH), T ("立体声宽度", "STEREO WIDTH"),
+                    num (state.stats.widthPct) + "%", widthNorm, theme::accent);
+        drawMetric (area.removeFromTop (rowH), T ("低频侧向", "LOW SIDE"),
+                    num (state.stats.lowSidePct) + "%", lowNorm,
+                    state.stats.lowSidePct > 35.0f ? theme::warn : theme::good);
+    }
+    else
+    {
+        const int w = area.getWidth() / 3;
+        drawMetric (area.removeFromLeft (w), T ("相关性", "CORR"),
+                    sgn (corr, 2), corrNorm,
+                    corr < 0.0f ? theme::bad : (corr < 0.15f ? theme::warn : theme::good));
+        drawMetric (area.removeFromLeft (w), T ("宽度", "WIDTH"),
+                    num (state.stats.widthPct) + "%", widthNorm, theme::accent);
+        drawMetric (area, T ("低频侧向", "LOW SIDE"),
+                    num (state.stats.lowSidePct) + "%", lowNorm,
+                    state.stats.lowSidePct > 35.0f ? theme::warn : theme::good);
+    }
 }
 } // namespace ml

@@ -45,6 +45,145 @@ void paintEmptyState (juce::Graphics& g, juce::Rectangle<int> area)
 }
 
 //==============================================================================
+void ReadoutBand::setValues (const StatsSnapshot& s, const BasisContext& b,
+                             const PlatformSummary& p, float targetLufs,
+                             float ceilingDb, bool signal)
+{
+    stats = s;
+    basis = b;
+    platform = p;
+    target = targetLufs;
+    ceiling = ceilingDb;
+    hasSignal = signal;
+    repaint();
+}
+
+void ReadoutBand::paintCell (juce::Graphics& g, juce::Rectangle<int> cell,
+                             const juce::String& label, const juce::String& value,
+                             const juce::String& unit, const juce::String& hint,
+                             juce::Colour status)
+{
+    const bool compact = cell.getHeight() < 70;
+    auto inner = cell.reduced (16, compact ? 4 : 8);
+
+    g.setColour (theme::textFaint);
+    g.setFont (uiFont (tokens::unit));
+    g.drawText (label, inner.removeFromTop (compact ? 11 : 13), juce::Justification::centredLeft, false);
+
+    auto valueRow = inner.removeFromTop (compact ? 26 : 34);
+    auto unitArea = valueRow.removeFromRight (40);
+
+    g.setColour (theme::text);
+    g.setFont (monoFont (compact ? 26.0f : tokens::display, true));
+    g.drawText (value, valueRow, juce::Justification::centredRight, false);
+
+    g.setColour (theme::textFaint);
+    g.setFont (uiFont (tokens::unit));
+    g.drawText (unit, unitArea.withTrimmedBottom (compact ? 2 : 7),
+                juce::Justification::bottomRight, false);
+
+    auto rule = inner.removeFromTop (4).removeFromLeft (24);
+    g.setColour (status);
+    g.fillRect (rule);
+
+    if (! compact)
+    {
+        g.setColour (theme::textFaint);
+        g.setFont (uiFont (tokens::unit));
+        g.drawText (hint, inner.removeFromTop (13), juce::Justification::centredLeft, false);
+    }
+}
+
+void ReadoutBand::paint (juce::Graphics& g)
+{
+    auto b = getLocalBounds();
+    g.fillAll (theme::background);
+
+    // Hairline top and bottom, no card.
+    surface::hairlineH (g, (float) b.getX(), (float) b.getRight(), (float) b.getY());
+    surface::hairlineH (g, (float) b.getX(), (float) b.getRight(), (float) b.getBottom() - 1.0f);
+
+    const bool live = hasSignal && stats.integrated > -70.0f;
+    const bool tpValid = hasSignal && stats.truePeakDb > -70.0f;
+    const bool lraValid = hasSignal && stats.lra > 0.05f;
+    const bool plrValid = live && tpValid;
+
+    const auto noReading = juce::String::charToString (0x2014);
+    auto basisValue = noReading;
+    auto basisHint = basis.label();
+    auto basisStatus = theme::textFaint;
+
+    if (basis.hasComparison())
+    {
+        const float diff = stats.integrated - basis.comparisonLufs();
+        basisValue = sgn (diff, 1);
+        basisHint = basis.label();
+        basisStatus = std::abs (diff) <= 1.0f ? theme::good
+                        : (std::abs (diff) <= 2.0f ? theme::warn : theme::bad);
+    }
+    else if (basis.mode == BasisMode::manual && live)
+    {
+        const float diff = stats.integrated - basis.manualLufs;
+        basisValue = sgn (diff, 1);
+        basisHint = T ("手动", "manual");
+        basisStatus = std::abs (diff) <= 1.5f ? theme::good : theme::warn;
+    }
+
+    const int gap = 0;
+    const int widths[5] { 30, 22, 19, 18, 15 };
+    int x = b.getX();
+
+    auto cell = [&] (int i)
+    {
+        auto r = juce::Rectangle<int> (x, b.getY(), b.getWidth() * widths[i] / 100, b.getHeight());
+        x = r.getRight();
+        return r;
+    };
+
+    const auto c0 = cell (0);
+    const auto c1 = cell (1);
+    const auto c2 = cell (2);
+    const auto c3 = cell (3);
+    auto c4 = b.withTrimmedLeft (c3.getRight()).withTrimmedRight (gap);
+
+    for (int i = 1; i < 5; ++i)
+    {
+        const auto& r = (i == 1 ? c1 : (i == 2 ? c2 : (i == 3 ? c3 : c4)));
+        surface::hairlineV (g, (float) r.getX(), (float) b.getY() + 12.0f,
+                            (float) b.getBottom() - 12.0f);
+    }
+
+    const auto tpStatus = ! tpValid ? theme::textFaint
+                         : (stats.truePeakDb > ceiling ? theme::bad
+                         : (stats.truePeakDb > ceiling - 1.0f ? theme::warn : theme::good));
+    const auto lraStatus = ! lraValid ? theme::textFaint
+                          : (stats.lra < 3.0f ? theme::warn
+                          : (stats.lra > 16.0f ? theme::info : theme::good));
+    const auto plrValue = plrValid ? stats.getPlr() : -100.0f;
+    const auto plrStatus = ! plrValid ? theme::textFaint
+                          : (plrValue < 8.0f ? theme::warn
+                          : (plrValue < 10.0f ? theme::info : theme::good));
+
+    paintCell (g, c0, T ("I", "I"), live ? num (stats.integrated) : noReading,
+               "LUFS", T ("综合响度", "integrated"),
+               live ? (std::abs (stats.integrated - target) <= 1.0f ? theme::good
+                                                                    : (std::abs (stats.integrated - target) <= 2.0f
+                                                                           ? theme::warn : theme::textFaint))
+                    : theme::textFaint);
+
+    paintCell (g, c1, T ("TP", "TP"), tpValid ? num (stats.truePeakDb) : noReading,
+               "dBTP", T ("真峰值 · 4×", "true peak · 4x"), tpStatus);
+
+    paintCell (g, c2, T ("LRA", "LRA"), lraValid ? num (stats.lra) : noReading,
+               "LU", T ("响度范围", "range"), lraStatus);
+
+    paintCell (g, c3, T ("PLR", "PLR"), plrValid ? num (plrValue) : noReading,
+               "dB", T ("峰响比", "peak / loud"), plrStatus);
+
+    paintCell (g, c4, T ("Δ", "Δ"), basisValue, "LU", basisHint, basisStatus);
+}
+
+//==============================================================================
 void MetricGrid::setValues (const StatsSnapshot& s, const BasisContext& b,
                             const PlatformSummary& p, float targetLufs,
                             float ceilingDb, bool signal)

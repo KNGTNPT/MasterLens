@@ -69,74 +69,64 @@ void MasterLensAudioProcessorEditor::resized()
     auto base = baseBounds();
     auto b = base;
 
-    headerArea = b.removeFromTop (56);
-    paramArea = b.removeFromTop (36);
-    footerArea = b.removeFromBottom (36);
+    headerArea = b.removeFromTop (48);
+    readout.setBounds (b.removeFromTop (base.getWidth() < 960 ? 64 : 76));
+    footerArea = b.removeFromBottom (32);
+    paramArea = {};
 
     // ---- header widgets -----------------------------------------------------
     {
-        auto h = headerArea.reduced (16, 14);
+        auto h = headerArea.reduced (20, 10);
 
-        languageButton.setBounds (h.removeFromRight (46).withSizeKeepingCentre (46, 28));
+        languageButton.setBounds (h.removeFromRight (34).withSizeKeepingCentre (34, 26));
+        h.removeFromRight (6);
+        settingsButton.setBounds (h.removeFromRight (44).withSizeKeepingCentre (44, 26));
+        h.removeFromRight (6);
+        aboutButton.setBounds (h.removeFromRight (36).withSizeKeepingCentre (36, 26));
+        h.removeFromRight (6);
+        themeButton.setBounds (h.removeFromRight (42).withSizeKeepingCentre (42, 26));
+        h.removeFromRight (14);
+
+        const int presetW = juce::jlimit (126, 190, h.getWidth() - 470);
+        presetBox.setBounds (h.removeFromRight (presetW).withSizeKeepingCentre (presetW, 26));
+        h.removeFromRight (10);
+
+        auto ceilingGroup = h.removeFromRight (136);
+        ceilingCaption.setBounds (ceilingGroup.removeFromLeft (30));
+        ceilingSlider.setBounds (ceilingGroup.withSizeKeepingCentre (106, 26));
         h.removeFromRight (8);
-        settingsButton.setBounds (h.removeFromRight (64).withSizeKeepingCentre (64, 28));
-        h.removeFromRight (8);
-        aboutButton.setBounds (h.removeFromRight (58).withSizeKeepingCentre (58, 28));
-        h.removeFromRight (8);
-        themeButton.setBounds (h.removeFromRight (72).withSizeKeepingCentre (72, 28));
-        h.removeFromRight (12);
 
-        const int presetW = juce::jlimit (150, 240, h.getWidth() - 360);
-        presetBox.setBounds (h.removeFromRight (presetW).withSizeKeepingCentre (presetW, 28));
-    }
+        auto targetGroup = h.removeFromRight (136);
+        targetCaption.setBounds (targetGroup.removeFromLeft (30));
+        targetSlider.setBounds (targetGroup.withSizeKeepingCentre (106, 26));
 
-    // ---- parameter bar: compact settings, not readings ----------------------
-    {
-        auto bar = paramArea.reduced (16, 4);
-        auto actions = bar.removeFromRight (juce::jlimit (160, 176, bar.getWidth() / 4));
-
-        holdButton.setBounds (actions.removeFromRight (72).withSizeKeepingCentre (72, 28));
-        actions.removeFromRight (6);
-        clearButton.setBounds (actions.removeFromRight (88).withSizeKeepingCentre (88, 28));
-
-        bar.removeFromRight (16);
-
-        const int half = juce::jmax (190, (bar.getWidth() - 16) / 2);
-        auto left = bar.removeFromLeft (half);
-        bar.removeFromLeft (16);
-        auto right = bar.removeFromLeft (half);
-
-        targetCaption.setBounds (left.removeFromLeft (104).withSizeKeepingCentre (104, 24));
-        targetSlider.setBounds (left);
-        ceilingCaption.setBounds (right.removeFromLeft (100).withSizeKeepingCentre (100, 24));
-        ceilingSlider.setBounds (right);
+        targetCaption.setVisible (true);
+        ceilingCaption.setVisible (true);
     }
 
     // ---- body ---------------------------------------------------------------
-    auto body = b.reduced (16, 8);
+    auto body = b.reduced (20, 8);
 
-    rail.setBounds (body.removeFromLeft (208));
-    body.removeFromLeft (16);
-
-    if (timeline.isVisible())
-    {
-        timeline.setBounds (body.removeFromBottom (40));
-        body.removeFromBottom (8);
-    }
-
+    const int railW = base.getWidth() < 960 ? 168 : 176;
+    rail.setBounds (body.removeFromLeft (railW));
+    body.removeFromLeft (20);
     detail.setBounds (body);
 
     // ---- footer widgets -----------------------------------------------------
     {
-        auto f = footerArea.reduced (14, 4);
+        auto f = footerArea.reduced (16, 4);
 
-        exportButton.setBounds (f.removeFromRight (112).withSizeKeepingCentre (112, 26));
+        exportButton.setBounds (f.removeFromRight (84).withSizeKeepingCentre (84, 24));
         f.removeFromRight (6);
-        snapshotB.setBounds (f.removeFromRight (32).withSizeKeepingCentre (32, 26));
+        snapshotB.setBounds (f.removeFromRight (24).withSizeKeepingCentre (24, 24));
         f.removeFromRight (4);
-        snapshotA.setBounds (f.removeFromRight (32).withSizeKeepingCentre (32, 26));
+        snapshotA.setBounds (f.removeFromRight (24).withSizeKeepingCentre (24, 24));
         f.removeFromRight (6);
-        monitorButton.setBounds (f.removeFromRight (86).withSizeKeepingCentre (86, 26));
+        monitorButton.setBounds (f.removeFromRight (72).withSizeKeepingCentre (72, 24));
+        f.removeFromRight (6);
+        clearButton.setBounds (f.removeFromRight (44).withSizeKeepingCentre (44, 24));
+        f.removeFromRight (4);
+        holdButton.setBounds (f.removeFromRight (34).withSizeKeepingCentre (34, 24));
     }
 
     aboutPanel.setBounds (base);
@@ -191,6 +181,7 @@ void MasterLensAudioProcessorEditor::setUiScale (float newScale, bool store)
 
     settingsPanel.setScale (uiScale);
     detail.invalidateDisplays();
+    readout.repaint();
     rail.repaint();
     timeline.repaint();
     repaint();
@@ -212,6 +203,7 @@ void MasterLensAudioProcessorEditor::applyTheme()
     ceilingCaption.setColour (juce::Label::textColourId, ml::theme::textDim);
 
     detail.invalidateDisplays();
+    readout.repaint();
     rail.repaint();
     timeline.repaint();
     settingsPanel.repaint();

@@ -112,10 +112,7 @@ void AboutPanel::paint (juce::Graphics& g)
 
     const auto card = aboutCardBounds (getLocalBounds()).toFloat();
 
-    g.setColour (theme::card);
-    g.fillRoundedRectangle (card, tokens::radiusCard);
-    g.setColour (theme::border);
-    g.drawRoundedRectangle (card.reduced (0.5f), tokens::radiusCard, 1.0f);
+    surface::raised (g, card, tokens::radiusCard);
 
     auto inner = card.reduced (28.0f, 24.0f).toNearestInt();
 

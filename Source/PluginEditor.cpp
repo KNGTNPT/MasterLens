@@ -41,9 +41,14 @@ MasterLensAudioProcessorEditor::MasterLensAudioProcessorEditor (MasterLensAudioP
     uiScale = computeInitialUiScale();
     ml::ui::setScale (uiScale);
 
+    addAndMakeVisible (readout);
     addAndMakeVisible (rail);
     addAndMakeVisible (detail);
-    addAndMakeVisible (timeline);
+
+    // 2.0.2: the separate timeline strip is retired; markers and the playhead
+    // now live inside the history graph.
+    addChildComponent (timeline);
+    timeline.setVisible (false);
 
     rail.onSelect = [this] (int index) { setPage (index); };
     detail.onImportReference = [this] { importReference(); };
@@ -75,6 +80,11 @@ MasterLensAudioProcessorEditor::MasterLensAudioProcessorEditor (MasterLensAudioP
         footerStatusText = T ("试听曲线选点 · Esc 停止", "Auditioning graph point · Esc to stop");
         footerStatusColour = ml::theme::accent;
         repaint();
+    };
+    detail.onHistorySelection = [this] (double fromAge, double toAge)
+    {
+        const double now = timelineNow();
+        measureRegion (juce::jmax (0.0, now - toAge), juce::jmax (0.0, now - fromAge));
     };
     detail.onAuditionRiskDetail = [this] (const juce::String& d) { auditionRiskDetail (d); };
     detail.onTargetGenreChanged = [this] (int index) { setTargetGenre (index); };
@@ -163,7 +173,7 @@ MasterLensAudioProcessorEditor::MasterLensAudioProcessorEditor (MasterLensAudioP
     }
 
     attachShortcutListener (*this);
-    startTimerHz (60);
+    startTimer (12);
 }
 
 MasterLensAudioProcessorEditor::~MasterLensAudioProcessorEditor()

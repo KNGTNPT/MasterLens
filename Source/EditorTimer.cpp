@@ -28,9 +28,7 @@ void MasterLensAudioProcessorEditor::setPage (int index)
     rail.setSelected (selectedPage);
     detail.setPage ((ml::PageId) selectedPage);
 
-    const bool offline = selectedPage == (int) ml::PageId::files
-                      || selectedPage == (int) ml::PageId::album;
-    timeline.setVisible (! offline);
+    timeline.setVisible (false);
     resized();
     repaint();
 }
@@ -74,6 +72,15 @@ void MasterLensAudioProcessorEditor::timerCallback()
         setHold (false, false);
     }
 
+    const bool spectrumVisible = selectedPage == (int) ml::PageId::spectrum;
+    const bool fastPage = selectedPage == (int) ml::PageId::loudness;
+
+    // Only the loudness page gets the full 60 Hz pass. Moving the throttle
+    // before the analyser/FX work is what brings the spectrum page below its
+    // 3% budget instead of doing FFT work on frames that will be skipped.
+    if (! fastPage && (frameCounter & 1) != 0)
+        return;
+
     const double sr = processor.getSampleRateValue();
 
     if (std::abs (sr - analyzerSampleRate) > 0.5)
@@ -105,9 +112,8 @@ void MasterLensAudioProcessorEditor::timerCallback()
         }
     }
 
-    // 60 fps on the spectrum page, 5 fps band data on other pages, no FFT while
-    // Hold is engaged.
-    const bool spectrumVisible = selectedPage == (int) ml::PageId::spectrum;
+    // Spectrum frames update on the 30 Hz analytical pass; other pages still
+    // get a slow band refresh. No FFT while Hold is engaged.
     const bool runAnalyzer = spectrumVisible || (frameCounter % 12) == 0;
 
     if (! frozen && runAnalyzer)
@@ -121,11 +127,6 @@ void MasterLensAudioProcessorEditor::timerCallback()
         timeline.setPlayhead (timelineNow());
         return;
     }
-
-    // The 60 Hz timer is reserved for the spectrum; every other page updates at
-    // 30 Hz so the 1.4.3 low-load behaviour is preserved.
-    if (! spectrumVisible && (frameCounter & 1) != 0)
-        return;
 
     stats = processor.getStatsSnapshot();
 
@@ -156,6 +157,9 @@ void MasterLensAudioProcessorEditor::timerCallback()
 
     const float target = basis.hasComparison() ? basis.comparisonLufs()
                        : (basis.mode == ml::BasisMode::manual ? manualTarget : -14.0f);
+
+    if ((frameCounter % 3) == 0)
+        readout.setValues (stats, basis, platform, target, ceiling, stats.hasSignal);
 
     {
         const auto& ring = processor.engine.getTpEvents();
@@ -250,9 +254,6 @@ void MasterLensAudioProcessorEditor::timerCallback()
     if ((frameCounter % 30) == 0)
         timeline.setMarkers (markers, timelineTotal());
 
-    if ((frameCounter % 3) == 0)
-        timeline.setPlayhead (timelineNow());
-
     if ((frameCounter % 6) == 0)
     {
         if (viewingSnapshot < 0)
@@ -261,6 +262,8 @@ void MasterLensAudioProcessorEditor::timerCallback()
             detail.setHistory (curve, target, stats.lra);
         }
     }
+
+    detail.setPlayhead (timelineNow(), timelineTotal());
 
     // The advisor, issue list and rail only need a few updates per second; the
     // meters and spectrum keep their full frame rate.

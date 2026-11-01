@@ -132,6 +132,7 @@ private:
     juce::TextButton holdButton, clearButton, languageButton, aboutButton, themeButton, exportButton, settingsButton;
     juce::TextButton monitorButton;
 
+    ml::ReadoutBand readout;
     ml::ModuleRail rail;
     ml::DetailArea detail;
     ml::TimelineStrip timeline;

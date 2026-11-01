@@ -9,7 +9,7 @@ void MasterLensAudioProcessorEditor::updateTexts()
     const bool en = ml::Localisation::isEnglish();
 
     holdButton.setButtonText (frozen ? T ("恢复", "Resume") : T ("保持", "Hold"));
-    clearButton.setButtonText (T ("清零统计", "Clear stats"));
+    clearButton.setButtonText (T ("清零", "Clear"));
     aboutButton.setButtonText (T ("关于", "About"));
     settingsButton.setButtonText (T ("设置", "Settings"));
     themeButton.setButtonText (ml::theme::dark ? T ("深色", "Dark") : T ("浅色", "Light"));
@@ -23,11 +23,8 @@ void MasterLensAudioProcessorEditor::updateTexts()
     monitorButton.setTooltip (T ("等响监听：按参考 LUFS 自动衰减 / 提升监听电平；关闭时输出逐位不变",
                                  "Loudness-matched monitor: trim to the reference LUFS; bypassed when off"));
 
-    targetCaption.setText (basisMode == ml::BasisMode::manual
-                               ? T ("参考响度", "Reference")
-                               : T ("参考响度", "Reference"),
-                           juce::dontSendNotification);
-    ceilingCaption.setText (T ("真峰值上限", "Ceiling"), juce::dontSendNotification);
+    targetCaption.setText ("REF", juce::dontSendNotification);
+    ceilingCaption.setText ("CEIL", juce::dontSendNotification);
 
     targetSlider.setEnabled (basisMode == ml::BasisMode::manual);
     targetSlider.setTooltip (T ("选择“手动参考值”后可键入目标 LUFS", "Choose Manual reference to type a target LUFS"));

@@ -56,109 +56,47 @@ void paintLogoMark (juce::Graphics& g, juce::Rectangle<float> area, bool monochr
     const float s = juce::jmin (area.getWidth(), area.getHeight());
     area = area.withSizeKeepingCentre (s, s);
 
-    const float corner = s * 0.255f;
     const auto centre = area.getCentre();
+    const float r = s * 0.365f;
+    const float stroke = juce::jmax (1.0f, s * 0.067f);
 
-    if (monochrome)
+    // Five unequal arcs. The lower-left arc is the only cyan element; at 16 px
+    // everything collapses to the single ink colour so the gaps stay legible.
+    const float arcs[5][2]
     {
-        g.setColour (theme::text);
-        g.fillRoundedRectangle (area, corner);
-    }
-    else
-    {
-        g.setGradientFill (juce::ColourGradient (theme::accent.brighter (0.10f),
-                                                 area.getX(), area.getY(),
-                                                 theme::violet.darker (0.08f),
-                                                 area.getRight(), area.getBottom(), false));
-        g.fillRoundedRectangle (area, corner);
-
-        // Top-edge sheen keeps the mark from reading as a flat blue square.
-        g.setGradientFill (juce::ColourGradient (juce::Colours::white.withAlpha (0.20f),
-                                                 area.getX(), area.getY(),
-                                                 juce::Colours::white.withAlpha (0.0f),
-                                                 area.getX(), area.getCentreY(), false));
-        g.fillRoundedRectangle (area.reduced (s * 0.02f), corner * 0.92f);
-    }
-
-    const auto ink = monochrome ? theme::background : juce::Colours::white;
-    const float ringR = s * 0.305f;
-
-    // Aperture ring: an arc with a deliberate opening at the lower right.
-    {
-        juce::Path ring;
-        ring.addCentredArc (centre.x, centre.y, ringR, ringR, 0.0f,
-                            0.42f, juce::MathConstants<float>::twoPi - 0.68f, true);
-
-        g.setColour (ink.withAlpha (0.94f));
-        g.strokePath (ring, juce::PathStrokeType (s * 0.052f,
-                                                   juce::PathStrokeType::curved,
-                                                   juce::PathStrokeType::rounded));
-    }
-
-    // Six iris blades, drawn as short radial strokes between ring and centre.
-    for (int i = 0; i < 6; ++i)
-    {
-        const float a = (float) i * juce::MathConstants<float>::twoPi / 6.0f + 0.36f;
-        const float r0 = ringR * 0.62f;
-        const float r1 = ringR * 0.96f;
-
-        juce::Path blade;
-        blade.startNewSubPath (centre.x + std::cos (a) * r0, centre.y + std::sin (a) * r0);
-        blade.lineTo (centre.x + std::cos (a) * r1, centre.y + std::sin (a) * r1);
-
-        g.setColour (ink.withAlpha (i % 2 == 0 ? 0.34f : 0.22f));
-        g.strokePath (blade, juce::PathStrokeType (s * 0.026f,
-                                                    juce::PathStrokeType::curved,
-                                                    juce::PathStrokeType::rounded));
-    }
-
-    // BerryStudio cluster: three overlapping berries with a stem and leaf, so the
-    // mark reads as a berry bunch rather than a face at small sizes.
-    const float br = s * 0.078f;
-    const auto berry = [&] (float dx, float dy, float alpha)
-    {
-        g.setColour (ink.withAlpha (alpha));
-        g.fillEllipse (centre.x + dx * s - br, centre.y + dy * s - br, br * 2.0f, br * 2.0f);
+        { -1.40f, -0.14f },   // top
+        {  0.04f,  1.01f },   // upper right
+        {  1.33f,  2.42f },   // lower right
+        {  2.76f,  3.72f },   // lower left (cyan at >= 32 px)
+        {  4.10f,  5.02f }    // upper left
     };
 
-    berry (0.0f, -0.062f, 0.98f);
-    berry (-0.060f, 0.054f, 0.98f);
-    berry (0.060f, 0.054f, 0.98f);
+    const bool colourLogo = ! monochrome && s >= 32.0f;
+    const auto blue = theme::accent;
+    const auto monoInk = theme::text;
 
-    if (! monochrome && s >= 64.0f)
+    for (int i = 0; i < 5; ++i)
     {
-        auto stem = juce::Rectangle<float> (centre.x - s * 0.010f, centre.y - s * 0.196f,
-                                            s * 0.020f, s * 0.070f);
-        g.setColour (ink.withAlpha (0.92f));
-        g.fillRoundedRectangle (stem, s * 0.010f);
+        juce::Path arc;
+        arc.addCentredArc (centre.x, centre.y, r, r, 0.0f, arcs[i][0], arcs[i][1], true);
 
-        juce::Path leaf;
-        leaf.addEllipse (centre.x + s * 0.020f, centre.y - s * 0.212f,
-                         s * 0.105f, s * 0.042f);
-        leaf.applyTransform (juce::AffineTransform::rotation (-0.58f,
-                                                              centre.x + s * 0.072f,
-                                                              centre.y - s * 0.191f));
-        g.fillPath (leaf);
+        g.setColour (colourLogo && i == 3 ? theme::cyan
+                                          : (monochrome ? monoInk : blue));
+        g.strokePath (arc, juce::PathStrokeType (stroke,
+                                                 juce::PathStrokeType::curved,
+                                                 juce::PathStrokeType::rounded));
     }
 
-    // Accent segment on the aperture: a small "measuring" highlight instead of
-    // colouring a berry, which would read as a face at small sizes.
-    if (! monochrome && s >= 40.0f)
-    {
-        juce::Path accent;
-        accent.addCentredArc (centre.x, centre.y, ringR, ringR, 0.0f, -0.92f, -0.18f, true);
-        g.setColour (theme::cyan.withAlpha (0.95f));
-        g.strokePath (accent, juce::PathStrokeType (s * 0.052f,
-                                                     juce::PathStrokeType::curved,
-                                                     juce::PathStrokeType::rounded));
-    }
+    g.setColour (colourLogo ? theme::cyan : (monochrome ? monoInk : blue));
+    g.fillEllipse (centre.x - s * 0.072f, centre.y - s * 0.072f,
+                   s * 0.144f, s * 0.144f);
 }
 
 void paintBerryWordmark (juce::Graphics& g, juce::Rectangle<int> area, juce::Colour colour,
                          float height, juce::Justification justification)
 {
     const auto font = uiFont (height, true);
-    drawTracked (g, "BERRYSTUDIO", font, area, height * 0.22f, colour, justification);
+    drawTracked (g, "BERRYSTUDIO", font, area, height * 0.04f, colour, justification);
 }
 
 void paintBerryLockup (juce::Graphics& g, juce::Rectangle<int> area, juce::Colour colour,
@@ -169,18 +107,11 @@ void paintBerryLockup (juce::Graphics& g, juce::Rectangle<int> area, juce::Colou
 
     paintLogoMark (g, mark);
 
-    area.removeFromLeft (juce::roundToInt (markSize * 0.28f));
+    // Lockup gap is exactly half the mark height.
+    area.removeFromLeft (juce::roundToInt (markSize * 0.5f));
 
     auto textArea = area;
-
     paintBerryWordmark (g, textArea.removeFromTop (juce::roundToInt (textHeight * 1.7f)),
                         colour, textHeight, juce::Justification::centredLeft);
-
-    g.setColour (colour.withAlpha (0.62f));
-    g.setFont (uiFont (textHeight * 0.66f));
-    g.drawText ("MASTERING  INSTRUMENTS",
-                textArea.removeFromTop (juce::roundToInt (textHeight * 1.1f)),
-                juce::Justification::centredLeft, false);
 }
 } // namespace ml
-

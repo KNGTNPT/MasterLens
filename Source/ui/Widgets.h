@@ -50,7 +50,37 @@ std::vector<CheckResult> buildChecklist (const StatsSnapshot& stats,
 void paintEmptyState (juce::Graphics&, juce::Rectangle<int> area);
 
 //==============================================================================
-/** 4 metric cards (I / TP / LRA / PLR), fixed 104 px, 4-up or 2x2. */
+/** Five-column hardware readout: I / TP / LRA / PLR / delta.
+
+    This is not a row of cards. One thin vertical rule separates columns, the
+    numbers share a tabular right edge and only the 4 px status rule carries
+    colour.
+*/
+class ReadoutBand : public juce::Component
+{
+public:
+    void setValues (const StatsSnapshot& s, const BasisContext& basis,
+                    const PlatformSummary& platform, float targetLufs,
+                    float ceilingDb, bool signal);
+
+    void paint (juce::Graphics&) override;
+
+private:
+    void paintCell (juce::Graphics&, juce::Rectangle<int>, const juce::String& label,
+                    const juce::String& value, const juce::String& unit,
+                    const juce::String& hint, juce::Colour status);
+
+    StatsSnapshot stats;
+    BasisContext basis;
+    PlatformSummary platform;
+    float target = -14.0f;
+    float ceiling = -1.0f;
+    bool hasSignal = false;
+};
+
+//==============================================================================
+/** Legacy 2.0.1 card grid, retained for the snapshot helper until the page
+    rewrite is complete. It is never made visible in 2.0.2. */
 class MetricGrid : public juce::Component
 {
 public:
@@ -87,8 +117,11 @@ private:
 
     StatsSnapshot stats;
     float target = -14.0f;
+    float displayM = -100.0f;
+    float displayS = -100.0f;
     float holdM = -100.0f;
     float holdS = -100.0f;
+    double lastUpdateMs = 0.0;
 };
 
 //==============================================================================
@@ -128,6 +161,13 @@ private:
     juce::Image background;
     bool backgroundDirty = true;
     int cachedThemeRevision = -1;
+
+    // Paint buffers: fixed capacity, reused every frame (no per-frame vector
+    // or Path allocation at 60 fps).
+    static constexpr int maxPoints = 768;
+    std::array<float, maxPoints> values {};
+    std::array<float, maxPoints> holds {};
+    juce::Path curvePath, holdPath, fillPath;
 };
 
 /** Time / frequency waterfall and 10-band heat map (2.0 beta2).
@@ -207,15 +247,18 @@ public:
         int severity = 0;
     };
 
-    void setData (std::vector<float> curve, float targetLufs);
+    void setData (const std::vector<float>& curve, float targetLufs);
     void setEvents (std::vector<Event> newEvents) { events = std::move (newEvents); repaint(); }
     void setBand (float lraValue) { bandLra = lraValue; repaint(); }
+    void setPlayhead (double seconds, double totalSeconds);
     void paint (juce::Graphics&) override;
-    void resized() override {}
-    void refreshLanguage() { backgroundDirty = true; repaint(); }
+    void resized() override { chipsDirty = true; backgroundDirty = true; }
+    void refreshLanguage() { backgroundDirty = true; chipsDirty = true; repaint(); }
     void invalidateBackground() { backgroundDirty = true; repaint(); }
 
     void mouseDown (const juce::MouseEvent&) override;
+    void mouseDrag (const juce::MouseEvent&) override;
+    void mouseUp (const juce::MouseEvent&) override;
     void mouseMove (const juce::MouseEvent&) override;
     void mouseExit (const juce::MouseEvent&) override;
 
@@ -227,7 +270,7 @@ private:
     void paintPlot (juce::Graphics&);
     void paintOverlay (juce::Graphics&);
     juce::Rectangle<int> plotArea() const;
-    std::array<juce::Rectangle<int>, 4> chipBounds() const;
+    std::array<juce::Rectangle<int>, 4> chipBounds();
     int pointsForRange() const;
 
     std::vector<float> data;
@@ -239,9 +282,18 @@ private:
     bool backgroundDirty = true;
     int cachedThemeRevision = -1;
     int hoverX = -1;
+    float playhead = 0.0f;
+    float totalSeconds = 0.0f;
+    bool dragging = false;
+    float dragStartAge = -1.0f;
+    float dragEndAge = -1.0f;
+    juce::Path curvePath, fillPath;
+    std::array<juce::Rectangle<int>, 4> chipCache {};
+    bool chipsDirty = true;
 
 public:
     std::function<void (double)> onSeek;
+    std::function<void (double, double)> onSelection;
 };
 
 //==============================================================================

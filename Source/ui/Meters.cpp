@@ -5,12 +5,35 @@ namespace ml
 //==============================================================================
 void LevelMeters::setValues (const StatsSnapshot& s, float targetLufs)
 {
+    const double now = juce::Time::getMillisecondCounterHiRes();
+    const float dt = lastUpdateMs > 0.0
+                         ? (float) juce::jlimit (0.001, 0.05, (now - lastUpdateMs) / 1000.0)
+                         : 0.016f;
+    lastUpdateMs = now;
+
     stats = s;
     target = targetLufs;
 
-    // One-pole fallback so the peak-hold line settles at roughly 10 dB/s.
-    holdM = s.momentary > holdM ? s.momentary : holdM - 0.18f;
-    holdS = s.shortTerm > holdS ? s.shortTerm : holdS - 0.18f;
+    const float attack = 1.0f - std::exp (-dt / 0.035f);
+    const float release = 1.0f - std::exp (-dt / 0.30f);
+
+    const auto follow = [&] (float& shown, float targetValue)
+    {
+        if (targetValue <= -99.0f)
+            return;
+
+        if (shown <= -99.0f)
+            shown = targetValue;
+        else
+            shown += (targetValue - shown) * (targetValue > shown ? attack : release);
+    };
+
+    follow (displayM, s.momentary);
+    follow (displayS, s.shortTerm);
+
+    // Peak hold falls at 10 dB/s, independent of the timer rate.
+    holdM = juce::jmax (displayM, holdM - 10.0f * dt);
+    holdS = juce::jmax (displayS, holdS - 10.0f * dt);
 
     repaint();
 }
@@ -102,10 +125,10 @@ void LevelMeters::paint (juce::Graphics& g)
     const int rowH = b.getHeight() / 2;
 
     paintRow (g, b.removeFromTop (rowH), T ("M 瞬时", "M momentary"), "400 ms",
-              stats.momentary, holdM, theme::accent);
+              displayM, holdM, theme::accent);
 
     paintRow (g, b, T ("S 短时", "S short-term"), "3 s",
-              stats.shortTerm, holdS, theme::accent.withAlpha (0.72f));
+              displayS, holdS, theme::accent.withAlpha (0.72f));
 
     // ---- shared scale labels -------------------------------------------------
     const auto trackArea = scaleRow.withTrimmedLeft (72).withTrimmedRight (76);

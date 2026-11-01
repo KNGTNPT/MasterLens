@@ -11,47 +11,45 @@ void theme::apply (bool useDark)
 
     if (useDark)
     {
-        theme::background = juce::Colour (0xff141517);
-        theme::card       = juce::Colour (0xff1a1b1e);
-        theme::cardAlt    = juce::Colour (0xff202226);
-        theme::raised     = juce::Colour (0xff202226);
-        theme::border     = juce::Colour (0x12ffffff);
-        theme::borderSoft = juce::Colour (0x0affffff);
-        theme::divider    = juce::Colour (0x12ffffff);
-        theme::text       = juce::Colour (0xffe9e9e7);
-        theme::textDim    = juce::Colour (0xff9b9da2);
-        theme::textFaint  = juce::Colour (0xff6c6f75);
-        theme::accent     = juce::Colour (0xffc2703c);
-        theme::accentHover= juce::Colour (0xffd07c45);
-        theme::accentSoft = juce::Colour (0x24c2703c);
-        theme::cyan       = juce::Colour (0xffc2703c);
-        theme::good       = juce::Colour (0xff6fa36f);
-        theme::info       = juce::Colour (0xffc2703c);
-        theme::warn       = juce::Colour (0xffc99a3f);
-        theme::bad        = juce::Colour (0xffc25b5b);
-        theme::violet     = juce::Colour (0xff8a5a3d);
+        theme::background = juce::Colour (0xff0b0e13);
+        theme::card       = juce::Colour (0xff141922);
+        theme::cardAlt    = juce::Colour (0xff1b222d);
+        theme::raised     = juce::Colour (0xff1b222d);
+        theme::border     = juce::Colour (0xff232b38);
+        theme::borderSoft = juce::Colour (0xff1e2632);
+        theme::divider    = juce::Colour (0xff1e2632);
+        theme::text       = juce::Colour (0xffe6eaf2);
+        theme::textDim    = juce::Colour (0xff9aa6b8);
+        theme::textFaint  = juce::Colour (0xff7e8a9c);
+        theme::accent     = juce::Colour (0xff4c8dff);
+        theme::accentSoft = juce::Colour (0xff1e2c46);
+        theme::cyan       = juce::Colour (0xff46c8d8);
+        theme::good       = juce::Colour (0xff35c48a);
+        theme::info       = juce::Colour (0xff4c8dff);
+        theme::warn       = juce::Colour (0xfff5a623);
+        theme::bad        = juce::Colour (0xffff5c5c);
+        theme::violet     = juce::Colour (0xff8b7bff);
     }
     else
     {
-        theme::background = juce::Colour (0xffefebe5);
-        theme::card       = juce::Colour (0xfff8f5f0);
-        theme::cardAlt    = juce::Colour (0xffe9e3da);
-        theme::raised     = juce::Colour (0xfffffdf9);
-        theme::border     = juce::Colour (0x18000000);
-        theme::borderSoft = juce::Colour (0x0d000000);
-        theme::divider    = juce::Colour (0x18000000);
-        theme::text       = juce::Colour (0xff252422);
-        theme::textDim    = juce::Colour (0xff6b6862);
-        theme::textFaint  = juce::Colour (0xff8d877d);
-        theme::accent     = juce::Colour (0xffa9582d);
-        theme::accentHover= juce::Colour (0xffbc6537);
-        theme::accentSoft = juce::Colour (0x24a9582d);
-        theme::cyan       = juce::Colour (0xffa9582d);
-        theme::good       = juce::Colour (0xff4f7f50);
-        theme::info       = juce::Colour (0xffa9582d);
-        theme::warn       = juce::Colour (0xff9a6a1f);
-        theme::bad        = juce::Colour (0xffa84444);
-        theme::violet     = juce::Colour (0xff7b4e37);
+        theme::background = juce::Colour (0xfff1f5fb);
+        theme::card       = juce::Colour (0xffffffff);
+        theme::cardAlt    = juce::Colour (0xfff7faff);
+        theme::raised     = juce::Colour (0xffffffff);
+        theme::border     = juce::Colour (0xffe2e9f3);
+        theme::borderSoft = juce::Colour (0xffedf2f9);
+        theme::divider    = juce::Colour (0xffedf2f9);
+        theme::text       = juce::Colour (0xff16232f);
+        theme::textDim    = juce::Colour (0xff55657a);
+        theme::textFaint  = juce::Colour (0xff63728a);
+        theme::accent     = juce::Colour (0xff2f7bf6);
+        theme::accentSoft = juce::Colour (0xffe6efff);
+        theme::cyan       = juce::Colour (0xff16b6c9);
+        theme::good       = juce::Colour (0xff14835a);
+        theme::info       = juce::Colour (0xff2f7bf6);
+        theme::warn       = juce::Colour (0xffb46a10);
+        theme::bad        = juce::Colour (0xffc9302a);
+        theme::violet     = juce::Colour (0xff5f4fe0);
     }
 
     ++theme::revisionCounter;
@@ -60,6 +58,134 @@ void theme::apply (bool useDark)
 //==============================================================================
 namespace surface
 {
+static float desktopScale()
+{
+    if (auto* d = juce::Desktop::getInstance().getDisplays().getPrimaryDisplay())
+        return juce::jmax (1.0f, (float) d->scale);
+
+    return 1.0f;
+}
+
+static juce::Colour lift (juce::Colour c, float amount)
+{
+    return c.overlaidWith (juce::Colours::white.withAlpha (amount));
+}
+
+static juce::Colour sink (juce::Colour c, float amount)
+{
+    return c.overlaidWith (juce::Colours::black.withAlpha (amount));
+}
+
+void raised (juce::Graphics& g, juce::Rectangle<float> area, float radius)
+{
+    // One light from above-left: top is a hair lighter, bottom a hair darker.
+    g.setGradientFill (juce::ColourGradient (lift (theme::raised, 0.035f),
+                                             area.getX(), area.getY(),
+                                             sink (theme::raised, 0.035f),
+                                             area.getX(), area.getBottom(), false));
+    g.fillRoundedRectangle (area, radius);
+
+    g.setColour (juce::Colours::white.withAlpha (theme::dark ? 0.06f : 0.30f));
+    g.drawHorizontalLine (juce::roundToInt (area.getY() + 0.5f),
+                          area.getX() + radius, area.getRight() - radius);
+
+    // Fixed raised shadow; this is two solid translucent strips, not a blur.
+    g.setColour (juce::Colours::black.withAlpha (0.20f));
+    g.fillRoundedRectangle (area.translated (0.0f, 1.0f).withTrimmedTop (area.getHeight() - 1.0f),
+                            radius * 0.5f);
+    g.setColour (juce::Colours::black.withAlpha (0.10f));
+    g.fillRoundedRectangle (area.translated (0.0f, 2.0f).withTrimmedTop (area.getHeight() - 1.0f),
+                            radius * 0.5f);
+}
+
+void recessed (juce::Graphics& g, juce::Rectangle<float> area, float radius)
+{
+    g.setColour (theme::card);
+    g.fillRoundedRectangle (area, radius);
+
+    g.setColour (juce::Colours::black.withAlpha (0.45f));
+    g.drawHorizontalLine (juce::roundToInt (area.getY() + 0.5f),
+                          area.getX() + radius, area.getRight() - radius);
+
+    g.setColour (juce::Colours::white.withAlpha (0.04f));
+    g.drawHorizontalLine (juce::roundToInt (area.getBottom() - 0.5f),
+                          area.getX() + radius, area.getRight() - radius);
+}
+
+void hairlineH (juce::Graphics& g, float x1, float x2, float y, juce::Colour colour)
+{
+    g.setColour (colour);
+    g.fillRect (x1, y, x2 - x1, 1.0f / desktopScale());
+}
+
+void hairlineV (juce::Graphics& g, float x, float y1, float y2, juce::Colour colour)
+{
+    g.setColour (colour);
+    g.fillRect (x, y1, 1.0f / desktopScale(), y2 - y1);
+}
+
+void cornerTicks (juce::Graphics& g, juce::Rectangle<float> area, juce::Colour colour)
+{
+    if (area.getWidth() < 24.0f || area.getHeight() < 24.0f)
+        return;
+
+    g.setColour (colour.withAlpha (0.75f));
+    const float len = 3.0f;
+
+    g.fillRect (area.getX(), area.getY(), len, 1.0f);
+    g.fillRect (area.getX(), area.getY(), 1.0f, len);
+    g.fillRect (area.getRight() - len, area.getY(), len, 1.0f);
+    g.fillRect (area.getRight() - 1.0f, area.getY(), 1.0f, len);
+    g.fillRect (area.getX(), area.getBottom() - 1.0f, len, 1.0f);
+    g.fillRect (area.getX(), area.getBottom() - len, 1.0f, len);
+    g.fillRect (area.getRight() - len, area.getBottom() - 1.0f, len, 1.0f);
+    g.fillRect (area.getRight() - 1.0f, area.getBottom() - len, 1.0f, len);
+}
+
+void glow (juce::Graphics& g, juce::Rectangle<float> area, juce::Colour colour, float radius)
+{
+    g.setColour (colour.withAlpha (0.12f));
+    g.drawRoundedRectangle (area.expanded (8.0f), radius + 8.0f, 1.0f);
+    g.setColour (colour.withAlpha (0.18f));
+    g.drawRoundedRectangle (area.expanded (4.0f), radius + 4.0f, 1.0f);
+    g.setColour (colour);
+    g.drawRoundedRectangle (area, radius, 1.0f);
+}
+
+void panel (juce::Graphics& g, juce::Rectangle<float> r, bool isRaised)
+{
+    if (isRaised)
+    {
+        raised (g, r, tokens::radiusCard);
+    }
+    else
+    {
+        g.setColour (theme::card);
+        g.fillRoundedRectangle (r, tokens::radiusCard);
+
+        // A 1 px inner top highlight keeps the panel from reading as a hole.
+        g.setColour (juce::Colours::white.withAlpha (theme::dark ? 0.045f : 0.30f));
+        g.drawHorizontalLine (juce::roundToInt (r.getY() + 0.5f),
+                              r.getX() + tokens::radiusCard, r.getRight() - tokens::radiusCard);
+    }
+}
+
+void graph (juce::Graphics& g, juce::Rectangle<float> area)
+{
+    panel (g, area, false);
+    cornerTicks (g, area.reduced (8.0f));
+}
+
+void noise (juce::Graphics&, juce::Rectangle<float>) {}
+void vignette (juce::Graphics&, juce::Rectangle<float>) {}
+void shadow (juce::Graphics& g, juce::Rectangle<float> area, float radius)
+{
+    g.setColour (juce::Colours::black.withAlpha (0.18f));
+    g.fillRoundedRectangle (area.translated (0.0f, 1.0f), radius);
+}
+} // namespace surface
+
+#if 0
 static const juce::Image& noiseImage()
 {
     static const juce::Image image = []
@@ -132,6 +258,7 @@ void shadow (juce::Graphics& g, juce::Rectangle<float> area, float radius)
     }
 }
 } // namespace surface
+#endif
 
 //==============================================================================
 juce::String typefaceName()
@@ -287,25 +414,55 @@ void MasterLensLookAndFeel::drawLinearSlider (juce::Graphics& g, int x, int y, i
     }
 
     const auto bounds = juce::Rectangle<float> ((float) x, (float) y, (float) width, (float) height);
-    constexpr float trackH = 6.0f;
-
-    auto track = juce::Rectangle<float> (bounds.getX(), bounds.getCentreY() - trackH * 0.5f,
-                                         bounds.getWidth(), trackH);
+    auto track = juce::Rectangle<float> (bounds.getX(), bounds.getCentreY() - 1.0f,
+                                         bounds.getWidth(), 2.0f);
 
     g.setColour (theme::borderSoft);
-    g.fillRoundedRectangle (track, 3.0f);
+    g.fillRect (track);
+    g.setColour (juce::Colours::black.withAlpha (0.45f));
+    g.fillRect (track.withHeight (1.0f));
+    g.setColour (juce::Colours::white.withAlpha (0.04f));
+    g.fillRect (track.withTop (track.getBottom() - 1.0f));
 
     const float pos = juce::jlimit (track.getX(), track.getRight(), sliderPos);
+    g.setColour (slider.isEnabled() ? theme::accent : theme::textFaint.withAlpha (0.4f));
+    g.fillRect (track.withRight (pos));
+
+    const bool dragging = slider.isMouseButtonDown() && slider.isMouseOverOrDragging();
+    const float thumbH = dragging ? 18.0f : 14.0f;
+    auto thumb = juce::Rectangle<float> (pos - 5.0f, bounds.getCentreY() - thumbH * 0.5f,
+                                         10.0f, thumbH);
+
+    g.setColour (theme::raised);
+    g.fillRoundedRectangle (thumb, 3.0f);
+    g.setColour (theme::border);
+    g.drawRoundedRectangle (thumb, 3.0f, 1.0f);
     g.setColour (theme::accent);
-    g.fillRoundedRectangle (track.withRight (pos), 3.0f);
+    g.fillRoundedRectangle (thumb.reduced (3.0f, 2.0f), 1.5f);
 
-    const float r = 7.0f;
-    auto thumb = juce::Rectangle<float> (pos - r, bounds.getCentreY() - r, r * 2.0f, r * 2.0f);
+    if (slider.hasKeyboardFocus (true))
+    {
+        g.setColour (theme::accent);
+        g.drawRoundedRectangle (thumb.expanded (2.0f), 5.0f, 1.0f);
+    }
 
-    g.setColour (theme::cardAlt);
-    g.fillEllipse (thumb);
-    g.setColour (slider.hasKeyboardFocus (true) ? theme::text : theme::accent);
-    g.drawEllipse (thumb.reduced (1.5f), 2.0f);
+    if (dragging)
+    {
+        const auto valueText = slider.getTextFromValue (slider.getValue());
+        const auto font = monoFont (11.0f);
+        const int tw = juce::roundToInt (juce::GlyphArrangement::getStringWidth (font, valueText)) + 16;
+        auto bubble = juce::Rectangle<int> (juce::roundToInt (pos) - tw / 2,
+                                            juce::roundToInt (thumb.getY()) - 26, tw, 20);
+        bubble.setX (juce::jlimit (x, x + width - tw, bubble.getX()));
+
+        g.setColour (theme::cardAlt);
+        g.fillRoundedRectangle (bubble.toFloat(), 4.0f);
+        g.setColour (theme::border);
+        g.drawRoundedRectangle (bubble.toFloat(), 4.0f, 1.0f);
+        g.setColour (theme::text);
+        g.setFont (font);
+        g.drawText (valueText, bubble, juce::Justification::centred);
+    }
 }
 
 void MasterLensLookAndFeel::drawButtonBackground (juce::Graphics& g, juce::Button& button,
@@ -314,27 +471,117 @@ void MasterLensLookAndFeel::drawButtonBackground (juce::Graphics& g, juce::Butto
 {
     auto bounds = button.getLocalBounds().toFloat().reduced (0.5f);
     constexpr float corner = tokens::radiusControl;
+    const bool primary = (bool) button.getProperties()["mlPrimary"];
+    const bool segment = (bool) button.getProperties()["mlSegment"];
 
-    auto base = button.getToggleState() ? theme::accentSoft : backgroundColour;
+    g.saveState();
+    g.setOpacity (button.isEnabled() ? 1.0f : 0.4f);
+
+    if (segment)
+    {
+        if (button.getToggleState())
+        {
+            g.setColour (theme::accent);
+            g.fillRect (bounds.getX() + 4.0f, bounds.getBottom() - 2.0f,
+                        juce::jmax (12.0f, bounds.getWidth() - 8.0f), 2.0f);
+        }
+        else
+        {
+            g.setColour (theme::borderSoft);
+            g.fillRect (bounds.getX(), bounds.getBottom() - 1.0f, bounds.getWidth(), 1.0f);
+        }
+
+        g.restoreState();
+        return;
+    }
 
     if (isButtonDown)
-        base = base.brighter (0.10f);
-    else if (isMouseOver)
-        base = base.brighter (0.06f);
+    {
+        surface::recessed (g, bounds, corner);
+    }
+    else if (primary)
+    {
+        g.setColour (theme::accent.withAlpha (isMouseOver ? 0.20f : 0.14f));
+        g.fillRoundedRectangle (bounds, corner);
+    }
+    else
+    {
+        auto base = button.getToggleState() ? theme::accentSoft : backgroundColour;
 
-    g.setColour (base);
-    g.fillRoundedRectangle (bounds, corner);
+        if (isMouseOver)
+            base = base.overlaidWith (juce::Colours::white.withAlpha (0.04f));
 
-    g.setColour (button.getToggleState() ? theme::accent.withAlpha (0.70f) : theme::border);
-    g.drawRoundedRectangle (bounds, corner, 1.0f);
+        g.setGradientFill (juce::ColourGradient (base.overlaidWith (juce::Colours::white.withAlpha (0.025f)),
+                                                 bounds.getX(), bounds.getY(),
+                                                 base.overlaidWith (juce::Colours::black.withAlpha (0.025f)),
+                                                 bounds.getX(), bounds.getBottom(), false));
+        g.fillRoundedRectangle (bounds, corner);
+
+        g.setColour (juce::Colours::white.withAlpha (0.06f));
+        g.drawHorizontalLine (juce::roundToInt (bounds.getY() + 0.5f),
+                              bounds.getX() + corner, bounds.getRight() - corner);
+    }
 
     if (button.hasKeyboardFocus (true))
     {
         g.setColour (theme::accent);
-        g.drawRoundedRectangle (bounds.reduced (2.0f), corner - 1.0f, 2.0f);
+        g.drawRoundedRectangle (bounds.reduced (2.0f), corner - 1.0f, 1.0f);
     }
+
+    g.restoreState();
 }
 
+void MasterLensLookAndFeel::drawButtonText (juce::Graphics& g, juce::TextButton& button,
+                                            bool isMouseOver, bool isButtonDown)
+{
+    juce::ignoreUnused (isMouseOver, isButtonDown);
+
+    const bool primary = (bool) button.getProperties()["mlPrimary"];
+    const bool segment = (bool) button.getProperties()["mlSegment"];
+    auto colour = (primary || (segment && button.getToggleState())) ? theme::accent
+                          : (button.getToggleState() ? theme::accent : theme::text);
+    colour = colour.withMultipliedAlpha (button.isEnabled() ? 1.0f : 0.4f);
+
+    g.setColour (colour);
+    g.setFont (uiFont (tokens::label, primary));
+    g.drawText (button.getButtonText(), button.getLocalBounds().reduced (6, 0),
+                juce::Justification::centred, true);
+}
+
+
+void MasterLensLookAndFeel::drawToggleButton (juce::Graphics& g, juce::ToggleButton& button,
+                                              bool isMouseOver, bool isButtonDown)
+{
+    juce::ignoreUnused (isButtonDown);
+
+    auto area = button.getLocalBounds();
+    auto track = area.removeFromLeft (28).withSizeKeepingCentre (28, 16).toFloat();
+
+    g.setColour (button.getToggleState() ? theme::accent : theme::borderSoft);
+    g.fillRoundedRectangle (track, 8.0f);
+    g.setColour (juce::Colours::black.withAlpha (0.35f));
+    g.drawRoundedRectangle (track, 8.0f, 1.0f);
+
+    const float knobX = button.getToggleState() ? track.getRight() - 14.0f : track.getX() + 2.0f;
+    g.setColour (button.getToggleState() ? theme::text : theme::textDim);
+    g.fillEllipse (knobX, track.getY() + 2.0f, 12.0f, 12.0f);
+
+    if (isMouseOver)
+    {
+        g.setColour (theme::text.withAlpha (0.16f));
+        g.drawRoundedRectangle (track.expanded (1.0f), 9.0f, 1.0f);
+    }
+
+    if (button.hasKeyboardFocus (true))
+    {
+        g.setColour (theme::accent);
+        g.drawRoundedRectangle (track.expanded (2.0f), 10.0f, 1.0f);
+    }
+
+    g.setColour (theme::textDim);
+    g.setFont (uiFont (tokens::label));
+    g.drawText (button.getButtonText(), area.withTrimmedLeft (8), juce::Justification::centredLeft, true);
+}
 
 void MasterLensLookAndFeel::drawComboBox (juce::Graphics& g, int width, int height, bool isButtonDown,
                                           int buttonX, int buttonY, int buttonW, int buttonH,
@@ -342,16 +589,14 @@ void MasterLensLookAndFeel::drawComboBox (juce::Graphics& g, int width, int heig
 {
     juce::ignoreUnused (buttonX, buttonY, buttonW, buttonH);
 
-    const auto bounds = juce::Rectangle<float> (0.5f, 0.5f, (float) width - 1.0f, (float) height - 1.0f);
+    const auto bounds = juce::Rectangle<float> (0.0f, 0.0f, (float) width, (float) height);
 
-    g.setColour (box.findColour (juce::ComboBox::backgroundColourId));
+    g.setColour (theme::card);
     g.fillRoundedRectangle (bounds, tokens::radiusControl);
+    g.setColour (theme::borderSoft);
+    g.fillRect (bounds.getX(), bounds.getBottom() - 1.0f, bounds.getWidth(), 1.0f);
 
-    g.setColour (box.hasKeyboardFocus (true) ? theme::accent
-                                             : box.findColour (juce::ComboBox::outlineColourId));
-    g.drawRoundedRectangle (bounds, tokens::radiusControl, 1.0f);
-
-    const float cx = bounds.getRight() - 16.0f;
+    const float cx = bounds.getRight() - 14.0f;
     const float cy = bounds.getCentreY();
 
     juce::Path arrow;
@@ -359,14 +604,14 @@ void MasterLensLookAndFeel::drawComboBox (juce::Graphics& g, int width, int heig
     arrow.lineTo (cx, cy + 2.5f);
     arrow.lineTo (cx + 4.0f, cy - 2.0f);
 
-    g.setColour (box.findColour (juce::ComboBox::arrowColourId));
-    g.strokePath (arrow, juce::PathStrokeType (1.6f, juce::PathStrokeType::mitered,
+    g.setColour (box.hasKeyboardFocus (true) ? theme::accent : theme::textDim);
+    g.strokePath (arrow, juce::PathStrokeType (1.5f, juce::PathStrokeType::mitered,
                                                juce::PathStrokeType::rounded));
 
     if (box.hasKeyboardFocus (true))
     {
         g.setColour (theme::accent);
-        g.drawRoundedRectangle (bounds.reduced (2.0f), tokens::radiusControl - 1.0f, 2.0f);
+        g.drawRoundedRectangle (bounds.reduced (0.5f), tokens::radiusControl, 1.0f);
     }
 }
 
@@ -376,20 +621,18 @@ void MasterLensLookAndFeel::drawLabel (juce::Graphics& g, juce::Label& label)
     // 32 px control with a monospaced, right aligned reading.
     if (dynamic_cast<juce::Slider*> (label.getParentComponent()) != nullptr)
     {
-        auto r = label.getLocalBounds().toFloat().reduced (0.5f);
+        auto r = label.getLocalBounds().toFloat();
 
-        g.setColour (theme::cardAlt);
-        g.fillRoundedRectangle (r, tokens::radiusControl);
-
-        g.setColour (label.hasKeyboardFocus (true) ? theme::accent : theme::border);
-        g.drawRoundedRectangle (r, tokens::radiusControl, 1.0f);
+        // Numeric fields are bottom-rule only: no box, no fill.
+        g.setColour (label.hasKeyboardFocus (true) ? theme::accent : theme::borderSoft);
+        g.fillRect (r.getX(), r.getBottom() - 1.0f, r.getWidth(), 1.0f);
 
         if (label.isBeingEdited())
             return; // the TextEditor paints itself
 
         g.setColour (theme::text);
-        g.setFont (monoFont (13.0f));
-        g.drawText (label.getText(), label.getLocalBounds().reduced (8, 0),
+        g.setFont (monoFont (12.0f, true));
+        g.drawText (label.getText(), label.getLocalBounds().reduced (2, 0),
                     juce::Justification::centredRight, false);
         return;
     }
@@ -402,13 +645,13 @@ void MasterLensLookAndFeel::drawTooltip (juce::Graphics& g, const juce::String& 
 {
     const auto r = juce::Rectangle<float> (0.0f, 0.0f, (float) width, (float) height).reduced (0.5f);
 
-    g.setColour (theme::cardAlt);
-    g.fillRoundedRectangle (r, tokens::radiusControl);
+    g.setColour (theme::card);
+    g.fillRoundedRectangle (r, 4.0f);
     g.setColour (theme::border);
-    g.drawRoundedRectangle (r, tokens::radiusControl, 1.0f);
+    g.drawRoundedRectangle (r, 4.0f, 1.0f);
 
-    g.setColour (theme::text);
-    g.setFont (uiFont (tokens::aux * ui::scale));
+    g.setColour (theme::textDim);
+    g.setFont (uiFont (tokens::unit * ui::scale));
     g.drawFittedText (text, 8, 0, width - 16, height, juce::Justification::centred,
                       juce::jmax (2, juce::roundToInt (3.0f * ui::scale)), 1.0f);
 }
@@ -458,10 +701,90 @@ juce::Font MasterLensLookAndFeel::getTextButtonFont (juce::TextButton&, int) { r
 void MasterLensLookAndFeel::drawPopupMenuBackground (juce::Graphics& g, int width, int height)
 {
     g.fillAll (juce::Colours::transparentBlack);
-    g.setColour (theme::card);
+    g.setColour (theme::cardAlt);
     g.fillRoundedRectangle (0.0f, 0.0f, (float) width, (float) height, tokens::radiusCard);
     g.setColour (theme::border);
     g.drawRoundedRectangle (0.5f, 0.5f, (float) width - 1.0f, (float) height - 1.0f,
                             tokens::radiusCard, 1.0f);
+}
+
+void MasterLensLookAndFeel::drawPopupMenuItem (juce::Graphics& g, const juce::Rectangle<int>& area,
+                                               bool isSeparator, bool isActive, bool isHighlighted,
+                                               bool isTicked, bool hasSubMenu, const juce::String& text,
+                                               const juce::String& shortcutKeyText,
+                                               const juce::Drawable* icon, const juce::Colour* textColour)
+{
+    juce::ignoreUnused (hasSubMenu, icon);
+
+    if (isSeparator)
+    {
+        surface::hairlineH (g, (float) area.getX() + 10.0f, (float) area.getRight() - 10.0f,
+                            (float) area.getCentreY());
+        return;
+    }
+
+    if (isHighlighted)
+    {
+        g.setColour (theme::raised);
+        g.fillRect (area.reduced (4, 1));
+    }
+
+    if (isTicked)
+    {
+        g.setColour (theme::accent);
+        g.fillRect (area.getX() + 4, area.getY() + 5, 2, area.getHeight() - 10);
+    }
+
+    g.setColour (isActive ? theme::text : theme::textFaint);
+    g.setFont (uiFont (tokens::label * ui::scale));
+    g.drawText (text, area.reduced (14, 0), juce::Justification::centredLeft, true);
+
+    if (shortcutKeyText.isNotEmpty())
+    {
+        g.setColour (theme::textFaint);
+        g.setFont (monoFont (tokens::unit * ui::scale));
+        g.drawText (shortcutKeyText, area.reduced (14, 0), juce::Justification::centredRight, true);
+    }
+}
+
+void MasterLensLookAndFeel::drawScrollbar (juce::Graphics& g, juce::ScrollBar&, int x, int y,
+                                           int width, int height, bool isScrollbarVertical,
+                                           int thumbStartPosition, int thumbSize,
+                                           bool isMouseOver, bool isMouseDown)
+{
+    juce::ignoreUnused (isScrollbarVertical);
+
+    const float alpha = isMouseDown ? 0.85f : (isMouseOver ? 0.6f : 0.35f);
+    juce::Rectangle<float> thumb;
+
+    if (isScrollbarVertical)
+        thumb = { (float) x + (float) width * 0.5f - 1.5f, (float) thumbStartPosition,
+                  3.0f, (float) thumbSize };
+    else
+        thumb = { (float) thumbStartPosition, (float) y + (float) height * 0.5f - 1.5f,
+                  (float) thumbSize, 3.0f };
+
+    g.setColour (theme::textDim.withAlpha (alpha));
+    g.fillRoundedRectangle (thumb, 1.5f);
+}
+
+void MasterLensLookAndFeel::drawScrollbarButton (juce::Graphics&, juce::ScrollBar&, int, int,
+                                                 int, bool, bool, bool)
+{
+    // No arrow buttons: the 3 px thumb is the whole scrollbar.
+}
+
+void MasterLensLookAndFeel::fillTextEditorBackground (juce::Graphics& g, int width, int height,
+                                                      juce::TextEditor&)
+{
+    g.setColour (theme::card);
+    g.fillRect (0, 0, width, height);
+}
+
+void MasterLensLookAndFeel::drawTextEditorOutline (juce::Graphics& g, int width, int height,
+                                                    juce::TextEditor& editor)
+{
+    g.setColour (editor.hasKeyboardFocus (true) ? theme::accent : theme::borderSoft);
+    g.fillRect (0, height - 1, width, 1);
 }
 } // namespace ml

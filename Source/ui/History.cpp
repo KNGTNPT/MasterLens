@@ -7,13 +7,28 @@ HistoryGraph::HistoryGraph()
 {
     setOpaque (true);
     setMouseCursor (juce::MouseCursor::CrosshairCursor);
+    curvePath.preallocateSpace (4096);
+    fillPath.preallocateSpace (4096);
 }
 
-void HistoryGraph::setData (std::vector<float> curve, float targetLufs)
+void HistoryGraph::setData (const std::vector<float>& curve, float targetLufs)
 {
-    data = std::move (curve);
+    data.assign (curve.begin(), curve.end());
     target = targetLufs;
-    repaint();
+    repaint (plotArea());
+}
+
+void HistoryGraph::setPlayhead (double seconds, double total)
+{
+    const float newHead = (float) juce::jmax (0.0, seconds);
+    const float newTotal = (float) juce::jmax (0.001, total);
+
+    if (std::abs (newHead - playhead) < 0.001f && std::abs (newTotal - totalSeconds) < 0.001f)
+        return;
+
+    playhead = newHead;
+    totalSeconds = newTotal;
+    repaint (plotArea());
 }
 
 juce::Rectangle<int> HistoryGraph::plotArea() const
@@ -39,9 +54,10 @@ int HistoryGraph::pointsForRange() const
     return juce::jmax (2, (int) data.size());
 }
 
-std::array<juce::Rectangle<int>, 4> HistoryGraph::chipBounds() const
+std::array<juce::Rectangle<int>, 4> HistoryGraph::chipBounds()
 {
-    std::array<juce::Rectangle<int>, 4> out {};
+    if (! chipsDirty)
+        return chipCache;
 
     const char* zh[4] { "1 秒", "10 秒", "60 秒", "整曲" };
     const char* en[4] { "1 s", "10 s", "60 s", "Song" };
@@ -54,11 +70,12 @@ std::array<juce::Rectangle<int>, 4> HistoryGraph::chipBounds() const
         const auto text = T (zh[i], en[i]);
         const int w = juce::roundToInt (juce::GlyphArrangement::getStringWidth (uiFont (tokens::unit), text)) + 20;
 
-        out[(size_t) i] = juce::Rectangle<int> (x, y, w, 20);
+        chipCache[(size_t) i] = juce::Rectangle<int> (x, y, w, 20);
         x += w + 6;
     }
 
-    return out;
+    chipsDirty = false;
+    return chipCache;
 }
 
 void HistoryGraph::mouseDown (const juce::MouseEvent& e)
@@ -77,14 +94,58 @@ void HistoryGraph::mouseDown (const juce::MouseEvent& e)
 
     const auto plot = plotArea();
 
-    if (plot.contains (e.getPosition()) && onSeek != nullptr)
+    if (plot.contains (e.getPosition()))
     {
         const int span = juce::jmax (2, pointsForRange());
         const float stepX = (float) plot.getWidth() / (float) (span - 1);
         const int indexFromRight = juce::jlimit (0, span - 1,
             juce::roundToInt ((float) (plot.getRight() - e.x) / juce::jmax (1.0f, stepX)));
-        onSeek ((double) indexFromRight * 0.1);
+
+        dragging = true;
+        dragStartAge = dragEndAge = (float) indexFromRight * 0.1f;
+        repaint (plotArea());
     }
+}
+
+void HistoryGraph::mouseDrag (const juce::MouseEvent& e)
+{
+    if (! dragging)
+        return;
+
+    const auto plot = plotArea();
+
+    if (plot.getWidth() <= 0)
+        return;
+
+    const int span = juce::jmax (2, pointsForRange());
+    const float stepX = (float) plot.getWidth() / (float) (span - 1);
+    const int indexFromRight = juce::jlimit (0, span - 1,
+        juce::roundToInt ((float) (plot.getRight() - e.x) / juce::jmax (1.0f, stepX)));
+
+    dragEndAge = (float) indexFromRight * 0.1f;
+    repaint (plotArea());
+}
+
+void HistoryGraph::mouseUp (const juce::MouseEvent&)
+{
+    if (! dragging)
+        return;
+
+    dragging = false;
+
+    if (dragStartAge >= 0.0f && dragEndAge >= 0.0f
+        && std::abs (dragEndAge - dragStartAge) >= 0.15f && onSelection != nullptr)
+    {
+        onSelection ((double) juce::jmin (dragStartAge, dragEndAge),
+                     (double) juce::jmax (dragStartAge, dragEndAge));
+    }
+    else if (onSeek != nullptr)
+    {
+        onSeek ((double) dragStartAge);
+    }
+
+    dragStartAge = dragEndAge = -1.0f;
+    repaint (plotArea());
 }
 
 void HistoryGraph::mouseMove (const juce::MouseEvent& e)
@@ -205,7 +266,7 @@ void HistoryGraph::paintPlot (juce::Graphics& g)
 
     if (count >= 2)
     {
-        juce::Path path;
+        curvePath.clear();
         bool started = false;
         float firstX = (float) plot.getRight(), lastX = (float) plot.getRight();
 
@@ -225,13 +286,13 @@ void HistoryGraph::paintPlot (juce::Graphics& g)
 
             if (! started)
             {
-                path.startNewSubPath (x, y);
+                curvePath.startNewSubPath (x, y);
                 started = true;
                 firstX = juce::jmin (firstX, x);
             }
             else
             {
-                path.lineTo (x, y);
+                curvePath.lineTo (x, y);
             }
 
             lastX = x;
@@ -239,18 +300,19 @@ void HistoryGraph::paintPlot (juce::Graphics& g)
 
         if (started)
         {
-            auto filled = path;
-            filled.lineTo (lastX, (float) plot.getBottom());
-            filled.lineTo (firstX, (float) plot.getBottom());
-            filled.closeSubPath();
+            fillPath.clear();
+            fillPath.addPath (curvePath);
+            fillPath.lineTo (lastX, (float) plot.getBottom());
+            fillPath.lineTo (firstX, (float) plot.getBottom());
+            fillPath.closeSubPath();
 
             juce::ColourGradient fillGrad (theme::accent.withAlpha (0.16f), 0.0f, (float) plot.getY(),
                                            theme::accent.withAlpha (0.0f), 0.0f, (float) plot.getBottom(), false);
             g.setGradientFill (fillGrad);
-            g.fillPath (filled);
+            g.fillPath (fillPath);
 
             g.setColour (theme::accent);
-            g.strokePath (path, juce::PathStrokeType (1.4f));
+            g.strokePath (curvePath, juce::PathStrokeType (1.4f));
 
             // Events live on the curve, not on a separate 40 px strip.
             for (const auto& ev : events)
@@ -296,10 +358,41 @@ void HistoryGraph::paintOverlay (juce::Graphics& g)
     if (latest > -99.0f)
     {
         g.setColour (theme::text);
-        g.setFont (monoFont (18.0f, true));
+        g.setFont (monoFont (14.0f, true));
         g.drawText (num (latest),
-                    juce::Rectangle<int> (plot.getRight() + 6, plot.getY() + 4, 58, 22),
+                    juce::Rectangle<int> (plot.getRight() + 6, plot.getY() + 4, 58, 20),
                     juce::Justification::centredLeft);
+    }
+
+    // ---- drag selection ------------------------------------------------------
+    if (dragStartAge >= 0.0f && dragEndAge >= 0.0f
+        && std::abs (dragEndAge - dragStartAge) > 0.01f)
+    {
+        const float a = (float) plot.getRight() - (juce::jmax (dragStartAge, dragEndAge) / 0.1f) * stepX;
+        const float b = (float) plot.getRight() - (juce::jmin (dragStartAge, dragEndAge) / 0.1f) * stepX;
+        const float x1 = juce::jlimit ((float) plot.getX(), (float) plot.getRight(), a);
+        const float x2 = juce::jlimit ((float) plot.getX(), (float) plot.getRight(), b);
+
+        g.setColour (theme::accent.withAlpha (0.10f));
+        g.fillRect (juce::Rectangle<float> (x1, (float) plot.getY(), x2 - x1,
+                                            (float) plot.getHeight()));
+        g.setColour (theme::accent);
+        g.fillRect (x1, (float) plot.getY(), 1.0f, (float) plot.getHeight());
+        g.fillRect (x2, (float) plot.getY(), 1.0f, (float) plot.getHeight());
+    }
+
+    // ---- playhead: the old bottom strip now lives in the graph --------------
+    if (totalSeconds > 0.001f && playhead > 0.0f)
+    {
+        const float age = juce::jmax (0.0f, totalSeconds - playhead);
+        const float hx = (float) plot.getRight() - (age / 0.1f) * stepX;
+
+        if (hx >= (float) plot.getX() && hx <= (float) plot.getRight())
+        {
+            g.setColour (theme::accent.withAlpha (0.85f));
+            g.fillRect (hx - 0.5f, (float) plot.getY(), 1.0f, (float) plot.getHeight());
+            g.fillEllipse (hx - 3.0f, (float) plot.getY() - 3.0f, 6.0f, 6.0f);
+        }
     }
 
     // ---- one relative time axis ---------------------------------------------

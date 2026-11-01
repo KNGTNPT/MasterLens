@@ -11,8 +11,8 @@ ModuleRail::ModuleRail()
 
 juce::Rectangle<int> ModuleRail::rowBounds (int index) const
 {
-    const int top = 12;
-    const int rowH = juce::jlimit (28, 38, (getHeight() - top - 8) / juce::jmax (1, numPages));
+    const int top = 10;
+    const int rowH = juce::jlimit (28, 44, (getHeight() - top - 8) / juce::jmax (1, numPages));
     return { 0, top + index * rowH, getWidth(), rowH };
 }
 
@@ -65,41 +65,43 @@ void ModuleRail::paint (juce::Graphics& g)
     {
         auto row = rowBounds (i);
         const bool sel = i == selected;
+        const bool hot = i == hoverRow;
         const auto& item = items[(size_t) i];
+        const bool compact = row.getHeight() < 34;
 
         if (sel)
         {
-            g.setColour (theme::accentSoft);
-            g.fillRoundedRectangle (row.toFloat().withTrimmedLeft (8).reduced (0, 2),
-                                    tokens::radiusControl);
-            g.setColour (theme::accent);
-            g.fillRoundedRectangle ((float) row.getX() + 8.0f, (float) row.getY() + 7.0f,
-                                    2.0f, (float) row.getHeight() - 14.0f, 1.0f);
-        }
-        else if (i == hoverRow)
-        {
             g.setColour (theme::raised.withAlpha (0.55f));
-            g.fillRoundedRectangle (row.toFloat().withTrimmedLeft (8).reduced (0, 2),
-                                    tokens::radiusControl);
+            g.fillRect (row.reduced (0, 1));
+            g.setColour (theme::accent);
+            g.fillRect (row.getX(), row.getY() + 4, 2, row.getHeight() - 8);
+        }
+        else if (hot)
+        {
+            g.setColour (theme::raised.withAlpha (0.32f));
+            g.fillRect (row.reduced (0, 1));
         }
 
-        g.setColour (item.colour);
-        g.fillEllipse (16.0f, (float) row.getY() + (row.getHeight() < 34 ? 9.0f : 11.0f), 6.0f, 6.0f);
+        // Group number is the only decorative index on this surface.
+        g.setColour (theme::textFaint.withAlpha (sel ? 0.9f : 0.55f));
+        g.setFont (monoFont (10.0f));
+        g.drawText (juce::String (i + 1).paddedLeft ('0', 2),
+                    row.getX() + 8, row.getY() + (compact ? 2 : 4), 20,
+                    compact ? 12 : 14, juce::Justification::centredLeft, false);
 
-        const bool compact = row.getHeight() < 34;
-        const int titleW = juce::jmax (96, row.getWidth() - 92);
+        const int titleW = juce::jmax (76, row.getWidth() - 78);
 
         g.setColour (sel ? theme::text : theme::textDim);
         g.setFont (uiFont (tokens::label, sel));
-        g.drawFittedText (item.title, 28, row.getY() + (compact ? 2 : 4), titleW,
-                          compact ? 14 : 16, juce::Justification::centredLeft, 1);
-
-        g.setColour (item.colour);
-        g.setFont (uiFont (tokens::unit));
-        g.drawFittedText (item.status, 28, row.getY() + (compact ? 15 : 20), titleW,
-                          compact ? 12 : 13, juce::Justification::centredLeft, 1);
+        g.drawFittedText (item.title, row.getX() + 30, row.getY() + (compact ? 2 : 4),
+                          titleW, compact ? 14 : 16, juce::Justification::centredLeft, 1);
 
         g.setColour (theme::textFaint);
+        g.setFont (uiFont (tokens::unit));
+        g.drawFittedText (item.status, row.getX() + 30, row.getY() + (compact ? 15 : 20),
+                          titleW, compact ? 12 : 13, juce::Justification::centredLeft, 1);
+
+        g.setColour (theme::textDim);
         g.setFont (monoFont (tokens::unit));
         g.drawFittedText (item.value, row.getWidth() - 64, row.getY() + (compact ? 7 : 9),
                           56, 14, juce::Justification::centredRight, 1);

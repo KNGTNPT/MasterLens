@@ -15,6 +15,9 @@ static juce::String formatHz (double hz)
 SpectrumDisplay::SpectrumDisplay()
 {
     setOpaque (true);
+    curvePath.preallocateSpace (8192);
+    holdPath.preallocateSpace (8192);
+    fillPath.preallocateSpace (8192);
 }
 
 void SpectrumDisplay::drawGrid (juce::Graphics& g)
@@ -134,16 +137,16 @@ void SpectrumDisplay::paint (juce::Graphics& g)
     if (numBins < 4)
         return;
 
-    const int steps = juce::jlimit (140, 760, getWidth());
+    // 420 points is visually indistinguishable at this plot width and keeps
+    // the 60 fps spectrum comfortably inside the 8 ms paint budget.
+    const int steps = juce::jlimit (140, 420, getWidth());
 
     const double logRange = std::log (20000.0 / 20.0);
 
-    std::vector<float> values ((size_t) steps + 1, -100.0f);
-    std::vector<float> holds ((size_t) steps + 1, -100.0f);
+    // Fixed buffers, reused every frame: no vector allocation in paint.
+    values.fill (-100.0f);
+    holds.fill (-100.0f);
 
-    // Sample the already fractional-octave smoothed curve with cubic
-    // interpolation. No per-pixel max() any more - that was what produced the
-    // jagged low end even after the FFT resolution was raised.
     for (int px = 0; px <= steps; ++px)
     {
         const double f = 20.0 * std::exp (logRange * ((double) px + 0.5) / (double) steps);
@@ -157,12 +160,12 @@ void SpectrumDisplay::paint (juce::Graphics& g)
         return xFor ((double) px / (double) steps);
     };
 
-    const auto makeSmoothPath = [&] (const std::vector<float>& data)
+    const auto makeSmoothPath = [&] (juce::Path& p, const std::array<float, maxPoints>& data)
     {
-        juce::Path p;
+        p.clear();
 
         if (steps < 3)
-            return p;
+            return;
 
         const auto pointAt = [&] (int index)
         {
@@ -184,24 +187,23 @@ void SpectrumDisplay::paint (juce::Graphics& g)
 
             p.cubicTo (c1, c2, p2);
         }
-
-        return p;
     };
 
-    const auto curve = makeSmoothPath (values);
-    const auto holdPath = makeSmoothPath (holds);
+    makeSmoothPath (curvePath, values);
+    makeSmoothPath (holdPath, holds);
 
-    juce::Path filled (curve);
-    filled.lineTo (plot.getRight(), plot.getBottom());
-    filled.lineTo (plot.getX(), plot.getBottom());
-    filled.closeSubPath();
+    fillPath.clear();
+    fillPath.addPath (curvePath);
+    fillPath.lineTo (plot.getRight(), plot.getBottom());
+    fillPath.lineTo (plot.getX(), plot.getBottom());
+    fillPath.closeSubPath();
 
     g.setColour (theme::accent.withAlpha (0.10f));
-    g.fillPath (filled);
+    g.fillPath (fillPath);
 
     g.setColour (theme::accent);
-    g.strokePath (curve, juce::PathStrokeType (1.8f, juce::PathStrokeType::curved,
-                                               juce::PathStrokeType::rounded));
+    g.strokePath (curvePath, juce::PathStrokeType (1.8f, juce::PathStrokeType::curved,
+                                                   juce::PathStrokeType::rounded));
 
     g.setColour (theme::violet.withAlpha (0.45f));
     g.strokePath (holdPath, juce::PathStrokeType (1.0f, juce::PathStrokeType::curved,

@@ -14,7 +14,7 @@ void MasterLensAudioProcessorEditor::buildControls()
     infoButton.onClick = [this] { showGenreInfo(); };
     addAndMakeVisible (infoButton);
 
-    const auto captionFont = ml::uiFont (ml::tokens::label);
+    const auto captionFont = ml::uiFont (ml::tokens::unit);
 
     targetCaption.setFont (captionFont);
     targetCaption.setColour (juce::Label::textColourId, ml::theme::textDim);
@@ -25,14 +25,14 @@ void MasterLensAudioProcessorEditor::buildControls()
     addAndMakeVisible (ceilingCaption);
 
     targetSlider.setSliderStyle (juce::Slider::LinearHorizontal);
-    targetSlider.setTextBoxStyle (juce::Slider::TextBoxRight, false, 104, 28);
+    targetSlider.setTextBoxStyle (juce::Slider::TextBoxRight, false, 70, 26);
     targetSlider.setDoubleClickReturnValue (true, -14.0);
     targetSlider.setNumDecimalPlacesToDisplay (1);
     targetSlider.setTextValueSuffix (" LU");
     addAndMakeVisible (targetSlider);
 
     ceilingSlider.setSliderStyle (juce::Slider::LinearHorizontal);
-    ceilingSlider.setTextBoxStyle (juce::Slider::TextBoxRight, false, 96, 28);
+    ceilingSlider.setTextBoxStyle (juce::Slider::TextBoxRight, false, 70, 26);
     ceilingSlider.setNumDecimalPlacesToDisplay (1);
     ceilingSlider.setTextValueSuffix (" dBTP");
     ceilingSlider.setDoubleClickReturnValue (true, -1.0);
@@ -92,6 +92,7 @@ void MasterLensAudioProcessorEditor::buildControls()
     addAndMakeVisible (themeButton);
 
     exportButton.onClick = [this] { exportReport(); };
+    exportButton.getProperties().set ("mlPrimary", true);
     addAndMakeVisible (exportButton);
 
     snapshotA.onClick = [this] { recallSnapshot (0); };

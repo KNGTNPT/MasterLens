@@ -16,21 +16,22 @@ namespace ml
 */
 namespace tokens
 {
-inline constexpr float display = 34.0f;   // hero reading
-inline constexpr float value   = 32.0f;   // metric/readout values
-inline constexpr float section = 16.0f;   // section title
-inline constexpr float label   = 13.0f;   // control label
+inline constexpr float display = 32.0f;   // five-column readout band
+inline constexpr float value   = 30.0f;   // secondary readings
+inline constexpr float section = 14.0f;   // page / group title
+inline constexpr float label   = 12.0f;   // control label
 inline constexpr float aux     = 12.0f;   // secondary copy
 inline constexpr float unit    = 11.0f;   // units, axis labels, time codes
 
-inline constexpr float radiusCard    = 8.0f;
-inline constexpr float radiusControl = 4.0f;
+inline constexpr float radiusCard    = 6.0f;
+inline constexpr float radiusControl = 5.0f;
 
-inline constexpr int rowHeight     = 36;
-inline constexpr int controlHeight = 30;
-inline constexpr int cardHeight    = 104;
+inline constexpr int rowHeight     = 32;
+inline constexpr int controlHeight = 28;
+inline constexpr int cardHeight    = 76;   // legacy name; now the readout band
 inline constexpr int gap           = 8;
-inline constexpr int margin        = 16;
+inline constexpr int groupGap      = 24;
+inline constexpr int margin        = 20;
 } // namespace tokens
 
 /** Runtime interface zoom (1.0 - 2.0).
@@ -81,25 +82,24 @@ inline juce::String scaleText (float s) { return juce::String (juce::roundToInt 
 */
 namespace theme
 {
-inline juce::Colour background { 0xff141517 };
-inline juce::Colour card       { 0xff1a1b1e };
-inline juce::Colour cardAlt    { 0xff202226 };
-inline juce::Colour raised     { 0xff202226 };
-inline juce::Colour border     { 0x12ffffff };
-inline juce::Colour borderSoft { 0x0affffff };
-inline juce::Colour divider    { 0x12ffffff };
-inline juce::Colour text       { 0xffe9e9e7 };
-inline juce::Colour textDim    { 0xff9b9da2 };
-inline juce::Colour textFaint  { 0xff6c6f75 };
-inline juce::Colour accent     { 0xffc2703c };
-inline juce::Colour accentHover{ 0xffd07c45 };
-inline juce::Colour accentSoft { 0x24c2703c };
-inline juce::Colour cyan       { 0xffc2703c };
-inline juce::Colour good       { 0xff6fa36f };
-inline juce::Colour info       { 0xffc2703c };
-inline juce::Colour warn       { 0xffc99a3f };
-inline juce::Colour bad        { 0xffc25b5b };
-inline juce::Colour violet     { 0xff8a5a3d };
+inline juce::Colour background { 0xff0b0e13 };
+inline juce::Colour card       { 0xff141922 };
+inline juce::Colour cardAlt    { 0xff1b222d };
+inline juce::Colour raised     { 0xff1b222d };
+inline juce::Colour border     { 0xff232b38 };
+inline juce::Colour borderSoft { 0xff1e2632 };
+inline juce::Colour divider    { 0xff1e2632 };
+inline juce::Colour text       { 0xffe6eaf2 };
+inline juce::Colour textDim    { 0xff9aa6b8 };
+inline juce::Colour textFaint  { 0xff7e8a9c };
+inline juce::Colour accent     { 0xff4c8dff };
+inline juce::Colour accentSoft { 0xff1e2c46 };
+inline juce::Colour cyan       { 0xff46c8d8 };
+inline juce::Colour good       { 0xff35c48a };
+inline juce::Colour info       { 0xff4c8dff };
+inline juce::Colour warn       { 0xfff5a623 };
+inline juce::Colour bad        { 0xffff5c5c };
+inline juce::Colour violet     { 0xff8b7bff };
 
 inline bool dark { true };
 inline int revisionCounter { 0 };
@@ -110,19 +110,26 @@ inline int revision() noexcept { return revisionCounter; }
 void apply (bool useDark);
 } // namespace theme
 
-/** Matte-instrument surface helpers.
+/** Instrument surfaces: exactly three materials.
 
-    The texture and shadows are rendered from small cached images, never with a
-    live blur. Panel fills carry only a 1 px inner highlight; cards do not get
-    outlines.
+    Flat     data / curves / type - no texture, no gradient.
+    Raised   panels and buttons - one top highlight, two-stop <=5% gradient,
+             one 0 1px 2px shadow. No live blur.
+    Recessed tracks, fields and table bodies - top inner shadow, bottom highlight.
+
+    Decoration is limited to hairlines, 3 px chart corner ticks and 01/02 group
+    numbers. There is no noise, vignette, glass, neon or random dot field.
 */
 namespace surface
 {
 void panel (juce::Graphics&, juce::Rectangle<float> area, bool raised = false);
 void graph (juce::Graphics&, juce::Rectangle<float> area);
-void noise (juce::Graphics&, juce::Rectangle<float> area);
-void vignette (juce::Graphics&, juce::Rectangle<float> area);
-void shadow (juce::Graphics&, juce::Rectangle<float> area, float radius = tokens::radiusCard);
+void raised (juce::Graphics&, juce::Rectangle<float> area, float radius = tokens::radiusControl);
+void recessed (juce::Graphics&, juce::Rectangle<float> area, float radius = tokens::radiusControl);
+void hairlineH (juce::Graphics&, float x1, float x2, float y, juce::Colour = theme::divider);
+void hairlineV (juce::Graphics&, float x, float y1, float y2, juce::Colour = theme::divider);
+void cornerTicks (juce::Graphics&, juce::Rectangle<float> area, juce::Colour = theme::border);
+void glow (juce::Graphics&, juce::Rectangle<float> area, juce::Colour, float radius = tokens::radiusControl);
 } // namespace surface
 
 juce::String typefaceName();
@@ -211,6 +218,10 @@ public:
 
     void drawButtonBackground (juce::Graphics&, juce::Button&, const juce::Colour&,
                                bool isMouseOver, bool isButtonDown) override;
+    void drawButtonText (juce::Graphics&, juce::TextButton&,
+                         bool isMouseOver, bool isButtonDown) override;
+    void drawToggleButton (juce::Graphics&, juce::ToggleButton&,
+                           bool isMouseOver, bool isButtonDown) override;
 
     void drawComboBox (juce::Graphics&, int width, int height, bool isButtonDown,
                        int buttonX, int buttonY, int buttonW, int buttonH,
@@ -221,11 +232,29 @@ public:
     juce::Rectangle<int> getTooltipBounds (const juce::String&, juce::Point<int> screenPos,
                                            juce::Rectangle<int> parentArea) override;
 
+    void drawScrollbar (juce::Graphics&, juce::ScrollBar&, int x, int y, int width, int height,
+                        bool isScrollbarVertical, int thumbStartPosition, int thumbSize,
+                        bool isMouseOver, bool isMouseDown) override;
+    void drawScrollbarButton (juce::Graphics&, juce::ScrollBar&, int width, int height,
+                              int buttonDirection, bool isScrollbarVertical,
+                              bool isMouseOver, bool isButtonDown) override;
+
+    void fillTextEditorBackground (juce::Graphics&, int width, int height,
+                                   juce::TextEditor&) override;
+    void drawTextEditorOutline (juce::Graphics&, int width, int height,
+                                juce::TextEditor&) override;
+
+    void drawPopupMenuBackground (juce::Graphics&, int width, int height) override;
+    void drawPopupMenuItem (juce::Graphics&, const juce::Rectangle<int>& area,
+                            bool isSeparator, bool isActive, bool isHighlighted,
+                            bool isTicked, bool hasSubMenu, const juce::String& text,
+                            const juce::String& shortcutKeyText,
+                            const juce::Drawable* icon, const juce::Colour* textColour) override;
+
     juce::Font getComboBoxFont (juce::ComboBox&) override;
     juce::Font getLabelFont (juce::Label&) override;
     juce::Font getPopupMenuFont() override;
     juce::Font getTextButtonFont (juce::TextButton&, int buttonHeight) override;
-    void drawPopupMenuBackground (juce::Graphics&, int width, int height) override;
 };
 
 /** Legacy name kept so older call sites still compile. */

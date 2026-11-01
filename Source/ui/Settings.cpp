@@ -111,10 +111,7 @@ void SettingsPanel::paint (juce::Graphics& g)
 
     const auto card = cardBounds().toFloat();
 
-    g.setColour (theme::card);
-    g.fillRoundedRectangle (card, tokens::radiusCard);
-    g.setColour (theme::border);
-    g.drawRoundedRectangle (card.reduced (0.5f), tokens::radiusCard, 1.0f);
+    surface::raised (g, card, tokens::radiusCard);
 
     auto l = settingsLayout (getLocalBounds());
 

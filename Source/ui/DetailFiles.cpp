@@ -93,36 +93,31 @@ void DetailArea::paintFiles (juce::Graphics& g)
     auto area = contentArea().withTrimmedTop (30);
     area.removeFromBottom (kFileButtonRow);
 
-    // ---- offline mode band ---------------------------------------------------
+    // ---- offline mode band (flat, no card) ----------------------------------
     {
         auto band = area.removeFromTop (kFileBandRow);
-        g.setColour (theme::raised);
-        g.fillRoundedRectangle (band.toFloat(), tokens::radiusControl);
         g.setColour (theme::accent);
-        g.fillEllipse ((float) band.getX() + 12.0f, (float) band.getCentreY() - 3.0f, 6.0f, 6.0f);
+        g.fillEllipse ((float) band.getX(), (float) band.getCentreY() - 3.0f, 6.0f, 6.0f);
         g.setColour (theme::textDim);
         g.setFont (uiFont (tokens::aux));
         g.drawText (T ("文件 QC · 离线分析结果 · 不随播放更新",
                        "File QC · offline results · does not follow playback"),
-                    band.withTrimmedLeft (26), juce::Justification::centredLeft);
+                    band.withTrimmedLeft (14), juce::Justification::centredLeft);
         g.setColour (theme::textFaint);
         g.setFont (monoFont (tokens::unit));
         g.drawText (T ("原生采样率 · 后台线程", "native rate · worker thread"),
-                    band.withTrimmedRight (12), juce::Justification::centredRight);
+                    band, juce::Justification::centredRight);
+        surface::hairlineH (g, (float) band.getX(), (float) band.getRight(),
+                            (float) band.getBottom() - 1.0f);
         area.removeFromTop (kFileDropGap);
     }
 
     // ---- drop zone / compact status -----------------------------------------
-    const int dropH = fileResults.empty() ? 88 : 34;
+    const int dropH = fileResults.empty() ? 76 : 28;
     auto drop = area.removeFromTop (dropH);
     area.removeFromTop (kFileDropGap);
 
-    g.setColour (fileBusy ? theme::accent.withAlpha (0.08f) : theme::raised.withAlpha (0.55f));
-    g.fillRoundedRectangle (drop.toFloat(), tokens::radiusCard);
-    g.setColour (fileBusy ? theme::accent.withAlpha (0.55f) : theme::divider);
-    g.drawRoundedRectangle (drop.toFloat().reduced (0.5f), tokens::radiusCard, 1.0f);
-
-    auto text = drop.reduced (14, fileResults.empty() ? 9 : 5);
+    auto text = drop;
 
     if (fileResults.empty())
     {
@@ -171,7 +166,8 @@ void DetailArea::paintFiles (juce::Graphics& g)
         g.setFont (uiFont (tokens::section));
         g.drawFittedText (T ("还没有文件结果。分析一个专辑文件夹后，这里会列出每首歌的读数。",
                              "No file results yet. Analyse an album folder and every track will appear here."),
-                          table, juce::Justification::centred, 2);
+                          table.removeFromTop (22).reduced (2, 0),
+                          juce::Justification::centredLeft, 1);
         return;
     }
 
@@ -228,17 +224,14 @@ void DetailArea::paintFiles (juce::Graphics& g)
         if (rowArea.getHeight() < 18)
             break;
 
-        if (row % 2 == 0)
-        {
-            g.setColour (theme::raised.withAlpha (0.38f));
-            g.fillRect (rowArea.withTrimmedRight (8));
-        }
-
         if (resultIndex == fileSelected)
         {
             g.setColour (theme::accentSoft);
-            g.fillRoundedRectangle (rowArea.withTrimmedRight (8).toFloat(), tokens::radiusControl);
+            g.fillRect (rowArea.withTrimmedRight (8));
         }
+
+        surface::hairlineH (g, (float) rowArea.getX(), (float) rowArea.getRight() - 8.0f,
+                            (float) rowArea.getBottom() - 1.0f);
 
         auto c = rowArea.withTrimmedRight (8).reduced (10, 0);
         FileColumns rowCols (c);
@@ -300,9 +293,11 @@ void DetailArea::paintFiles (juce::Graphics& g)
         const auto& r = fileResults[(size_t) fileSelected];
         auto detail = table.withY (table.getBottom() + 8).withHeight (54);
 
-        g.setColour (theme::raised);
-        g.fillRoundedRectangle (detail.toFloat(), tokens::radiusControl);
-        auto inner = detail.reduced (12, 6);
+        surface::hairlineH (g, (float) detail.getX(), (float) detail.getRight(),
+                            (float) detail.getY());
+        surface::hairlineH (g, (float) detail.getX(), (float) detail.getRight(),
+                            (float) detail.getBottom() - 1.0f);
+        auto inner = detail.reduced (10, 7);
 
         g.setColour (theme::text);
         g.setFont (uiFont (tokens::label, true));

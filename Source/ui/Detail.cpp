@@ -9,7 +9,6 @@ namespace ml
 //==============================================================================
 DetailArea::DetailArea()
 {
-    addChildComponent (tiles);
     addChildComponent (levelBars);
     addChildComponent (history);
 
@@ -17,6 +16,12 @@ DetailArea::DetailArea()
     {
         if (onHistorySeek != nullptr)
             onHistorySeek (age);
+    };
+
+    history.onSelection = [this] (double fromAge, double toAge)
+    {
+        if (onHistorySelection != nullptr)
+            onHistorySelection (fromAge, toAge);
     };
     addChildComponent (spectrum);
     addChildComponent (spectrogram);
@@ -162,6 +167,9 @@ void DetailArea::refreshTexts()
     spectrumViewButtons[0].setButtonText (T ("频谱", "Spectrum"));
     spectrumViewButtons[1].setButtonText (T ("频谱图", "Waterfall"));
     spectrumViewButtons[2].setButtonText (T ("频段热力", "Band heat"));
+
+    for (auto& b : spectrumViewButtons)
+        b.getProperties().set ("mlSegment", true);
     spectrumViewButtons[(size_t) spectrumView].setToggleState (true, juce::dontSendNotification);
 
     reportButton.setButtonText (T ("导出报告", "Export report"));
@@ -223,7 +231,6 @@ void DetailArea::invalidateDisplays()
 
 void DetailArea::hideAllChildren()
 {
-    tiles.setVisible (false);
     levelBars.setVisible (false);
     history.setVisible (false);
     spectrum.setVisible (false);
@@ -267,7 +274,7 @@ void DetailArea::hideAllChildren()
 
 juce::Rectangle<int> DetailArea::contentArea() const
 {
-    return getLocalBounds().reduced (16, 12);
+    return getLocalBounds().reduced (20, 12);
 }
 
 void DetailArea::setPage (PageId p)
@@ -287,6 +294,12 @@ void DetailArea::setHistory (const std::vector<float>& curve, float targetLufs, 
         history.setData (curve, targetLufs);
         history.setBand (lra);
     }
+}
+
+void DetailArea::setPlayhead (double seconds, double totalSeconds)
+{
+    if (page == PageId::loudness)
+        history.setPlayhead (seconds, totalSeconds);
 }
 
 void DetailArea::expandFirstIssueForSnapshot()
@@ -329,7 +342,7 @@ void DetailArea::setSpectrumView (int view)
     spectrogram.setMode (spectrumView == 2 ? SpectrogramDisplay::Mode::bands
                                            : SpectrogramDisplay::Mode::spectrogram);
     spectrogram.setVisible (spectrumView != 0);
-    bands.setVisible (true);
+    bands.setVisible (false);   // the 2.0.2 right column is painted by DetailArea
     resized();
     repaint();
 }
@@ -449,12 +462,12 @@ void DetailArea::setState (UiState s)
     switch (page)
     {
         case PageId::loudness:
+            // Meters follow every UI frame; the 10 Hz source is smoothed in
+            // LevelMeters. Events and text stay at their slower cadence.
+            levelBars.setValues (state.stats, state.target);
+
             if ((tick % 3) == 0)
             {
-                tiles.setValues (state.stats, state.basis, state.platform,
-                                 state.target, state.ceiling, state.stats.hasSignal);
-                levelBars.setValues (state.stats, state.target);
-
                 const double now = state.stats.hostPosition > 0.0
                                        ? state.stats.hostPosition : state.stats.elapsed;
                 std::vector<HistoryGraph::Event> evs;
@@ -546,21 +559,25 @@ void DetailArea::resized()
     {
         case PageId::loudness:
         {
-            const bool compact = area.getHeight() < 300;
-            const int gap = compact ? 6 : tokens::gap;
-            const int cardsH = area.getWidth() >= 560
-                                   ? (compact ? 92 : tokens::cardHeight)
-                                   : tokens::cardHeight * 2 + tokens::gap;
+            const bool compact = area.getWidth() < 700;
+            const int sideW = compact ? 0 : juce::jlimit (220, 276, area.getWidth() / 3);
 
-            tiles.setBounds (area.removeFromTop (juce::jmin (cardsH, area.getHeight() / 2)));
-            area.removeFromTop (gap);
-
-            const int metersH = compact ? 68 : juce::jlimit (88, 96, area.getHeight() / 3);
-            levelBars.setBounds (area.removeFromTop (metersH));
-            area.removeFromTop (gap);
+            if (sideW > 0)
+            {
+                auto side = area.removeFromRight (sideW);
+                area.removeFromRight (20);
+                levelBars.setBounds (side.removeFromTop (juce::jmin (150, side.getHeight() / 2)));
+                loudnessSideArea = side;   // remaining right column, painted on the page
+            }
+            else
+            {
+                levelBars.setBounds (area.removeFromTop (104));
+                area.removeFromTop (10);
+                loudnessSideArea = area.removeFromBottom (72);
+                area.removeFromBottom (10);
+            }
 
             history.setBounds (area);
-            tiles.setVisible (true);
             levelBars.setVisible (true);
             history.setVisible (true);
             break;
@@ -568,39 +585,49 @@ void DetailArea::resized()
 
         case PageId::spectrum:
         {
-            const int footerH = juce::jlimit (86, 118, area.getHeight() / 4);
-            const int buttonsH = 34;
+            const bool compact = area.getWidth() < 760;
+            auto modes = area.removeFromTop (26);
+            area.removeFromTop (8);
 
-            auto buttons = area.removeFromBottom (buttonsH);
+            const int sideW = compact ? 0 : juce::jlimit (200, 240, area.getWidth() / 4);
+
+            if (sideW > 0)
+            {
+                auto side = area.removeFromRight (sideW);
+                area.removeFromRight (20);
+                spectrumSideArea = side;
+            }
+            else
+            {
+                spectrumSideArea = area.removeFromBottom (84);
+                area.removeFromBottom (10);
+            }
+
+            bands.setVisible (false);
+
+            auto buttons = area.removeFromBottom (28);
             area.removeFromBottom (6);
-            auto footer = area.removeFromBottom (footerH);
-            area.removeFromBottom (tokens::gap);
-
-            auto chipRow = footer.removeFromBottom (28);
-
             spectrum.setBounds (area);
             spectrogram.setBounds (area);
-            bands.setBounds (footer);
-            juce::ignoreUnused (chipRow);
 
-            auto row = buttons.withTrimmedRight (4);
-            refClear.setBounds (row.removeFromRight (58));
-            row.removeFromRight (5);
-            refAlign.setBounds (row.removeFromRight (66));
-            row.removeFromRight (5);
-            refImport.setBounds (row.removeFromRight (102));
-            row.removeFromRight (5);
-            refPlay.setBounds (row.removeFromRight (84));
-
-            auto modes = row.withTrimmedRight (8);
-            const int modeW = juce::jlimit (54, 76, (modes.getWidth() - 10) / 3);
+            auto modeRow = modes.withTrimmedRight (4);
+            const int modeW = juce::jlimit (54, 72, (modeRow.getWidth() - 1) / 3);
+            modeRow = modeRow.removeFromRight (modeW * 3);
 
             for (auto& b : spectrumViewButtons)
             {
-                b.setBounds (modes.removeFromLeft (modeW).withSizeKeepingCentre (modeW, 28));
-                modes.removeFromLeft (5);
+                b.setBounds (modeRow.removeFromLeft (modeW).withSizeKeepingCentre (modeW, 24));
                 b.setVisible (true);
             }
+
+            auto refRow = buttons.withTrimmedRight (4);
+            refClear.setBounds (refRow.removeFromRight (54).withSizeKeepingCentre (54, 24));
+            refRow.removeFromRight (4);
+            refAlign.setBounds (refRow.removeFromRight (62).withSizeKeepingCentre (62, 24));
+            refRow.removeFromRight (4);
+            refImport.setBounds (refRow.removeFromRight (92).withSizeKeepingCentre (92, 24));
+            refRow.removeFromRight (4);
+            refPlay.setBounds (refRow.removeFromRight (78).withSizeKeepingCentre (78, 24));
 
             spectrum.setVisible (spectrumView == 0);
             spectrogram.setVisible (spectrumView != 0);

@@ -347,12 +347,21 @@ private:
 
     void renderLogo()
     {
-        const auto write = [this] (int size, const juce::String& relative)
+        const auto write = [this] (int size, const juce::String& relative,
+                                   bool background, bool monochrome)
         {
             juce::Image image (juce::Image::ARGB, size, size, true);
             juce::Graphics g (image);
 
-            ml::paintLogoMark (g, juce::Rectangle<float> (0.0f, 0.0f, (float) size, (float) size));
+            if (background)
+                g.fillAll (ml::theme::background);
+
+            auto mark = juce::Rectangle<float> (0.0f, 0.0f, (float) size, (float) size);
+
+            if (background)
+                mark = mark.reduced ((float) size * 0.16f);
+
+            ml::paintLogoMark (g, mark, monochrome);
 
             const auto file = juce::File::getCurrentWorkingDirectory().getChildFile (relative);
             file.getParentDirectory().createDirectory();
@@ -366,8 +375,19 @@ private:
             }
         };
 
-        write (1024, "packaging/icon.png");
-        write (768, "docs/logo.png");
+        write (1024, "packaging/icon.png", true, false);
+        write (768, "docs/logo.png", false, false);
+        write (512, "docs/logo-512.png", false, false);
+        write (128, "docs/logo-128.png", false, false);
+        write (64, "docs/logo-64.png", false, false);
+        write (32, "docs/logo-32.png", false, false);
+        write (16, "docs/logo-16.png", false, false);
+        write (64, "docs/logo-mono-64.png", false, true);
+        write (64, "docs/logo-dark-64.png", true, false);
+
+        ml::theme::apply (false);
+        write (64, "docs/logo-light-64.png", true, false);
+        ml::theme::apply (true);
     }
 
     void saveAndQuit()
