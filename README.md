@@ -191,7 +191,7 @@ There is no bus ARA. Most hosts expose ARA only on audio tracks, usually as the 
 - **macOS 公证 / Windows 代码签名**：需要证书和 notary 凭据；当前仍是 ad-hoc 签名，Windows 由 CI 编译验证。
 - **Windows 实机验证**：目前只有 CI 编译和安装包生成，没有在实体机器上的 DAW 回归。
 
-这些不是忘了写，而是没有外部 SDK / 证书时不能诚实地宣称完成。以后有这些条件，再补。
+这些没做，是因为手里没有 Avid / ARA SDK、DDP 规格和签名证书。没有条件就不冒充完成；以后拿到了再补。
 
 ---
 
