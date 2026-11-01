@@ -170,7 +170,7 @@ The 2.0 release added offline file and folder QC at native sample rates, host-pl
 
 There is no bus ARA. Most hosts expose ARA only on audio tracks, usually as the first insert; a bus analyser cannot rely on it. A per-track ARA variant is a possible future product, not part of 2.0.
 
-**Verified:** 73 offline DSP assertions, `auval`, CI on macOS, Windows x64 and Windows ARM64, and a no-DSP-change report comparison. At 1120×700 the loudness page runs at 63.2 Hz with paint p95 2.85 ms; spectrum paint p95 is 6.97 ms, stereo 1.78 ms and File QC 1.58 ms. UI CPU is 1.74% / 2.82% / 1.72% / 1.68% respectively; the editor closed costs 0.41%.
+**Verified:** 73 offline DSP assertions, `auval`, a local universal macOS build/DMG, Windows x64 and Windows ARM64 CI, and a no-DSP-change report comparison. At 1120×700 the loudness page runs at 63.2 Hz with paint p95 2.85 ms; spectrum paint p95 is 6.97 ms, stereo 1.78 ms and File QC 1.58 ms. UI CPU is 1.74% / 2.82% / 1.72% / 1.68% respectively; the editor closed costs 0.41%.
 
 ---
 
