@@ -10,13 +10,12 @@ namespace ml
 {
 /** Design tokens shared by every module.
 
-    Sizes follow the 8 pt grid; there are exactly two corner radii and six text
-    sizes. uiFont() applies the JUCE line-height compensation so the rendered
-    glyph height matches the token.
+    Base sizes shared by the graphite instrument surface. uiFont() applies
+    the JUCE line-height compensation so rendered glyphs match the token.
 */
 namespace tokens
 {
-inline constexpr float display = 32.0f;   // five-column readout band
+inline constexpr float display = 32.0f;   // main readout
 inline constexpr float value   = 30.0f;   // secondary readings
 inline constexpr float section = 14.0f;   // page / group title
 inline constexpr float label   = 12.0f;   // control label
@@ -82,24 +81,24 @@ inline juce::String scaleText (float s) { return juce::String (juce::roundToInt 
 */
 namespace theme
 {
-inline juce::Colour background { 0xff0b0e13 };
-inline juce::Colour card       { 0xff141922 };
-inline juce::Colour cardAlt    { 0xff1b222d };
-inline juce::Colour raised     { 0xff1b222d };
-inline juce::Colour border     { 0xff232b38 };
-inline juce::Colour borderSoft { 0xff1e2632 };
-inline juce::Colour divider    { 0xff1e2632 };
-inline juce::Colour text       { 0xffe6eaf2 };
-inline juce::Colour textDim    { 0xff9aa6b8 };
-inline juce::Colour textFaint  { 0xff7e8a9c };
-inline juce::Colour accent     { 0xff4c8dff };
-inline juce::Colour accentSoft { 0xff1e2c46 };
-inline juce::Colour cyan       { 0xff46c8d8 };
-inline juce::Colour good       { 0xff35c48a };
-inline juce::Colour info       { 0xff4c8dff };
-inline juce::Colour warn       { 0xfff5a623 };
-inline juce::Colour bad        { 0xffff5c5c };
-inline juce::Colour violet     { 0xff8b7bff };
+inline juce::Colour background { 0xff171a1b };
+inline juce::Colour card       { 0xff202425 };
+inline juce::Colour cardAlt    { 0xff2a2f30 };
+inline juce::Colour raised     { 0xff2a2f30 };
+inline juce::Colour border     { 0xff3b4242 };
+inline juce::Colour borderSoft { 0xff303637 };
+inline juce::Colour divider    { 0xff303637 };
+inline juce::Colour text       { 0xffe5e9e3 };
+inline juce::Colour textDim    { 0xffa4afaa };
+inline juce::Colour textFaint  { 0xff89958f };
+inline juce::Colour accent     { 0xff99c9b4 };
+inline juce::Colour accentSoft { 0xff30463e };
+inline juce::Colour cyan       { 0xff91b9c5 };
+inline juce::Colour good       { 0xff99c9b4 };
+inline juce::Colour info       { 0xff99c9b4 };
+inline juce::Colour warn       { 0xffdbb57a };
+inline juce::Colour bad        { 0xffe1897c };
+inline juce::Colour violet     { 0xffb7abd0 };
 
 inline bool dark { true };
 inline int revisionCounter { 0 };

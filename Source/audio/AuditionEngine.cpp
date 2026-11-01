@@ -119,13 +119,19 @@ void AuditionEngine::process (juce::AudioBuffer<float>& buffer)
     const float* inL = buffer.getReadPointer (0);
     const float* inR = buffer.getNumChannels() > 1 ? buffer.getReadPointer (1) : inL;
 
-    for (int i = 0; i < n; ++i)
+    // Capture in contiguous spans; the default bypass path used to perform
+    // a variable integer division for every incoming sample.
+    for (int offset = 0; offset < n;)
     {
-        left[(size_t) writePos] = inL[i];
-        right[(size_t) writePos] = inR[i];
-        writePos = (writePos + 1) % ringLength;
-        ++totalSamples;
+        const int count = juce::jmin (n - offset, ringLength - writePos);
+        std::copy_n (inL + offset, count, left.data() + writePos);
+        std::copy_n (inR + offset, count, right.data() + writePos);
+        writePos += count;
+        if (writePos == ringLength)
+            writePos = 0;
+        offset += count;
     }
+    totalSamples += n;
 
     if (pendingStart.exchange (false, std::memory_order_acq_rel))
     {

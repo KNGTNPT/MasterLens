@@ -11,6 +11,7 @@ void LevelMeters::setValues (const StatsSnapshot& s, float targetLufs)
                          : 0.016f;
     lastUpdateMs = now;
 
+    ++updateCount;
     stats = s;
     target = targetLufs;
 

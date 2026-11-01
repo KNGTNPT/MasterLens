@@ -11,42 +11,42 @@ void theme::apply (bool useDark)
 
     if (useDark)
     {
-        theme::background = juce::Colour (0xff0b0e13);
-        theme::card       = juce::Colour (0xff141922);
-        theme::cardAlt    = juce::Colour (0xff1b222d);
-        theme::raised     = juce::Colour (0xff1b222d);
-        theme::border     = juce::Colour (0xff232b38);
-        theme::borderSoft = juce::Colour (0xff1e2632);
-        theme::divider    = juce::Colour (0xff1e2632);
-        theme::text       = juce::Colour (0xffe6eaf2);
-        theme::textDim    = juce::Colour (0xff9aa6b8);
-        theme::textFaint  = juce::Colour (0xff7e8a9c);
-        theme::accent     = juce::Colour (0xff4c8dff);
-        theme::accentSoft = juce::Colour (0xff1e2c46);
-        theme::cyan       = juce::Colour (0xff46c8d8);
-        theme::good       = juce::Colour (0xff35c48a);
-        theme::info       = juce::Colour (0xff4c8dff);
-        theme::warn       = juce::Colour (0xfff5a623);
-        theme::bad        = juce::Colour (0xffff5c5c);
-        theme::violet     = juce::Colour (0xff8b7bff);
+        theme::background = juce::Colour (0xff171a1b);
+        theme::card       = juce::Colour (0xff202425);
+        theme::cardAlt    = juce::Colour (0xff2a2f30);
+        theme::raised     = juce::Colour (0xff2a2f30);
+        theme::border     = juce::Colour (0xff3b4242);
+        theme::borderSoft = juce::Colour (0xff303637);
+        theme::divider    = juce::Colour (0xff303637);
+        theme::text       = juce::Colour (0xffe5e9e3);
+        theme::textDim    = juce::Colour (0xffa4afaa);
+        theme::textFaint  = juce::Colour (0xff89958f);
+        theme::accent     = juce::Colour (0xff99c9b4);
+        theme::accentSoft = juce::Colour (0xff30463e);
+        theme::cyan       = juce::Colour (0xff91b9c5);
+        theme::good       = juce::Colour (0xff99c9b4);
+        theme::info       = juce::Colour (0xff99c9b4);
+        theme::warn       = juce::Colour (0xffdbb57a);
+        theme::bad        = juce::Colour (0xffe1897c);
+        theme::violet     = juce::Colour (0xffb7abd0);
     }
     else
     {
-        theme::background = juce::Colour (0xfff1f5fb);
+        theme::background = juce::Colour (0xffe5e6df);
         theme::card       = juce::Colour (0xffffffff);
-        theme::cardAlt    = juce::Colour (0xfff7faff);
+        theme::cardAlt    = juce::Colour (0xffe9ece5);
         theme::raised     = juce::Colour (0xffffffff);
-        theme::border     = juce::Colour (0xffe2e9f3);
-        theme::borderSoft = juce::Colour (0xffedf2f9);
-        theme::divider    = juce::Colour (0xffedf2f9);
-        theme::text       = juce::Colour (0xff16232f);
-        theme::textDim    = juce::Colour (0xff55657a);
-        theme::textFaint  = juce::Colour (0xff63728a);
-        theme::accent     = juce::Colour (0xff2f7bf6);
-        theme::accentSoft = juce::Colour (0xffe6efff);
-        theme::cyan       = juce::Colour (0xff16b6c9);
+        theme::border     = juce::Colour (0xffc4cdc5);
+        theme::borderSoft = juce::Colour (0xffd0d7cf);
+        theme::divider    = juce::Colour (0xffd0d7cf);
+        theme::text       = juce::Colour (0xff26352e);
+        theme::textDim    = juce::Colour (0xff53665b);
+        theme::textFaint  = juce::Colour (0xff62776a);
+        theme::accent     = juce::Colour (0xff356d56);
+        theme::accentSoft = juce::Colour (0xffd6e5d9);
+        theme::cyan       = juce::Colour (0xff426b7a);
         theme::good       = juce::Colour (0xff14835a);
-        theme::info       = juce::Colour (0xff2f7bf6);
+        theme::info       = juce::Colour (0xff356d56);
         theme::warn       = juce::Colour (0xffb46a10);
         theme::bad        = juce::Colour (0xffc9302a);
         theme::violet     = juce::Colour (0xff5f4fe0);
@@ -185,88 +185,13 @@ void shadow (juce::Graphics& g, juce::Rectangle<float> area, float radius)
 }
 } // namespace surface
 
-#if 0
-static const juce::Image& noiseImage()
-{
-    static const juce::Image image = []
-    {
-        juce::Image img (juce::Image::ARGB, 256, 256, true);
-        juce::Random rng (0x4d4c4e);
-        juce::Image::BitmapData data (img, juce::Image::BitmapData::writeOnly);
-
-        for (int y = 0; y < img.getHeight(); ++y)
-            for (int x = 0; x < img.getWidth(); ++x)
-            {
-                const auto v = (juce::uint8) (rng.nextInt (256));
-                data.setPixelColour (x, y, juce::Colour::fromRGB (v, v, v));
-            }
-
-        return img;
-    }();
-
-    return image;
-}
-
-void noise (juce::Graphics& g, juce::Rectangle<float> area)
-{
-    g.setOpacity (theme::dark ? 0.025f : 0.018f);
-    g.drawImage (noiseImage(), area);
-    g.setOpacity (1.0f);
-}
-
-void vignette (juce::Graphics& g, juce::Rectangle<float> area)
-{
-    if (area.getWidth() < 8.0f || area.getHeight() < 8.0f)
-        return;
-
-    juce::ColourGradient grad (juce::Colour (0x00000000), area.getCentreX(), area.getCentreY(),
-                               juce::Colour (0x0f000000), area.getX(), area.getY(), true);
-    g.setGradientFill (grad);
-    g.fillRect (area);
-}
-
-void panel (juce::Graphics& g, juce::Rectangle<float> area, bool raised)
-{
-    const auto r = area.reduced (0.5f);
-    const auto base = raised ? theme::raised : theme::card;
-
-    g.setColour (base);
-    g.fillRoundedRectangle (r, tokens::radiusCard);
-
-    // One-pixel inner top highlight. It reads as a soft edge without a border.
-    g.setColour (juce::Colours::white.withAlpha (theme::dark ? 0.04f : 0.30f));
-    g.drawHorizontalLine (juce::roundToInt (r.getY() + 1.0f),
-                          r.getX() + tokens::radiusCard, r.getRight() - tokens::radiusCard);
-
-    if (raised)
-        shadow (g, r, tokens::radiusCard);
-}
-
-void graph (juce::Graphics& g, juce::Rectangle<float> area)
-{
-    panel (g, area, false);
-    vignette (g, area);
-    noise (g, area);
-}
-
-void shadow (juce::Graphics& g, juce::Rectangle<float> area, float radius)
-{
-    for (int i = 3; i >= 1; --i)
-    {
-        g.setColour (juce::Colours::black.withAlpha (0.035f * (float) (4 - i)));
-        g.fillRoundedRectangle (area.expanded ((float) i * 2.0f).translated (0.0f, 2.0f), radius + (float) i);
-    }
-}
-} // namespace surface
-#endif
-
 //==============================================================================
 juce::String typefaceName()
 {
     static const juce::String name = []
     {
         const juce::StringArray preferred { "PingFang SC", "Hiragino Sans GB", "Heiti SC",
-                                            "Songti SC", "Helvetica Neue" };
+                                            "Noto Sans CJK SC", "Helvetica Neue", "DejaVu Sans" };
         const auto all = juce::Font::findAllTypefaceNames();
 
         for (const auto& p : preferred)
@@ -305,7 +230,7 @@ juce::Font uiFont (float height, bool bold)
 
     juce::Font font (juce::FontOptions (typefaceName(), height * 1.22f,
                                         bold ? juce::Font::bold : juce::Font::plain)
-                         .withFallbacks ({ "PingFang SC", "Hiragino Sans GB", "Arial Unicode MS" }));
+                         .withFallbacks ({ "PingFang SC", "Hiragino Sans GB", "Noto Sans CJK SC", "Arial Unicode MS" }));
 
     cache.emplace (key, font);
     return font;
@@ -325,11 +250,11 @@ juce::Font monoFont (float height, bool bold)
     {
         const auto& all = allTypefaceNames();
 
-        for (const auto* candidate : { "SF Mono", "Menlo", "Monaco" })
+        for (const auto* candidate : { "SF Mono", "Menlo", "Monaco", "DejaVu Sans Mono" })
             if (all.contains (candidate))
                 return juce::String (candidate);
 
-        return juce::String ("Menlo");
+        return juce::Font::getDefaultMonospacedFontName();
     }();
 
     juce::Font font (juce::FontOptions (name, height * 1.1f,

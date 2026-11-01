@@ -50,7 +50,7 @@ std::vector<CheckResult> buildChecklist (const StatsSnapshot& stats,
 void paintEmptyState (juce::Graphics&, juce::Rectangle<int> area);
 
 //==============================================================================
-/** Five-column hardware readout: I / TP / LRA / PLR / delta.
+/** Vertical mastering readout: integrated dial, TP / LRA / PLR / delta.
 
     This is not a row of cards. One thin vertical rule separates columns, the
     numbers share a tabular right edge and only the 4 px status rule carries
@@ -64,8 +64,10 @@ public:
                     float ceilingDb, bool signal);
 
     void paint (juce::Graphics&) override;
+    int getUpdateCount() const noexcept { return updateCount; }
 
 private:
+    int updateCount = 0;
     void paintCell (juce::Graphics&, juce::Rectangle<int>, const juce::String& label,
                     const juce::String& value, const juce::String& unit,
                     const juce::String& hint, juce::Colour status);
@@ -110,8 +112,10 @@ class LevelMeters : public juce::Component
 public:
     void setValues (const StatsSnapshot& s, float targetLufs);
     void paint (juce::Graphics&) override;
+    int getUpdateCount() const noexcept { return updateCount; }
 
 private:
+    int updateCount = 0;
     void paintRow (juce::Graphics&, juce::Rectangle<int>, const juce::String& label,
                    const juce::String& windowText, float valueDb, float holdDb, juce::Colour colour);
 
@@ -131,13 +135,17 @@ class StereoMeters : public juce::Component
 public:
     void setValues (const StatsSnapshot& s);
     void paint (juce::Graphics&) override;
+    int getUpdateCount() const noexcept { return updateCount; }
 
 private:
+    int updateCount = 0;
     void paintMeter (juce::Graphics&, juce::Rectangle<int>, const juce::String& label,
                      const juce::String& readout, float normalised, juce::Colour fill,
                      float marker = -1.0f, juce::Colour status = juce::Colour (0xff6c6f75));
 
     StatsSnapshot stats;
+    double lastUpdateMs = 0.0;
+    float shownCorrelation = 0.0f, shownWidth = 0.0f, shownLowSide = 0.0f;
 };
 
 //==============================================================================

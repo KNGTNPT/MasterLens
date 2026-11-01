@@ -704,6 +704,46 @@ int main()
         }
     }
 
+    // FIR regression: direct shift-register reference, including ring wraps,
+    // impulses, random input, silence and reset. No mirrored storage/SIMD here.
+    {
+        ml::TruePeakDetector detector;
+        detector.prepare (sr);
+        float coefficients[4][24] {}, delay[24] {};
+        double kernel[96] {}, sum = 0.0;
+        for (int k=0;k<96;++k)
+        {
+            const double t = ((double) k-47.5)/4.0;
+            const double x = (double) k/95.0;
+            const double pi = juce::MathConstants<double>::pi;
+            kernel[k] = (std::abs(t)<1.0e-9 ? 1.0 : std::sin(pi*t)/(pi*t))
+                * (0.35875-0.48829*std::cos(2*pi*x)+0.14128*std::cos(4*pi*x)-0.01168*std::cos(6*pi*x));
+            sum += kernel[k];
+        }
+        for(int p=0;p<4;++p)
+            for(int j=0;j<24;++j)
+                coefficients[p][j]=(float)(kernel[p+4*j]*4.0/sum);
+        juce::Random rng(203);
+        double maximumError=0.0;
+        for(int n=0;n<32768;++n)
+        {
+            const float x=n<96 ? (n==31 ? 1.0f : 0.0f) : (rng.nextFloat()*2.0f-1.0f);
+            for(int j=23;j>0;--j) delay[j]=delay[j-1];
+            delay[0]=x;
+            float expected=std::abs(x);
+            for(int p=0;p<4;++p)
+            {
+                float accumulator=0.0f;
+                for(int j=0;j<24;++j) accumulator+=coefficients[p][j]*delay[j];
+                expected=juce::jmax(expected,std::abs(accumulator));
+            }
+            maximumError=juce::jmax(maximumError,(double)std::abs(detector.process(x)-expected));
+        }
+        check("TP direct convolution",maximumError,0.0,1.0e-6);
+        detector.reset();
+        check("TP reset clears mirror",detector.process(0.0f),0.0,0.0);
+    }
+
     // ---------------------------------------------------------------------
     // 10) CPU benchmark (stereo, 48 kHz, 512-sample blocks)
     // ---------------------------------------------------------------------

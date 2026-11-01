@@ -313,26 +313,23 @@ public:
     /** Returns the maximum absolute interpolated value for this input sample. */
     inline float process (float x) noexcept
     {
-        history[(size_t) head] = x;
+        // Mirroring makes the 24-tap window contiguous across the ring wrap.
+        // Accumulate the four phases together: one history load per tap, and
+        // independent SIMD lanes without reassociating any phase's sum.
+        history[(size_t) head] = history[(size_t) (head + historySize)] = x;
+        const float* samples = history + head + historySize;
         head = (head + 1) & (historySize - 1);
-
-        float maxAbs = std::abs (x);
-        int idx = head - 1;
-
-        for (int p = 0; p < phases; ++p)
+        float phase0 = 0.0f, phase1 = 0.0f, phase2 = 0.0f, phase3 = 0.0f;
+        for (int j = 0; j < tapsPerPhase; ++j)
         {
-            float acc = 0.0f;
-            int i = idx;
-            const float* c = coeffs[p];
-
-            for (int j = 0; j < tapsPerPhase; ++j)
-            {
-                acc += c[j] * history[(size_t) (i & (historySize - 1))];
-                --i;
-            }
-
-            maxAbs = juce::jmax (maxAbs, std::abs (acc));
+            const float sample = samples[-j];
+            phase0 += coeffs[j][0] * sample;
+            phase1 += coeffs[j][1] * sample;
+            phase2 += coeffs[j][2] * sample;
+            phase3 += coeffs[j][3] * sample;
         }
+        const float maxAbs = juce::jmax (std::abs (x), std::abs (phase0), std::abs (phase1),
+                                        juce::jmax (std::abs (phase2), std::abs (phase3)));
 
         return maxAbs;
     }
@@ -342,8 +339,8 @@ private:
     static constexpr int tapsPerPhase = 24;
     static constexpr int historySize = 32;   // power of two, >= tapsPerPhase
 
-    float coeffs[phases][tapsPerPhase] {};
-    float history[historySize] {};
+    alignas (16) float coeffs[tapsPerPhase][phases] {};
+    float history[historySize * 2] {};
     int head = 0;
 };
 

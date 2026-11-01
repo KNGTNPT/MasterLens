@@ -164,7 +164,7 @@ void DetailArea::paintLoudness (juce::Graphics& g)
     if (loudnessSideArea.isEmpty())
         return;
 
-    const bool compact = loudnessSideArea.getHeight() < 100;
+    const bool compact = loudnessSideArea.getHeight() < 150;
     auto area = loudnessSideArea;
 
     const auto drawMetric = [&] (juce::Rectangle<int> cell, const juce::String& label,
@@ -181,7 +181,8 @@ void DetailArea::paintLoudness (juce::Graphics& g)
         g.setFont (monoFont (13.0f, true));
         g.drawText (value, inner.removeFromTop (18), juce::Justification::centredLeft, false);
 
-        auto track = inner.removeFromTop (4).withTrimmedTop (4).toFloat();
+        inner.removeFromTop (4);
+        auto track = inner.removeFromTop (4).toFloat();
         g.setColour (theme::borderSoft);
         g.fillRect (track);
         g.setColour (colour);

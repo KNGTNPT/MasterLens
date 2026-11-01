@@ -48,6 +48,10 @@ public:
         captureAlbum();
     }
     void runTimerTickForSnapshot() { timerCallback(); }
+    int getMeterTicksForBenchmark() const noexcept { return detail.getMeterUpdates(); }
+    int getReadoutTicksForBenchmark() const noexcept { return readout.getUpdateCount(); }
+    int getTimerTicksForBenchmark() const noexcept { return timerTicks; }
+    int getPresentationTicksForBenchmark() const noexcept { return presentationTicks; }
     void setSpectrumViewForSnapshot (int view) { detail.setSpectrumView (view); }
 
     void writeReportPdfForSnapshot (const juce::File& file)
@@ -201,6 +205,7 @@ private:
     float lraTargetSetting = 8.0f;
     float clipAllowSetting = 0.0f;
     int frameCounter = 0;
+    int timerTicks = 0, presentationTicks = 0;
     juce::String lastStatsSignature;
     int tick = 0;
     int selectedPage = 0;

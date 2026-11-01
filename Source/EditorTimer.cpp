@@ -65,6 +65,7 @@ void MasterLensAudioProcessorEditor::timerCallback()
         return;
 
     ++frameCounter;
+    ++timerTicks;
 
     if (holdFromKeyboard && ! juce::KeyPress::isKeyCurrentlyDown (juce::KeyPress::spaceKey))
     {
@@ -73,11 +74,13 @@ void MasterLensAudioProcessorEditor::timerCallback()
     }
 
     const bool spectrumVisible = selectedPage == (int) ml::PageId::spectrum;
-    const bool fastPage = selectedPage == (int) ml::PageId::loudness;
+    const bool fastPage = selectedPage == (int) ml::PageId::loudness
+                       || selectedPage == (int) ml::PageId::stereo
+                       || selectedPage == (int) ml::PageId::truePeak
+                       || spectrumVisible;
 
-    // Only the loudness page gets the full 60 Hz pass. Moving the throttle
-    // before the analyser/FX work is what brings the spectrum page below its
-    // 3% budget instead of doing FFT work on frames that will be skipped.
+    // Present moving meters on every tick. Static reports can update at half
+    // this rate; FFT and event attribution have separate slower schedules.
     if (! fastPage && (frameCounter & 1) != 0)
         return;
 
@@ -114,7 +117,7 @@ void MasterLensAudioProcessorEditor::timerCallback()
 
     // Spectrum frames update on the 30 Hz analytical pass; other pages still
     // get a slow band refresh. No FFT while Hold is engaged.
-    const bool runAnalyzer = spectrumVisible || (frameCounter % 12) == 0;
+    const bool runAnalyzer = (spectrumVisible && (frameCounter % 2) == 0) || (frameCounter % 12) == 0;
 
     if (! frozen && runAnalyzer)
         analyzer.update (processor.spectrumRing);
@@ -128,6 +131,7 @@ void MasterLensAudioProcessorEditor::timerCallback()
         return;
     }
 
+    ++presentationTicks;
     stats = processor.getStatsSnapshot();
 
     if (viewingSnapshot >= 0 && snapshots[viewingSnapshot].valid)
@@ -158,9 +162,10 @@ void MasterLensAudioProcessorEditor::timerCallback()
     const float target = basis.hasComparison() ? basis.comparisonLufs()
                        : (basis.mode == ml::BasisMode::manual ? manualTarget : -14.0f);
 
-    if ((frameCounter % 3) == 0)
-        readout.setValues (stats, basis, platform, target, ceiling, stats.hasSignal);
+    readout.setValues (stats, basis, platform, target, ceiling, stats.hasSignal);
 
+    const auto& resos = analyzer.getResonances();
+    if ((frameCounter % 12) == 0)
     {
         const auto& ring = processor.engine.getTpEvents();
         const int n = ring.size();
@@ -170,35 +175,33 @@ void MasterLensAudioProcessorEditor::timerCallback()
 
         for (int i = 0; i < n; ++i)
             tpEvents.push_back (ring.get (i));
+
+        bandRatios = analyzer.getBandRatios();
+
+        if ((frameCounter % 24) == 0)
+            signalDefects = ml::analyseSignalDefects (analyzer.getAverageSpectrumDb(),
+                                                      analyzer.getBinHz(), stats);
+
+        updateSignalProblems();
+
+        for (const auto& e : tpEvents)
+            addMarker (e.time, 2, 0, T ("真峰值 +", "TP +") + ml::fmt1 (e.overshootDb) + " dBTP");
+
+        if (stats.psrMin > -99.0f && stats.psrMinTime > 0.0)
+            addMarker (stats.psrMinTime, 1, 1, T ("PSR 最低 ", "PSR minimum ") + ml::fmt1 (stats.psrMin) + " dB");
+
+        if (stats.lastSpikeTime > 0.0)
+            addMarker (stats.lastSpikeTime, 1, 1, T ("响度瞬时尖峰", "Loudness spike"));
+
+        if (stats.correlation < 0.0f && stats.elapsed > 1.0)
+            addMarker (std::floor (timelineNow()), 2, 2, T ("相关性为负", "Negative correlation"));
+
+        if (stats.elapsed > 3.0)
+            for (const auto& r : resos)
+                addMarker (std::floor (timelineNow() / 5.0) * 5.0, 1, 3,
+                           T ("谐振 ", "Resonance ") + juce::String (juce::roundToInt (r.freq))
+                               + " Hz +" + ml::fmt1 (r.excessDb));
     }
-
-    bandRatios = analyzer.getBandRatios();
-
-    const auto& resos = analyzer.getResonances();
-
-    if ((frameCounter % 30) == 0)
-        signalDefects = ml::analyseSignalDefects (analyzer.getAverageSpectrumDb(),
-                                                  analyzer.getBinHz(), stats);
-
-    updateSignalProblems();
-
-    for (const auto& e : tpEvents)
-        addMarker (e.time, 2, 0, T ("真峰值 +", "TP +") + ml::fmt1 (e.overshootDb) + " dBTP");
-
-    if (stats.psrMin > -99.0f && stats.psrMinTime > 0.0)
-        addMarker (stats.psrMinTime, 1, 1, T ("PSR 最低 ", "PSR minimum ") + ml::fmt1 (stats.psrMin) + " dB");
-
-    if (stats.lastSpikeTime > 0.0)
-        addMarker (stats.lastSpikeTime, 1, 1, T ("响度瞬时尖峰", "Loudness spike"));
-
-    if (stats.correlation < 0.0f && stats.elapsed > 1.0)
-        addMarker (std::floor (timelineNow()), 2, 2, T ("相关性为负", "Negative correlation"));
-
-    if (stats.elapsed > 3.0)
-        for (const auto& r : resos)
-            addMarker (std::floor (timelineNow() / 5.0) * 5.0, 1, 3,
-                       T ("谐振 ", "Resonance ") + juce::String (juce::roundToInt (r.freq))
-                           + " Hz +" + ml::fmt1 (r.excessDb));
 
     ml::UiState us;
     us.stats = stats;
@@ -269,8 +272,6 @@ void MasterLensAudioProcessorEditor::timerCallback()
     // meters and spectrum keep their full frame rate.
     if ((frameCounter % 12) == 0)
     {
-    if ((frameCounter % 12) == 0)
-    {
         const int command = processor.consumePendingUiCommand();
 
         if (command == 2)
@@ -287,9 +288,8 @@ void MasterLensAudioProcessorEditor::timerCallback()
             exportMarkers();
         else if (command == 5)
             clearAlbum();
-    }
 
-    advisor.update (stats, devs, target, ceiling, signalDefects, basis, hasTonalBasis);
+        advisor.update (stats, devs, target, ceiling, signalDefects, basis, hasTonalBasis);
         issueCache = advisor.getIssues();
 
         detail.setIssues (issueCache);

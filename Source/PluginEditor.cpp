@@ -173,7 +173,7 @@ MasterLensAudioProcessorEditor::MasterLensAudioProcessorEditor (MasterLensAudioP
     }
 
     attachShortcutListener (*this);
-    startTimer (12);
+    startTimerHz (60);
 }
 
 MasterLensAudioProcessorEditor::~MasterLensAudioProcessorEditor()

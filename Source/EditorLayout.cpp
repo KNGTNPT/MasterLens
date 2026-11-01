@@ -66,68 +66,54 @@ float MasterLensAudioProcessorEditor::computeInitialUiScale() const
 //==============================================================================
 void MasterLensAudioProcessorEditor::resized()
 {
-    auto base = baseBounds();
+    const auto base = baseBounds();
     auto b = base;
-
-    headerArea = b.removeFromTop (48);
-    readout.setBounds (b.removeFromTop (base.getWidth() < 960 ? 64 : 76));
-    footerArea = b.removeFromBottom (32);
-    paramArea = {};
-
-    // ---- header widgets -----------------------------------------------------
-    {
-        auto h = headerArea.reduced (20, 10);
-
-        languageButton.setBounds (h.removeFromRight (34).withSizeKeepingCentre (34, 26));
-        h.removeFromRight (6);
-        settingsButton.setBounds (h.removeFromRight (44).withSizeKeepingCentre (44, 26));
-        h.removeFromRight (6);
-        aboutButton.setBounds (h.removeFromRight (36).withSizeKeepingCentre (36, 26));
-        h.removeFromRight (6);
-        themeButton.setBounds (h.removeFromRight (42).withSizeKeepingCentre (42, 26));
-        h.removeFromRight (14);
-
-        const int presetW = juce::jlimit (126, 190, h.getWidth() - 470);
-        presetBox.setBounds (h.removeFromRight (presetW).withSizeKeepingCentre (presetW, 26));
-        h.removeFromRight (10);
-
-        auto ceilingGroup = h.removeFromRight (136);
-        ceilingCaption.setBounds (ceilingGroup.removeFromLeft (30));
-        ceilingSlider.setBounds (ceilingGroup.withSizeKeepingCentre (106, 26));
-        h.removeFromRight (8);
-
-        auto targetGroup = h.removeFromRight (136);
-        targetCaption.setBounds (targetGroup.removeFromLeft (30));
-        targetSlider.setBounds (targetGroup.withSizeKeepingCentre (106, 26));
-
-        targetCaption.setVisible (true);
-        ceilingCaption.setVisible (true);
-    }
-
-    // ---- body ---------------------------------------------------------------
-    auto body = b.reduced (20, 8);
-
-    const int railW = base.getWidth() < 960 ? 168 : 176;
-    rail.setBounds (body.removeFromLeft (railW));
-    body.removeFromLeft (20);
+    headerArea = b.removeFromTop (64);
+    footerArea = b.removeFromBottom (26);
+    paramArea = b.removeFromBottom (76);
+    rail.setBounds (b.removeFromTop (48).reduced (18, 0));
+    auto body = b.reduced (18, 16);
+    const int readoutW = base.getWidth() < 1000 ? 180 : 210;
+    readout.setBounds (body.removeFromLeft (readoutW));
+    body.removeFromLeft (18);
     detail.setBounds (body);
 
-    // ---- footer widgets -----------------------------------------------------
-    {
-        auto f = footerArea.reduced (16, 4);
+    auto h = headerArea.reduced (22, 16);
+    languageButton.setBounds (h.removeFromRight (36));
+    h.removeFromRight (6);
+    settingsButton.setBounds (h.removeFromRight (48));
+    h.removeFromRight (6);
+    aboutButton.setBounds (h.removeFromRight (38));
+    h.removeFromRight (6);
+    themeButton.setBounds (h.removeFromRight (42));
 
-        exportButton.setBounds (f.removeFromRight (84).withSizeKeepingCentre (84, 24));
-        f.removeFromRight (6);
-        snapshotB.setBounds (f.removeFromRight (24).withSizeKeepingCentre (24, 24));
-        f.removeFromRight (4);
-        snapshotA.setBounds (f.removeFromRight (24).withSizeKeepingCentre (24, 24));
-        f.removeFromRight (6);
-        monitorButton.setBounds (f.removeFromRight (72).withSizeKeepingCentre (72, 24));
-        f.removeFromRight (6);
-        clearButton.setBounds (f.removeFromRight (44).withSizeKeepingCentre (44, 24));
-        f.removeFromRight (4);
-        holdButton.setBounds (f.removeFromRight (34).withSizeKeepingCentre (34, 24));
-    }
+    auto desk = paramArea.reduced (24, 14);
+    auto reference = desk.removeFromLeft (base.getWidth() < 1000 ? 128 : 190);
+    presetBox.setBounds (reference.withTrimmedTop (18).withHeight (28));
+    desk.removeFromLeft (base.getWidth() < 1000 ? 12 : 20);
+    auto ref = desk.removeFromLeft (base.getWidth() < 1000 ? 114 : 142);
+    targetCaption.setBounds (ref.removeFromTop (18));
+    targetSlider.setBounds (ref.withHeight (28));
+    desk.removeFromLeft (base.getWidth() < 1000 ? 12 : 18);
+    auto ceil = desk.removeFromLeft (base.getWidth() < 1000 ? 114 : 142);
+    ceilingCaption.setBounds (ceil.removeFromTop (18));
+    ceilingSlider.setBounds (ceil.withHeight (28));
+    targetCaption.setVisible (true);
+    ceilingCaption.setVisible (true);
+    infoButton.setVisible (false);
+
+    auto actions = desk.withTrimmedTop (14).withHeight (30);
+    exportButton.setBounds (actions.removeFromRight (84));
+    actions.removeFromRight (8);
+    snapshotB.setBounds (actions.removeFromRight (26));
+    actions.removeFromRight (4);
+    snapshotA.setBounds (actions.removeFromRight (26));
+    actions.removeFromRight (8);
+    monitorButton.setBounds (actions.removeFromRight (base.getWidth() < 1000 ? 64 : 88));
+    actions.removeFromRight (8);
+    clearButton.setBounds (actions.removeFromRight (40));
+    actions.removeFromRight (4);
+    holdButton.setBounds (actions.removeFromRight (34));
 
     aboutPanel.setBounds (base);
     genrePanel.setBounds (base);
@@ -137,7 +123,8 @@ void MasterLensAudioProcessorEditor::resized()
     // 200 % zoom cannot clip a label.
     for (auto* child : getChildren())
         if (child != nullptr)
-            child->setTransform (juce::AffineTransform::scale (uiScale));
+            child->setTransform (dynamic_cast<juce::ResizableCornerComponent*> (child) != nullptr
+                ? juce::AffineTransform() : juce::AffineTransform::scale (uiScale));
 
     processor.apvts.state.setProperty ("editorWidth", base.getWidth(), nullptr);
     processor.apvts.state.setProperty ("editorHeight", base.getHeight(), nullptr);

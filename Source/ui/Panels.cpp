@@ -49,6 +49,7 @@ void ReadoutBand::setValues (const StatsSnapshot& s, const BasisContext& b,
                              const PlatformSummary& p, float targetLufs,
                              float ceilingDb, bool signal)
 {
+    ++updateCount;
     stats = s;
     basis = b;
     platform = p;
@@ -60,127 +61,89 @@ void ReadoutBand::setValues (const StatsSnapshot& s, const BasisContext& b,
 
 void ReadoutBand::paintCell (juce::Graphics& g, juce::Rectangle<int> cell,
                              const juce::String& label, const juce::String& value,
-                             const juce::String& unit, const juce::String& hint,
-                             juce::Colour status)
+                             const juce::String& unit, const juce::String& hint, juce::Colour status)
 {
-    const bool compact = cell.getHeight() < 70;
-    auto inner = cell.reduced (16, compact ? 4 : 8);
-
-    g.setColour (theme::textFaint);
+    surface::hairlineH (g, (float) cell.getX(), (float) cell.getRight(), (float) cell.getY());
+    auto inner = cell.reduced (0, 7);
     g.setFont (uiFont (tokens::unit));
-    g.drawText (label, inner.removeFromTop (compact ? 11 : 13), juce::Justification::centredLeft, false);
-
-    auto valueRow = inner.removeFromTop (compact ? 26 : 34);
-    auto unitArea = valueRow.removeFromRight (40);
-
+    g.setColour (theme::textDim);
+    g.drawText (label, inner.removeFromTop (14), juce::Justification::centredLeft, false);
+    auto row = inner.removeFromTop (26);
+    g.setFont (monoFont (22.0f));
     g.setColour (theme::text);
-    g.setFont (monoFont (compact ? 26.0f : tokens::display, true));
-    g.drawText (value, valueRow, juce::Justification::centredRight, false);
-
+    g.drawText (value, row.withTrimmedRight (40), juce::Justification::centredLeft, false);
+    g.setFont (monoFont (10.0f));
     g.setColour (theme::textFaint);
-    g.setFont (uiFont (tokens::unit));
-    g.drawText (unit, unitArea.withTrimmedBottom (compact ? 2 : 7),
-                juce::Justification::bottomRight, false);
-
-    auto rule = inner.removeFromTop (4).removeFromLeft (24);
+    g.drawText (unit, row.removeFromRight (40), juce::Justification::centredRight, false);
     g.setColour (status);
-    g.fillRect (rule);
-
-    if (! compact)
-    {
-        g.setColour (theme::textFaint);
-        g.setFont (uiFont (tokens::unit));
-        g.drawText (hint, inner.removeFromTop (13), juce::Justification::centredLeft, false);
-    }
+    g.fillEllipse ((float) cell.getRight()-4.0f, (float) cell.getY()+13.0f, 4.0f, 4.0f);
+    juce::ignoreUnused (hint);
 }
 
 void ReadoutBand::paint (juce::Graphics& g)
 {
     auto b = getLocalBounds();
-    g.fillAll (theme::background);
-
-    // Hairline top and bottom, no card.
-    surface::hairlineH (g, (float) b.getX(), (float) b.getRight(), (float) b.getY());
-    surface::hairlineH (g, (float) b.getX(), (float) b.getRight(), (float) b.getBottom() - 1.0f);
-
+    surface::raised (g, b.toFloat(), 5.0f);
+    auto content = b.reduced (18, 12);
     const bool live = hasSignal && stats.integrated > -70.0f;
-    const bool tpValid = hasSignal && stats.truePeakDb > -70.0f;
-    const bool lraValid = hasSignal && stats.lra > 0.05f;
-    const bool plrValid = live && tpValid;
-
-    const auto noReading = juce::String::charToString (0x2014);
-    auto basisValue = noReading;
-    auto basisHint = basis.label();
-    auto basisStatus = theme::textFaint;
-
-    if (basis.hasComparison())
+    const bool peak = hasSignal && stats.truePeakDb > -70.0f;
+    auto hero = content.removeFromTop (juce::jlimit (142, 206, getHeight() * 43 / 100));
+    g.setColour (theme::textDim);
+    g.setFont (uiFont (11.0f, true).withExtraKerningFactor (0.05f));
+    g.drawText (T ("综合响度", "INTEGRATED"), hero.removeFromTop (20),
+                juce::Justification::centred, false);
+    auto dial = hero.toFloat().reduced (4.0f, 2.0f);
+    const float size = juce::jmin (dial.getWidth(), dial.getHeight() + 16.0f);
+    dial = juce::Rectangle<float> (size, size).withCentre ({ dial.getCentreX(), dial.getY() + size * 0.5f });
+    const float cx = dial.getCentreX(), cy = dial.getCentreY();
+    const float radius = size * 0.43f;
+    constexpr float start = -2.35f, end = 2.35f;
+    for (int i = 0; i <= 32; ++i)
     {
-        const float diff = stats.integrated - basis.comparisonLufs();
-        basisValue = sgn (diff, 1);
-        basisHint = basis.label();
-        basisStatus = std::abs (diff) <= 1.0f ? theme::good
-                        : (std::abs (diff) <= 2.0f ? theme::warn : theme::bad);
+        const float angle = start + (end-start) * (float) i / 32.0f;
+        const float len = i%4==0 ? 7.0f : 3.0f;
+        g.setColour (theme::textFaint.withAlpha (i%4==0 ? 0.7f : 0.35f));
+        g.drawLine (cx+std::sin(angle)*(radius+6), cy-std::cos(angle)*(radius+6),
+                    cx+std::sin(angle)*(radius+6+len), cy-std::cos(angle)*(radius+6+len), 1.0f);
     }
-    else if (basis.mode == BasisMode::manual && live)
+    juce::Path ring;
+    ring.addCentredArc (cx, cy, radius, radius, 0.0f, start, end, true);
+    g.setColour (theme::background);
+    g.strokePath (ring, juce::PathStrokeType (4.0f, juce::PathStrokeType::curved, juce::PathStrokeType::rounded));
+    if (live)
     {
-        const float diff = stats.integrated - basis.manualLufs;
-        basisValue = sgn (diff, 1);
-        basisHint = T ("手动", "manual");
-        basisStatus = std::abs (diff) <= 1.5f ? theme::good : theme::warn;
+        juce::Path level;
+        level.addCentredArc (cx, cy, radius, radius, 0.0f, start,
+            start+(end-start)*juce::jlimit(0.0f,1.0f,(stats.integrated+36.0f)/36.0f),true);
+        g.setColour (theme::accent);
+        g.strokePath (level, juce::PathStrokeType (3.0f, juce::PathStrokeType::curved, juce::PathStrokeType::rounded));
     }
+    const float ta = start+(end-start)*juce::jlimit(0.0f,1.0f,(target+36.0f)/36.0f);
+    g.setColour (theme::text);
+    if (basis.hasComparison() || basis.mode == BasisMode::manual)
+        g.drawLine (cx+std::sin(ta)*(radius-4),cy-std::cos(ta)*(radius-4),
+                    cx+std::sin(ta)*(radius+4),cy-std::cos(ta)*(radius+4),2.0f);
+    g.setFont (monoFont (getWidth()<200 ? 31.0f : 36.0f));
+    g.drawText (live ? num(stats.integrated) : noValue(),
+        juce::Rectangle<float>(cx-size*0.5f,cy-22.0f,size,40.0f),juce::Justification::centred,false);
+    g.setFont (monoFont (10.0f));
+    g.setColour (theme::textFaint);
+    g.drawText ("LUFS / EBU R128",juce::Rectangle<float>(cx-size*0.5f,cy+19.0f,size,18.0f),
+                juce::Justification::centred,false);
 
-    const int gap = 0;
-    const int widths[5] { 30, 22, 19, 18, 15 };
-    int x = b.getX();
-
-    auto cell = [&] (int i)
-    {
-        auto r = juce::Rectangle<int> (x, b.getY(), b.getWidth() * widths[i] / 100, b.getHeight());
-        x = r.getRight();
-        return r;
-    };
-
-    const auto c0 = cell (0);
-    const auto c1 = cell (1);
-    const auto c2 = cell (2);
-    const auto c3 = cell (3);
-    auto c4 = b.withTrimmedLeft (c3.getRight()).withTrimmedRight (gap);
-
-    for (int i = 1; i < 5; ++i)
-    {
-        const auto& r = (i == 1 ? c1 : (i == 2 ? c2 : (i == 3 ? c3 : c4)));
-        surface::hairlineV (g, (float) r.getX(), (float) b.getY() + 12.0f,
-                            (float) b.getBottom() - 12.0f);
-    }
-
-    const auto tpStatus = ! tpValid ? theme::textFaint
-                         : (stats.truePeakDb > ceiling ? theme::bad
-                         : (stats.truePeakDb > ceiling - 1.0f ? theme::warn : theme::good));
-    const auto lraStatus = ! lraValid ? theme::textFaint
-                          : (stats.lra < 3.0f ? theme::warn
-                          : (stats.lra > 16.0f ? theme::info : theme::good));
-    const auto plrValue = plrValid ? stats.getPlr() : -100.0f;
-    const auto plrStatus = ! plrValid ? theme::textFaint
-                          : (plrValue < 8.0f ? theme::warn
-                          : (plrValue < 10.0f ? theme::info : theme::good));
-
-    paintCell (g, c0, T ("I", "I"), live ? num (stats.integrated) : noReading,
-               "LUFS", T ("综合响度", "integrated"),
-               live ? (std::abs (stats.integrated - target) <= 1.0f ? theme::good
-                                                                    : (std::abs (stats.integrated - target) <= 2.0f
-                                                                           ? theme::warn : theme::textFaint))
-                    : theme::textFaint);
-
-    paintCell (g, c1, T ("TP", "TP"), tpValid ? num (stats.truePeakDb) : noReading,
-               "dBTP", T ("真峰值 · 4×", "true peak · 4x"), tpStatus);
-
-    paintCell (g, c2, T ("LRA", "LRA"), lraValid ? num (stats.lra) : noReading,
-               "LU", T ("响度范围", "range"), lraStatus);
-
-    paintCell (g, c3, T ("PLR", "PLR"), plrValid ? num (plrValue) : noReading,
-               "dB", T ("峰响比", "peak / loud"), plrStatus);
-
-    paintCell (g, c4, T ("Δ", "Δ"), basisValue, "LU", basisHint, basisStatus);
+    const int rowH = content.getHeight()/4;
+    paintCell (g, content.removeFromTop(rowH), T("真峰值", "TRUE PEAK"), peak ? num(stats.truePeakDb) : noValue(),
+        "dBTP", {}, !peak ? theme::textFaint : (stats.truePeakDb>ceiling ? theme::bad
+            : (stats.truePeakDb>ceiling-1.0f ? theme::warn : theme::accent)));
+    paintCell (g, content.removeFromTop(rowH), T("响度范围", "LOUDNESS RANGE"),live ? num(stats.lra) : noValue(),
+        "LU", {}, live && stats.lra<3 ? theme::warn : theme::textFaint);
+    paintCell (g, content.removeFromTop(rowH), T("峰响比", "PEAK / LOUDNESS"),live&&peak ? num(stats.getPlr()) : noValue(),
+        "dB", {}, live && stats.getPlr()<8 ? theme::warn : theme::textFaint);
+    const bool comparison = basis.hasComparison() || basis.mode == BasisMode::manual;
+    const float delta = stats.integrated - (basis.hasComparison() ? basis.comparisonLufs() : target);
+    paintCell (g, content, comparison ? T("参考差值", "REFERENCE DELTA") : T("平台最大衰减", "MAX PLATFORM CUT"),
+        live ? (comparison ? sgn(delta) : num(platform.maxCutDb)) : noValue(), comparison ? "LU" : "dB", {},
+        live && (comparison ? std::abs(delta)>2 : platform.maxCutDb>3) ? theme::warn : theme::accent);
 }
 
 //==============================================================================

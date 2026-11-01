@@ -19,7 +19,7 @@ class UiShotApplication : public juce::JUCEApplication
 {
 public:
     const juce::String getApplicationName() override { return "MasterLensUiShot"; }
-    const juce::String getApplicationVersion() override { return "1.0"; }
+    const juce::String getApplicationVersion() override { return ml::kVersion; }
     bool moreThanOneInstanceAllowed() override { return true; }
 
     void initialise (const juce::String& commandLine) override
@@ -78,6 +78,8 @@ public:
                 buffer.setSample (1, i, v * 0.9f);
             }
 
+            juce::AudioBuffer<float> untouched;
+            untouched.makeCopyOf(buffer);
             const int blocks = (int) (48000.0 * 30.0 / 512.0);
             const auto start = juce::Time::getHighResolutionTicks();
 
@@ -89,7 +91,13 @@ public:
 
             const double wall = juce::Time::highResolutionTicksToSeconds (
                 juce::Time::getHighResolutionTicks() - start);
-            std::printf ("CLOSED_BENCH wall=%.3f s load=%.2f%%\n", wall, 100.0 * wall / 30.0);
+            bool transparent = processor->getLatencySamples()==0;
+            for(int ch=0;ch<buffer.getNumChannels();++ch)
+                for(int n=0;n<buffer.getNumSamples();++n)
+                    transparent = transparent && buffer.getSample(ch,n)==untouched.getSample(ch,n);
+            std::printf ("CLOSED_BENCH wall=%.3f s load=%.2f%% bypass=%s latency=%d\n",
+                wall, 100.0 * wall / 30.0,transparent ? "PASS" : "FAIL",processor->getLatencySamples());
+            if (!transparent) setApplicationReturnValue(1);
             quit();
             return;
         }
@@ -162,6 +170,10 @@ public:
 
         if (benchMode)
         {
+            benchTimerStart = editor->getTimerTicksForBenchmark();
+            benchPresentationStart = editor->getPresentationTicksForBenchmark();
+            benchMeterStart = editor->getMeterTicksForBenchmark();
+            benchReadoutStart = editor->getReadoutTicksForBenchmark();
             benchCpuStart = std::clock();
             benchWallStart = juce::Time::getMillisecondCounterHiRes();
 
@@ -170,6 +182,17 @@ public:
                 const double wall = (juce::Time::getMillisecondCounterHiRes() - benchWallStart) / 1000.0;
                 const double cpu = ((double) (std::clock() - benchCpuStart)) / (double) CLOCKS_PER_SEC;
 
+                const double timerHz = (editor->getTimerTicksForBenchmark()-benchTimerStart)/wall;
+                const double presentationHz = (editor->getPresentationTicksForBenchmark()-benchPresentationStart)/wall;
+                const double meterHz = (editor->getMeterTicksForBenchmark()-benchMeterStart)/wall;
+                const double readoutHz = (editor->getReadoutTicksForBenchmark()-benchReadoutStart)/wall;
+                std::printf("UI_CADENCE timer=%.1fHz presentation=%.1fHz meter=%.1fHz readout=%.1fHz\n",
+                            timerHz,presentationHz,meterHz,readoutHz);
+                if ((pageShot==0 || pageShot==3) && (meterHz<45.0 || readoutHz<45.0))
+                {
+                    std::fprintf(stderr,"Meter cadence below 45 Hz\n");
+                    setApplicationReturnValue(1);
+                }
                 std::vector<double> frames;
 
                 // Paint the whole tree into a reusable image. Unlike
@@ -390,6 +413,24 @@ private:
         ml::theme::apply (true);
     }
 
+    void checkLayout (juce::Component& parent)
+    {
+        for (auto* child : parent.getChildren())
+        {
+            if (!child->isVisible()) continue;
+            const auto* viewport = parent.findParentComponentOfClass<juce::Viewport>();
+            const bool scrollContent = viewport != nullptr && viewport->getViewedComponent() == child;
+            if (!scrollContent && !parent.getLocalBounds().expanded(1).contains(child->getBoundsInParent()))
+            {
+                std::fprintf(stderr,"LAYOUT_CLIP type=%s bounds=%s parent=%s\n",
+                    typeid(*child).name(),child->getBoundsInParent().toString().toRawUTF8(),
+                    parent.getLocalBounds().toString().toRawUTF8());
+                setApplicationReturnValue(1);
+            }
+            checkLayout(*child);
+        }
+    }
+
     void saveAndQuit()
     {
         if (expandedShot)
@@ -398,6 +439,7 @@ private:
         if (snapShot)
             editor->captureSnapshotForSnapshot (0);
 
+        checkLayout(*editor);
         std::vector<float> curve;
         processor->copyShortTermCurve (curve, 1800);
 
@@ -473,6 +515,7 @@ private:
     bool settingsShot = false;
     bool fileQcShot = false;
     bool benchMode = false;
+    int benchTimerStart=0, benchPresentationStart=0, benchMeterStart=0, benchReadoutStart=0;
     std::clock_t benchCpuStart = 0;
     double benchWallStart = 0.0;
     juce::String outSuffix;

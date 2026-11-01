@@ -2,223 +2,129 @@
 
 namespace ml
 {
-//==============================================================================
 void StereoMeters::setValues (const StatsSnapshot& s)
 {
+    ++updateCount;
+    const double now = juce::Time::getMillisecondCounterHiRes();
+    const float alpha = lastUpdateMs > 0.0
+        ? 1.0f - std::exp (-(float) juce::jlimit (0.001, 0.1, (now-lastUpdateMs)/1000.0)/0.12f) : 1.0f;
+    lastUpdateMs = now;
+    shownCorrelation += (s.correlation-shownCorrelation)*alpha;
+    shownWidth += (s.widthPct-shownWidth)*alpha;
+    shownLowSide += (s.lowSidePct-shownLowSide)*alpha;
     stats = s;
+    stats.correlation = shownCorrelation;
+    stats.widthPct = shownWidth;
+    stats.lowSidePct = shownLowSide;
     repaint();
 }
 
 void StereoMeters::paint (juce::Graphics& g)
 {
-    auto b = getLocalBounds();
-
-    if (b.getWidth() < 80 || b.getHeight() < 80)
-        return;
-
-    const bool compact = b.getWidth() < 720 || b.getHeight() < 390;
-    const int sideW = compact ? juce::jlimit (190, 230, b.getWidth() / 3)
-                              : juce::jlimit (230, 270, b.getWidth() / 3);
-    auto right = b.removeFromRight (sideW);
-    b.removeFromRight (20);
-
-    const bool stereo = stats.stereo;
-    const float corr = stereo ? stats.correlation : 1.0f;
-    const float width = stereo ? stats.widthPct : 0.0f;
-    const float lowSide = stereo ? stats.lowSidePct : 0.0f;
-
-    const auto corrColour = ! stereo ? theme::textFaint
-                           : (corr < 0.0f ? theme::bad
-                           : (corr < 0.15f ? theme::warn : theme::good));
-    const auto widthColour = ! stereo ? theme::textFaint
-                            : (width < 15.0f ? theme::info
-                            : (width > 150.0f ? theme::warn : theme::good));
-    const auto lowColour = ! stereo ? theme::textFaint
-                          : (lowSide > 35.0f ? theme::warn : theme::good);
-
-    // ---- left: three tracks, no cards --------------------------------------
+    auto area = getLocalBounds();
+    if (area.getWidth()<160 || area.getHeight()<140) return;
+    auto bands = area.removeFromBottom (juce::jmin (100, area.getHeight()/3));
+    area.removeFromBottom (16);
+    auto dial = area.removeFromLeft (area.getWidth()*45/100).toFloat();
+    area.removeFromLeft (24);
+    const float corr = stats.stereo ? stats.correlation : 1.0f;
+    const auto status = !stats.stereo ? theme::textFaint
+        : corr<0 ? theme::bad : corr<0.15f ? theme::warn : theme::accent;
+    const float size = juce::jmin (dial.getWidth()-24.0f, dial.getHeight()-32.0f);
+    const float cx = dial.getCentreX(), cy = dial.getCentreY()-6.0f, radius = size*0.44f;
+    g.setFont (uiFont (tokens::unit));
+    g.setColour (theme::textDim);
+    g.drawText (T("声道相关性", "CHANNEL CORRELATION"),
+                dial.withHeight (18.0f), juce::Justification::centred, false);
+    juce::Path arc;
+    constexpr float start=-2.25f, end=2.25f;
+    arc.addCentredArc (cx,cy,radius,radius,0,start,end,true);
+    g.setColour (theme::background);
+    g.strokePath (arc,juce::PathStrokeType(10.0f));
+    g.setColour (theme::border);
+    g.strokePath (arc,juce::PathStrokeType(1.0f));
+    for(int i=0;i<=20;++i)
     {
-        auto title = b.removeFromTop (22);
-        g.setColour (theme::textFaint);
-        g.setFont (uiFont (tokens::unit));
-        g.drawText ("01", title.removeFromLeft (24), juce::Justification::centredLeft, false);
-        g.drawText (T ("空间 / 相位", "SPACE / PHASE"), title, juce::Justification::centredLeft, false);
-        surface::hairlineH (g, 0.0f, (float) b.getRight(), (float) b.getY() - 1.0f);
+        const float angle=start+(end-start)*(float)i/20.0f;
+        const float length=i%5==0 ? 10.0f : 4.0f;
+        g.setColour (i<10 ? theme::warn.withAlpha(0.55f) : theme::accent.withAlpha(0.7f));
+        g.drawLine(cx+std::sin(angle)*(radius+8),cy-std::cos(angle)*(radius+8),
+                   cx+std::sin(angle)*(radius+8+length),cy-std::cos(angle)*(radius+8+length),1.0f);
+    }
+    const float angle=start+(end-start)*juce::jlimit(0.0f,1.0f,(corr+1.0f)*0.5f);
+    g.setColour(status);
+    g.drawLine(cx,cy,cx+std::sin(angle)*(radius-12),cy-std::cos(angle)*(radius-12),1.6f);
+    g.setGradientFill(juce::ColourGradient(theme::raised,cx-5,cy-5,theme::background,cx+5,cy+5,false));
+    g.fillEllipse(cx-5,cy-5,10,10);
+    g.setColour(theme::textDim);
+    g.drawEllipse(cx-5,cy-5,10,10,0.7f);
+    g.setColour(theme::text);
+    g.setFont(monoFont(size<180 ? 25.0f : 34.0f));
+    g.drawText(stats.stereo ? sgn(corr,2) : noValue(),
+        juce::Rectangle<float>(dial.getX(),cy+18,dial.getWidth(),38),juce::Justification::centred,false);
+    g.setFont(monoFont(10.0f));
+    g.setColour(theme::textFaint);
+    g.drawText("-1",juce::Rectangle<float>(cx-radius-12,cy+radius*0.75f,30,14),juce::Justification::centred,false);
+    g.drawText("+1",juce::Rectangle<float>(cx+radius-18,cy+radius*0.75f,30,14),juce::Justification::centred,false);
 
-        const auto drawTrack = [&] (juce::Rectangle<int> row, const juce::String& label,
-                                    const juce::String& value, float normalised,
-                                    float markerNorm, juce::Colour status)
-        {
-            auto inner = row;
-            auto header = inner.removeFromTop (18);
-            g.setColour (theme::textDim);
-            g.setFont (uiFont (tokens::label));
-            g.drawText (label, header, juce::Justification::centredLeft, false);
-
-            g.setColour (theme::text);
-            g.setFont (monoFont (15.0f, true));
-            g.drawText (value, header, juce::Justification::centredRight, false);
-
-            auto track = inner.removeFromTop (4).withTrimmedTop (8).toFloat();
-            g.setColour (theme::borderSoft);
-            g.fillRect (track);
-            g.setColour (juce::Colours::black.withAlpha (0.40f));
-            g.fillRect (track.withHeight (1.0f));
-
-            const float n = juce::jlimit (0.0f, 1.0f, normalised);
-            g.setColour (status);
-            g.fillRect (track.withWidth (juce::jmax (2.0f, track.getWidth() * n)));
-
-            if (markerNorm >= 0.0f)
-            {
-                const float mx = track.getX() + track.getWidth() * juce::jlimit (0.0f, 1.0f, markerNorm);
-                g.setColour (theme::accent.withAlpha (0.85f));
-                g.fillRect (mx - 0.5f, track.getY() - 4.0f, 1.0f, track.getHeight() + 8.0f);
-            }
-
-            auto rule = inner.removeFromTop (4).removeFromLeft (24);
-            g.setColour (status);
-            g.fillRect (rule);
-        };
-
-        const int trackH = compact ? 62 : juce::jlimit (70, 92, (b.getHeight() - 150) / 3);
-        drawTrack (b.removeFromTop (trackH), T ("声道相关性", "CORRELATION"),
-                   stereo ? sgn (corr, 2) : noValue(), (corr + 1.0f) * 0.5f, 0.5f, corrColour);
-        drawTrack (b.removeFromTop (trackH), T ("立体声宽度", "STEREO WIDTH"),
-                   stereo ? num (width) + "%" : noValue(), width / 200.0f, 0.5f, widthColour);
-        drawTrack (b.removeFromTop (trackH), T ("低频侧向", "LOW-END SIDE"),
-                   stereo ? num (lowSide) + "%" : noValue(), lowSide / 100.0f, 0.35f, lowColour);
-
-    // ---- right: per-channel values, no four equal cards ---------------------
+    const auto value = [&] (juce::Rectangle<int> cell,const juce::String& label,const juce::String& number)
     {
-        auto rightArea = right;
-        auto title = rightArea.removeFromTop (22);
-        g.setColour (theme::textFaint);
-        g.setFont (uiFont (tokens::unit));
-        g.drawText ("02", title.removeFromLeft (24), juce::Justification::centredLeft, false);
-        g.drawText (T ("通道 / 折叠", "CHANNEL / FOLD"), title, juce::Justification::centredLeft, false);
-        surface::hairlineH (g, (float) rightArea.getX(), (float) rightArea.getRight(),
-                            (float) rightArea.getY() - 1.0f);
-
-        const auto drawValue = [&] (juce::Rectangle<int> row, const juce::String& label,
-                                    const juce::String& value, const juce::String& detail,
-                                    juce::Colour status)
-        {
-            g.setColour (theme::textFaint);
-            g.setFont (uiFont (tokens::unit));
-            g.drawText (label, row.removeFromTop (13), juce::Justification::centredLeft, false);
-
-            g.setColour (theme::text);
-            g.setFont (monoFont (15.0f, true));
-            g.drawText (value, row.removeFromTop (18), juce::Justification::centredLeft, false);
-
-            g.setColour (status);
-            g.fillRect (juce::Rectangle<float> ((float) row.getX(), (float) row.getY() + 2.0f,
-                                                18.0f, 3.0f));
-
-            g.setColour (theme::textFaint);
-            g.setFont (uiFont (tokens::unit));
-            g.drawText (detail, row.withTrimmedLeft (24), juce::Justification::centredLeft, false);
-        };
-
-        const int rowH = compact ? 44 : 54;
-        drawValue (rightArea.removeFromTop (rowH), T ("左声道 TP", "L TRUE PEAK"),
-                   stereo ? fmtDb (stats.truePeakLeft) + " dBTP" : noValue(),
-                   T ("独立", "separate"), stereo ? theme::textDim : theme::textFaint);
-        drawValue (rightArea.removeFromTop (rowH), T ("右声道 TP", "R TRUE PEAK"),
-                   stereo ? fmtDb (stats.truePeakRight) + " dBTP" : noValue(),
-                   T ("独立", "separate"), stereo ? theme::textDim : theme::textFaint);
-        drawValue (rightArea.removeFromTop (rowH), T ("Side TP", "SIDE TRUE PEAK"),
-                   stereo && stats.sideTruePeak > -99.0f ? fmtDb (stats.sideTruePeak) + " dBTP" : noValue(),
-                   T ("单声道隐患", "mono risk"),
-                   stereo && stats.sideTruePeak > -20.0f ? theme::warn : theme::textDim);
-
-        const auto foldStatus = stats.monoFoldLossDb < -0.5f ? theme::warn : theme::good;
-        drawValue (rightArea.removeFromTop (rowH), T ("单声道折叠", "MONO FOLD"),
-                   fmtDb (stats.monoFoldLossDb) + " dB",
-                   T ("保留 ", "retained ") + num (stats.monoRetainPct) + "%", foldStatus);
-
-        rightArea.removeFromTop (8);
-        surface::hairlineH (g, (float) rightArea.getX(), (float) rightArea.getRight(),
-                            (float) rightArea.getY());
-
-        g.setColour (theme::textFaint);
-        g.setFont (monoFont (tokens::unit));
-        g.drawText ("M " + fmtDb (stats.midLufs) + " LUFS   ·   S " + fmtDb (stats.sideLufs) + " LUFS",
-                    rightArea.removeFromTop (20), juce::Justification::centredLeft, false);
-    }
-
-    }
-
-    // ---- bottom: three bands as a table, artefacts as text ------------------
+        g.setFont(uiFont(tokens::unit)); g.setColour(theme::textFaint);
+        g.drawText(label,cell.removeFromTop(18),juce::Justification::centredLeft,false);
+        g.setFont(monoFont(19.0f));g.setColour(theme::text);
+        g.drawText(number,cell,juce::Justification::centredLeft,false);
+    };
+    auto peaks=area.removeFromTop(juce::jmin(66,area.getHeight()/3));
+    const int peakW=peaks.getWidth()/2;
+    value(peaks.removeFromLeft(peakW),"L / TRUE PEAK",fmtDb(stats.truePeakLeft)+" dBTP");
+    value(peaks,"R / TRUE PEAK",fmtDb(stats.truePeakRight)+" dBTP");
+    const auto bar = [&] (juce::Rectangle<int> cell,const juce::String& label,float amount,float range,float threshold)
     {
-        auto bottom = b.removeFromBottom (compact ? 92 : 112);
-        auto bands = bottom.removeFromLeft (juce::roundToInt ((float) bottom.getWidth() * 0.64f));
-        bottom.removeFromLeft (20);
+        auto line=cell.removeFromTop(20);
+        g.setFont(uiFont(tokens::label));g.setColour(theme::textDim);
+        g.drawText(label,line,juce::Justification::centredLeft,false);
+        g.setFont(monoFont(13.0f));g.setColour(theme::text);
+        g.drawText(num(amount)+"%",line,juce::Justification::centredRight,false);
+        cell.removeFromTop(6);
+        auto track=cell.removeFromTop(5).toFloat();
+        surface::recessed(g,track,1.0f);
+        g.setColour(amount>threshold ? theme::warn : theme::accent);
+        g.fillRect(track.withWidth(track.getWidth()*juce::jlimit(0.0f,1.0f,amount/range)));
+    };
+    const int rowH=juce::jmin(64,area.getHeight()/3);
+    bar(area.removeFromTop(rowH),T("立体声宽度", "STEREO WIDTH"),stats.widthPct,200.0f,150.0f);
+    bar(area.removeFromTop(rowH),T("低频侧向", "LOW-END SIDE"),stats.lowSidePct,100.0f,35.0f);
+    g.setFont(monoFont(tokens::unit));g.setColour(theme::textDim);
+    g.drawText(T("单声道保留 ","MONO RETAIN ")+num(stats.monoRetainPct)+"%  /  "+fmtDb(stats.monoFoldLossDb)+" dB",
+               area.removeFromTop(20),juce::Justification::centredLeft,false);
+    g.setColour(theme::textFaint);
+    g.drawText("M "+fmtDb(stats.midLufs)+"  /  S "+fmtDb(stats.sideLufs)+" LUFS",
+               area.removeFromTop(20),juce::Justification::centredLeft,false);
+    g.drawText("SIDE TP "+fmtDb(stats.sideTruePeak)+" dBTP",area.removeFromTop(20),juce::Justification::centredLeft,false);
 
-        surface::hairlineH (g, (float) bands.getX(), (float) bottom.getRight(),
-                            (float) bands.getY());
-        bands.removeFromTop (10);
-
-        const auto bandCell = [&] (juce::Rectangle<int> cell, const juce::String& title,
-                                   const juce::String& range, float c, float side)
-        {
-            g.setColour (theme::textDim);
-            g.setFont (uiFont (tokens::label));
-            g.drawText (title, cell.removeFromTop (15), juce::Justification::centredLeft, false);
-
-            g.setColour (theme::textFaint);
-            g.setFont (monoFont (tokens::unit));
-            g.drawText (range, cell.removeFromTop (12), juce::Justification::centredLeft, false);
-
-            g.setColour (theme::text);
-            g.setFont (monoFont (13.0f, true));
-            g.drawText (T ("相关 ", "corr ") + sgn (c, 2), cell.removeFromTop (17),
-                        juce::Justification::centredLeft, false);
-
-            g.setColour (theme::textFaint);
-            g.setFont (uiFont (tokens::unit));
-            g.drawText (T ("侧向 ", "side ") + num (side) + "%", cell, juce::Justification::centredLeft, false);
-        };
-
-        const int bandW = bands.getWidth() / 3;
-        bandCell (bands.removeFromLeft (bandW), T ("低频", "LOW"), "< 150 Hz",
-                  stats.bandCorrLow, stats.bandSideLow);
-        surface::hairlineV (g, (float) bands.getX(), (float) bands.getY(),
-                            (float) bands.getBottom());
-        bandCell (bands.removeFromLeft (bandW), T ("中频", "MID"), "150 Hz - 2 kHz",
-                  stats.bandCorrMid, stats.bandSideMid);
-        surface::hairlineV (g, (float) bands.getX(), (float) bands.getY(),
-                            (float) bands.getBottom());
-        bandCell (bands, T ("高频", "HIGH"), "> 2 kHz",
-                  stats.bandCorrHigh, stats.bandSideHigh);
-
-        auto artefacts = bottom;
-        g.setColour (theme::textFaint);
-        g.setFont (uiFont (tokens::unit));
-        g.drawText (T ("伪影", "ARTEFACTS"), artefacts.removeFromTop (14),
-                    juce::Justification::centredLeft, false);
-
-        const auto artefact = [&] (const juce::String& label, int count, juce::Colour status)
-        {
-            auto row = artefacts.removeFromTop (juce::jmax (13, artefacts.getHeight() / 4));
-            g.setColour (status);
-            g.fillRect (juce::Rectangle<float> ((float) row.getX(), (float) row.getCentreY() - 1.0f,
-                                                3.0f, 3.0f));
-            g.setColour (theme::textDim);
-            g.setFont (uiFont (tokens::unit));
-            g.drawText (label + " " + juce::String (count), row.withTrimmedLeft (9),
-                        juce::Justification::centredLeft, false);
-        };
-
-        artefact (T ("DC 偏移", "DC"), juce::roundToInt (std::abs (stats.dcOffsetDb)),
-                  stats.dcOffsetDb > -46.0f ? theme::warn : theme::good);
-        artefact (T ("削波", "Clip"), stats.clipEvents,
-                  stats.clipEvents > 0 ? theme::bad : theme::good);
-        artefact (T ("瞬态", "Clicks"), stats.clickEvents,
-                  stats.clickEvents > 0 ? theme::warn : theme::good);
-        artefact (T ("跨采样", "Overs"), stats.oversCount,
-                  stats.oversCount > 0 ? theme::warn : theme::good);
+    surface::hairlineH(g,(float)bands.getX(),(float)bands.getRight(),(float)bands.getY());
+    bands.removeFromTop(12);
+    const int w=bands.getWidth()/4;
+    const char* namesZh[]{"低频","中频","高频"};
+    const char* namesEn[]{"LOW","MID","HIGH"};
+    const char* ranges[]{"<150 Hz","150 Hz - 2 kHz",">2 kHz"};
+    const float correlations[]{stats.bandCorrLow,stats.bandCorrMid,stats.bandCorrHigh};
+    const float sides[]{stats.bandSideLow,stats.bandSideMid,stats.bandSideHigh};
+    for(int i=0;i<3;++i)
+    {
+        auto cell=bands.removeFromLeft(w);
+        g.setFont(uiFont(tokens::unit));g.setColour(theme::textDim);
+        g.drawText(T(namesZh[i],namesEn[i])+" / "+ranges[i],cell.removeFromTop(18),juce::Justification::centredLeft,false);
+        g.setFont(monoFont(15.0f));g.setColour(theme::text);
+        g.drawText(sgn(correlations[i],2),cell.removeFromTop(24),juce::Justification::centredLeft,false);
+        g.setFont(monoFont(10.0f));g.setColour(theme::textFaint);
+        g.drawText(T("侧向 ","SIDE ")+num(sides[i])+"%",cell.removeFromTop(16),juce::Justification::centredLeft,false);
     }
+    g.setFont(uiFont(tokens::unit));g.setColour(theme::textFaint);
+    g.drawText(T("事件计数", "EVENT COUNTS"),bands.removeFromTop(18),juce::Justification::centredLeft,false);
+    g.setFont(monoFont(11.0f));
+    g.drawText("CLIP "+juce::String(stats.clipEvents)+" / TP "+juce::String(stats.oversCount),
+               bands.removeFromTop(22),juce::Justification::centredLeft,false);
+    g.drawText("DC "+juce::String(stats.dcOffsetDb,1)+" dBFS",bands.removeFromTop(18),juce::Justification::centredLeft,false);
 }
 } // namespace ml

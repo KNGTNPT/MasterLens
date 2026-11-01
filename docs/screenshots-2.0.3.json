@@ -1,0 +1,179 @@
+{
+  "version": "2.0.3",
+  "platform": "Linux",
+  "architecture": "x86_64",
+  "rendererSha256": "9a683e5f094d75633f097d3fb0f1a9da8d63832e8088db725757b5a549dcffb9",
+  "images": [
+    {
+      "path": "docs/screenshot-2.0.3.png",
+      "sha256": "414c0f217624bfaa56b926f254c53ec759fb12bb877659063e3759474cb19384",
+      "width": 2240,
+      "height": 1400,
+      "arguments": [
+        "page0",
+        "size1120",
+        "out=203"
+      ]
+    },
+    {
+      "path": "docs/spectrum-2.0.3.png",
+      "sha256": "6dcce79f33cdaff17cc1548316de9566cc9a5a77089ac08adf0af786c3f65339",
+      "width": 2240,
+      "height": 1400,
+      "arguments": [
+        "page2",
+        "size1120",
+        "out=203"
+      ]
+    },
+    {
+      "path": "docs/stereo-2.0.3.png",
+      "sha256": "0c342c4ea48dc68187f111025fcec2bb590f8862d404627415578156951720b5",
+      "width": 2240,
+      "height": 1400,
+      "arguments": [
+        "page3",
+        "size1120",
+        "out=203"
+      ]
+    },
+    {
+      "path": "docs/peak-2.0.3.png",
+      "sha256": "856c4f0f8c8d03ee14ddf50ae43b1228245539bca536b7f887f5992fb042709f",
+      "width": 2240,
+      "height": 1400,
+      "arguments": [
+        "page1",
+        "size1120",
+        "out=203"
+      ]
+    },
+    {
+      "path": "docs/delivery-2.0.3.png",
+      "sha256": "090e05a564133f53f6a3edfc4613a60961b057a34ddb8dd56e9c94be3febcf55",
+      "width": 2240,
+      "height": 1400,
+      "arguments": [
+        "page4",
+        "size1120",
+        "out=203"
+      ]
+    },
+    {
+      "path": "docs/checks-2.0.3.png",
+      "sha256": "ad048c780db801380607183163298cd78085b9339f996ed6a8bbdd9f703eb1d0",
+      "width": 2240,
+      "height": 1400,
+      "arguments": [
+        "page7",
+        "size1120",
+        "out=203"
+      ]
+    },
+    {
+      "path": "docs/signal-2.0.3.png",
+      "sha256": "932f973ee9f1c06eecc80bd0ca70b0a2d7b6992b991ea2f72b2274597d14740d",
+      "width": 2240,
+      "height": 1400,
+      "arguments": [
+        "page6",
+        "size1120",
+        "out=203"
+      ]
+    },
+    {
+      "path": "docs/target-2.0.3.png",
+      "sha256": "ba2fdb7ad5703aba4667d65ca52b3ea983f41bdc3f46b64f8a70d5010abbc286",
+      "width": 2240,
+      "height": 1400,
+      "arguments": [
+        "page9",
+        "size1120",
+        "out=203"
+      ]
+    },
+    {
+      "path": "docs/timeline-2.0.3.png",
+      "sha256": "10214b1c6cdb135ac7210d8035ff2b7f4075c9ce922dfee10eae4acd09906097",
+      "width": 2240,
+      "height": 1400,
+      "arguments": [
+        "page8",
+        "size1120",
+        "out=203"
+      ]
+    },
+    {
+      "path": "docs/english-2.0.3.png",
+      "sha256": "64ca4dee7c706cf2be969a4fc80cd470d7977e6476d296d8f0e3e097233bae4d",
+      "width": 2240,
+      "height": 1400,
+      "arguments": [
+        "page0",
+        "en",
+        "size1120",
+        "out=203"
+      ]
+    },
+    {
+      "path": "docs/settings-2.0.3.png",
+      "sha256": "3e7cf6054ea0b6e474b171bf7c493093874fe6134ef68dbdbeb34c1129aa8921",
+      "width": 2240,
+      "height": 1400,
+      "arguments": [
+        "page0",
+        "settings",
+        "size1120",
+        "out=203"
+      ]
+    },
+    {
+      "path": "docs/about-2.0.3.png",
+      "sha256": "a1bca18f01777ba80b33df2b31c1b68a51f347f672fd63770c6194f246c923d7",
+      "width": 2240,
+      "height": 1400,
+      "arguments": [
+        "page0",
+        "about",
+        "size1120",
+        "out=203"
+      ]
+    },
+    {
+      "path": "docs/album-2.0.3.png",
+      "sha256": "09a8b12d7698b9f20f051388592fb9d40ab36f441e0ff4c5e5d923801fe051ef",
+      "width": 2240,
+      "height": 1400,
+      "arguments": [
+        "page5",
+        "albumcap",
+        "size1120",
+        "out=203album"
+      ]
+    },
+    {
+      "path": "docs/fileqc-2.0.3.png",
+      "sha256": "7c822ea82af4a7f4c8f5a855a4563029c9462af83dcc67707d8b2ec32fde5e59",
+      "width": 2240,
+      "height": 1400,
+      "arguments": [
+        "page10",
+        "fileqc",
+        "size1120",
+        "out=203files"
+      ]
+    },
+    {
+      "path": "docs/waterfall-2.0.3.png",
+      "sha256": "b7b96aa53f9d8cee48b88f418f3ef836bab58f7337dc465c599d089d837b72fc",
+      "width": 2240,
+      "height": 1400,
+      "arguments": [
+        "page2",
+        "spectrumview1",
+        "size1120",
+        "out=203waterfall"
+      ]
+    }
+  ]
+}

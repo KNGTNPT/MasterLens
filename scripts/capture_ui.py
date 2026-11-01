@@ -1,0 +1,73 @@
+#!/usr/bin/env python3
+"""Capture the real editor, validate layout, and refresh README screenshots.
+
+Build MasterLensUiShot first. On headless Linux provide DISPLAY (Xvfb) and a
+Fontconfig configuration containing a Chinese font. PNGs are copied unchanged.
+"""
+import argparse
+import hashlib
+import json
+import platform
+import shutil
+import struct
+import subprocess
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+SHOTS = [
+    ('screenshot', ['page0'], 'ui_shot_page0_203.png'),
+    ('spectrum', ['page2'], 'ui_shot_page2_203.png'),
+    ('stereo', ['page3'], 'ui_shot_page3_203.png'),
+    ('peak', ['page1'], 'ui_shot_page1_203.png'),
+    ('delivery', ['page4'], 'ui_shot_page4_203.png'),
+    ('checks', ['page7'], 'ui_shot_page7_203.png'),
+    ('signal', ['page6'], 'ui_shot_page6_203.png'),
+    ('target', ['page9'], 'ui_shot_page9_203.png'),
+    ('timeline', ['page8'], 'ui_shot_page8_203.png'),
+    ('english', ['page0', 'en'], 'ui_shot_en_page0_203.png'),
+    ('settings', ['page0', 'settings'], 'ui_shot_page0_settings_203.png'),
+    ('about', ['page0', 'about'], 'ui_shot_page0_about_203.png'),
+    ('album', ['page5', 'albumcap'], 'ui_shot_page5_203album.png'),
+    ('fileqc', ['page10', 'fileqc'], 'ui_shot_page10_203files.png'),
+    ('waterfall', ['page2', 'spectrumview1'], 'ui_shot_page2_203waterfall.png'),
+]
+
+
+def digest(path):
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--build-dir', default='build')
+    parser.add_argument('--reuse', action='store_true',
+                        help='reuse captures newer than this renderer (same invocation outputs only)')
+    args = parser.parse_args()
+    build = (ROOT / args.build_dir).resolve()
+    renderer = build / 'MasterLensUiShot_artefacts/Release/MasterLensUiShot'
+    if platform.system() == 'Darwin':
+        renderer = build / 'MasterLensUiShot_artefacts/Release/MasterLensUiShot.app/Contents/MacOS/MasterLensUiShot'
+    renderer = renderer.resolve(strict=True)
+    provenance = {'version': '2.0.3', 'platform': platform.system(),
+                  'architecture': platform.machine(), 'rendererSha256': digest(renderer), 'images': []}
+    for name, flags, output in SHOTS:
+        suffix = '203album' if name == 'album' else '203files' if name == 'fileqc' else '203waterfall' if name == 'waterfall' else '203'
+        capture = ROOT / output
+        dimensions = struct.unpack('>II', capture.read_bytes()[16:24]) if capture.exists() else None
+        if not (args.reuse and capture.exists() and dimensions == (2240, 1400)
+                and capture.stat().st_mtime >= renderer.stat().st_mtime):
+            subprocess.run([str(renderer), *flags, 'size1120', f'out={suffix}'], cwd=ROOT, check=True)
+        destination = ROOT / f'docs/{name}-2.0.3.png'
+        shutil.copyfile(capture, destination)
+        data = destination.read_bytes()
+        assert data[:8] == b'\x89PNG\r\n\x1a\n'
+        width, height = struct.unpack('>II', data[16:24])
+        provenance['images'].append({'path': str(destination.relative_to(ROOT)),
+                                     'sha256': digest(destination), 'width': width, 'height': height,
+                                     'arguments': [*flags, 'size1120', f'out={suffix}']})
+        print(destination.relative_to(ROOT), width, height, flush=True)
+    (ROOT / 'docs/screenshots-2.0.3.json').write_text(json.dumps(provenance, indent=2) + '\n')
+
+
+if __name__ == '__main__':
+    main()

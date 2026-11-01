@@ -10,31 +10,31 @@ void MasterLensAudioProcessorEditor::paint (juce::Graphics& g)
     g.fillAll (ml::theme::background);
     g.addTransform (juce::AffineTransform::scale (uiScale));
 
-    // ---- header: brand, version, reference controls -------------------------
-    {
-        auto content = headerArea.reduced (20, 10);
-        auto logo = content.removeFromLeft (24).toFloat();
+    const float width = (float) baseBounds().getWidth();
+    g.setGradientFill (juce::ColourGradient (ml::theme::cardAlt, 0.0f, 0.0f,
+                                             ml::theme::background, width, 120.0f, false));
+    g.fillRect (headerArea);
+    auto brand = headerArea.reduced (24, 14);
+    ml::paintLogoMark (g, brand.removeFromLeft (34).toFloat());
+    brand.removeFromLeft (12);
+    g.setFont (ml::uiFont (17.0f, true).withExtraKerningFactor (0.10f));
+    g.setColour (ml::theme::text);
+    g.drawText ("MASTERLENS", brand.removeFromTop (23).withWidth (220),
+                juce::Justification::centredLeft, false);
+    g.setFont (ml::monoFont (9.0f));
+    g.setColour (ml::theme::textFaint);
+    g.drawText ("BERRY STUDIO  /  " + juce::String (ml::kVersion), brand.withWidth (240),
+                juce::Justification::centredLeft, false);
+    ml::surface::hairlineH (g, 18.0f, width - 18.0f, 111.0f);
 
-        ml::paintLogoMark (g, logo);
-        content.removeFromLeft (10);
-
-        const auto nameFont = ml::uiFont (13.0f, true);
-        const auto name = juce::String ("MasterLens");
-        const int nameW = juce::roundToInt (juce::GlyphArrangement::getStringWidth (nameFont, name));
-
-        g.setColour (ml::theme::text);
-        g.setFont (nameFont);
-        g.drawText (name, content.getX(), content.getY(), nameW + 4, 28,
-                    juce::Justification::centredLeft, false);
-
-        g.setColour (ml::theme::textFaint);
-        g.setFont (ml::uiFont (ml::tokens::unit));
-        g.drawText ("v" + juce::String (ml::kVersion), content.getX() + nameW + 8,
-                    content.getY(), 70, 28, juce::Justification::centredLeft, false);
-
-        ml::surface::hairlineH (g, 0.0f, (float) baseBounds().getWidth(),
-                                (float) headerArea.getBottom() - 1.0f);
-    }
+    // The control desk has a beveled leading edge, like a separate console plate.
+    ml::surface::raised (g, paramArea.toFloat(), 0.0f);
+    ml::surface::hairlineH (g, 0.0f, width, (float) paramArea.getY(),
+                           ml::theme::text.withAlpha (0.12f));
+    g.setColour (ml::theme::textFaint);
+    g.setFont (ml::uiFont (ml::tokens::unit));
+    g.drawText (T ("比较基准", "COMPARISON BASIS"), 24, paramArea.getY() + 12, 190, 16,
+                juce::Justification::centredLeft, false);
 
     // ---- footer: technical line, one output state, brand, actions -----------
     {
@@ -82,7 +82,7 @@ void MasterLensAudioProcessorEditor::paint (juce::Graphics& g)
         const auto outFont = ml::monoFont (ml::tokens::unit);
         const int outW = juce::jmin (160, juce::roundToInt (
             juce::GlyphArrangement::getStringWidth (outFont, outState)) + 18);
-        auto outArea = juce::Rectangle<int> (f.getCentreX() - outW / 2, f.getY(), outW, f.getHeight());
+        auto outArea = juce::Rectangle<int> (f.getRight() - outW, f.getY(), outW, f.getHeight());
 
         g.setColour (outColour);
         g.fillEllipse ((float) outArea.getX(), (float) outArea.getCentreY() - 2.5f, 5.0f, 5.0f);
@@ -90,7 +90,7 @@ void MasterLensAudioProcessorEditor::paint (juce::Graphics& g)
         g.drawText (outState, outArea.withTrimmedLeft (12), juce::Justification::centredLeft, false);
 
         // Fixed brand lockup: 11 px, +4% tracking, weakest tone.
-        auto brand = juce::Rectangle<int> (f.getX() + 318, f.getY(), 104, f.getHeight());
+        auto brand = juce::Rectangle<int> (f.getCentreX() - 52, f.getY(), 104, f.getHeight());
         ml::paintBerryWordmark (g, brand, ml::theme::textFaint, 11.0f,
                                 juce::Justification::centredLeft);
     }

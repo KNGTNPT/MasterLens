@@ -14,11 +14,11 @@ concurrency:
 
 env:
   JUCE_TAG: "8.0.15"
-  APP_VERSION: "2.0.2"
+  APP_VERSION: "2.0.3"
 
 jobs:
   macos:
-    runs-on: macos-14
+    runs-on: macos-15
     steps:
       - uses: actions/checkout@v7
 
@@ -31,7 +31,10 @@ jobs:
           -G "Unix Makefiles" -DCMAKE_OSX_ARCHITECTURES="arm64;x86_64"
 
       - name: Build (all bundles)
-        run: cmake --build build --config Release -j 4
+        run: cmake --build build --config Release --target MasterLens_AU MasterLens_VST3 MasterLens_Standalone MasterLensCli MasterLensDspTest -j 4
+
+      - name: DSP regression
+        run: ./build/MasterLensDspTest_artefacts/Release/MasterLensDspTest
 
       - name: Package DMG
         run: |
@@ -103,6 +106,12 @@ jobs:
           cmake --build build --config Release --target MasterLens_Standalone -j 4
           cmake --build build --config Release --target MasterLensCli -j 4
 
+      - name: DSP regression (native x64)
+        if: matrix.arch == 'x64'
+        run: |
+          cmake --build build --config Release --target MasterLensDspTest -j 4
+          ./build/MasterLensDspTest_artefacts/Release/MasterLensDspTest.exe
+
       - name: Install NSIS
         run: choco install nsis -y --no-progress
 
@@ -131,3 +140,33 @@ jobs:
           path: MasterLens-${{ env.APP_VERSION }}-Windows-${{ matrix.arch }}.exe
           if-no-files-found: error
           retention-days: 30
+
+  release:
+    name: Publish verified installers
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [macos, windows]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/download-artifact@v7
+        with:
+          pattern: MasterLens-*
+          path: release
+          merge-multiple: true
+      - name: Verify assets and publish
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$RELEASE_TAG" = "v${APP_VERSION}"
+          cd release
+          for asset in "MasterLens-${APP_VERSION}-macOS.dmg" "MasterLens-${APP_VERSION}-Windows-x64.exe" "MasterLens-${APP_VERSION}-Windows-ARM64.exe"; do
+            test -s "$asset"
+          done
+          sha256sum *.dmg *.exe > SHA256SUMS.txt
+          gh release create "$RELEASE_TAG" *.dmg *.exe SHA256SUMS.txt \
+            --verify-tag --title "MasterLens ${APP_VERSION}" \
+            --notes-file ../docs/release-2.0.3.md

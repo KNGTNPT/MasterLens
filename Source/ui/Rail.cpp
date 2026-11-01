@@ -11,9 +11,10 @@ ModuleRail::ModuleRail()
 
 juce::Rectangle<int> ModuleRail::rowBounds (int index) const
 {
-    const int top = 10;
-    const int rowH = juce::jlimit (28, 44, (getHeight() - top - 8) / juce::jmax (1, numPages));
-    return { 0, top + index * rowH, getWidth(), rowH };
+    const int x0 = getWidth() * index / numPages;
+    const int x1 = getWidth() * (index + 1) / numPages;
+    return { x0, 0, x1 - x0, getHeight() };
+
 }
 
 void ModuleRail::setModule (int index, juce::String title, juce::String value,
@@ -59,52 +60,56 @@ void ModuleRail::setVerdict (juce::String headline, juce::String subline, juce::
 
 void ModuleRail::paint (juce::Graphics& g)
 {
-    g.fillAll (theme::card);
-
+    g.fillAll (theme::background);
+    const char* zh[] { "响度", "峰值", "频谱", "声场", "平台", "专辑", "信号", "诊断", "时间", "目标", "文件" };
+    const char* en[] { "Loudness", "Peak", "Spectrum", "Stereo", "Delivery", "Album", "Signal", "Checks", "Timeline", "Target", "Files" };
     for (int i = 0; i < numPages; ++i)
     {
-        auto row = rowBounds (i);
+        auto r = rowBounds (i);
         const bool sel = i == selected;
-        const bool hot = i == hoverRow;
-        const auto& item = items[(size_t) i];
-        const bool compact = row.getHeight() < 34;
-
+        const auto colour = sel ? theme::accent : (i == hoverRow ? theme::text : theme::textFaint);
         if (sel)
         {
-            g.setColour (theme::raised.withAlpha (0.55f));
-            g.fillRect (row.reduced (0, 1));
+            g.setGradientFill (juce::ColourGradient (theme::accent.withAlpha (0.0f),
+                (float) r.getCentreX(), (float) r.getY(), theme::accent.withAlpha (0.09f),
+                (float) r.getCentreX(), (float) r.getBottom(), false));
+            g.fillRect (r);
             g.setColour (theme::accent);
-            g.fillRect (row.getX(), row.getY() + 4, 2, row.getHeight() - 8);
+            g.fillRect (r.getX() + 14, r.getBottom() - 2, r.getWidth() - 28, 2);
         }
-        else if (hot)
+        const float cx = (float) r.getCentreX(), cy = 13.0f;
+        g.setColour (colour);
+        juce::Path icon;
+        switch (i)
         {
-            g.setColour (theme::raised.withAlpha (0.32f));
-            g.fillRect (row.reduced (0, 1));
+            case 0: // three unequal meter stems
+                for (int j=0; j<3; ++j) g.fillRoundedRectangle (cx-7.0f+j*6.0f,cy-2.0f-j*2.0f,2.0f,7.0f+j*2.0f,1.0f);
+                break;
+            case 1:
+                icon.startNewSubPath(cx-8,cy+5); icon.lineTo(cx-2,cy+5); icon.lineTo(cx+1,cy-7); icon.lineTo(cx+4,cy+5); icon.lineTo(cx+8,cy+5); break;
+            case 2:
+                icon.startNewSubPath(cx-9,cy+5); icon.cubicTo(cx-5,cy+4,cx-6,cy-7,cx-2,cy-5); icon.cubicTo(cx+2,cy-3,cx+2,cy+4,cx+9,cy+5); break;
+            case 3:
+                g.drawEllipse(cx-9,cy-5,12,12,1.0f); g.drawEllipse(cx-3,cy-5,12,12,1.0f); break;
+            case 4:
+                for (int j=0;j<3;++j) { icon.startNewSubPath(cx-8,cy-4+j*5);icon.lineTo(cx+7-j*3,cy-4+j*5); } break;
+            case 5:
+                g.drawRoundedRectangle(cx-7,cy-5,14,12,2,1);g.drawEllipse(cx-2,cy-1,4,4,1);break;
+            case 6:
+                icon.startNewSubPath(cx-9,cy);icon.lineTo(cx-4,cy);icon.lineTo(cx-1,cy-6);icon.lineTo(cx+2,cy+6);icon.lineTo(cx+5,cy);icon.lineTo(cx+9,cy);break;
+            case 7:
+                icon.startNewSubPath(cx-6,cy);icon.lineTo(cx-1,cy+5);icon.lineTo(cx+7,cy-5);break;
+            case 8:
+                g.drawEllipse(cx-7,cy-6,14,14,1);icon.startNewSubPath(cx,cy-3);icon.lineTo(cx,cy+1);icon.lineTo(cx+4,cy+3);break;
+            case 9:
+                g.drawEllipse(cx-7,cy-6,14,14,1);g.drawEllipse(cx-3,cy-2,6,6,1);break;
+            case 10:
+                icon.startNewSubPath(cx-7,cy+6);icon.lineTo(cx-7,cy-6);icon.lineTo(cx+2,cy-6);icon.lineTo(cx+7,cy-1);icon.lineTo(cx+7,cy+6);icon.closeSubPath();break;
         }
-
-        // Group number is the only decorative index on this surface.
-        g.setColour (theme::textFaint.withAlpha (sel ? 0.9f : 0.55f));
-        g.setFont (monoFont (10.0f));
-        g.drawText (juce::String (i + 1).paddedLeft ('0', 2),
-                    row.getX() + 8, row.getY() + (compact ? 2 : 4), 20,
-                    compact ? 12 : 14, juce::Justification::centredLeft, false);
-
-        const int titleW = juce::jmax (76, row.getWidth() - 78);
-
-        g.setColour (sel ? theme::text : theme::textDim);
-        g.setFont (uiFont (tokens::label, sel));
-        g.drawFittedText (item.title, row.getX() + 30, row.getY() + (compact ? 2 : 4),
-                          titleW, compact ? 14 : 16, juce::Justification::centredLeft, 1);
-
-        g.setColour (theme::textFaint);
-        g.setFont (uiFont (tokens::unit));
-        g.drawFittedText (item.status, row.getX() + 30, row.getY() + (compact ? 15 : 20),
-                          titleW, compact ? 12 : 13, juce::Justification::centredLeft, 1);
-
-        g.setColour (theme::textDim);
-        g.setFont (monoFont (tokens::unit));
-        g.drawFittedText (item.value, row.getWidth() - 64, row.getY() + (compact ? 7 : 9),
-                          56, 14, juce::Justification::centredRight, 1);
+        g.strokePath(icon,juce::PathStrokeType(1.15f));
+        g.setFont (uiFont (getWidth()<980 ? 10.0f : 11.0f, sel));
+        g.drawText (T (zh[i], en[i]), r.withTrimmedTop (28).withTrimmedBottom (4),
+                    juce::Justification::centred, false);
     }
 }
 

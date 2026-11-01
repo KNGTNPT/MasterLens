@@ -61,7 +61,7 @@ void TruePeakDetector::prepare (double sampleRate)
 
     for (int p = 0; p < phases; ++p)
         for (int j = 0; j < tapsPerPhase; ++j)
-            coeffs[p][j] = (float) (h[p + phases * j] * scale);
+            coeffs[j][p] = (float) (h[p + phases * j] * scale);
 
     reset();
 }

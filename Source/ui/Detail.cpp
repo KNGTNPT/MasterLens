@@ -496,8 +496,7 @@ void DetailArea::setState (UiState s)
             break;
 
         case PageId::stereo:
-            if ((tick % 3) == 0)
-                meters.setValues (state.stats);
+            meters.setValues (state.stats);
             break;
 
         case PageId::delivery:
@@ -559,23 +558,12 @@ void DetailArea::resized()
     {
         case PageId::loudness:
         {
-            const bool compact = area.getWidth() < 700;
-            const int sideW = compact ? 0 : juce::jlimit (220, 276, area.getWidth() / 3);
-
-            if (sideW > 0)
-            {
-                auto side = area.removeFromRight (sideW);
-                area.removeFromRight (20);
-                levelBars.setBounds (side.removeFromTop (juce::jmin (150, side.getHeight() / 2)));
-                loudnessSideArea = side;   // remaining right column, painted on the page
-            }
-            else
-            {
-                levelBars.setBounds (area.removeFromTop (104));
-                area.removeFromTop (10);
-                loudnessSideArea = area.removeFromBottom (72);
-                area.removeFromBottom (10);
-            }
+            auto console = area.removeFromBottom (juce::jmin (116, area.getHeight()/3));
+            area.removeFromBottom (22);
+            const int phaseWidth = juce::jmin (220, console.getWidth()/3);
+            loudnessSideArea = console.removeFromRight (phaseWidth);
+            console.removeFromRight (24);
+            levelBars.setBounds (console);
 
             history.setBounds (area);
             levelBars.setVisible (true);
@@ -585,23 +573,10 @@ void DetailArea::resized()
 
         case PageId::spectrum:
         {
-            const bool compact = area.getWidth() < 760;
             auto modes = area.removeFromTop (26);
-            area.removeFromTop (8);
-
-            const int sideW = compact ? 0 : juce::jlimit (200, 240, area.getWidth() / 4);
-
-            if (sideW > 0)
-            {
-                auto side = area.removeFromRight (sideW);
-                area.removeFromRight (20);
-                spectrumSideArea = side;
-            }
-            else
-            {
-                spectrumSideArea = area.removeFromBottom (84);
-                area.removeFromBottom (10);
-            }
+            area.removeFromTop (6);
+            spectrumSideArea = area.removeFromBottom (78);
+            area.removeFromBottom (14);
 
             bands.setVisible (false);
 
@@ -631,7 +606,7 @@ void DetailArea::resized()
 
             spectrum.setVisible (spectrumView == 0);
             spectrogram.setVisible (spectrumView != 0);
-            bands.setVisible (true);
+            bands.setVisible (false);
             refImport.setVisible (true);
             refClear.setVisible (true);
             refPlay.setVisible (true);
