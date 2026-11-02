@@ -6,6 +6,8 @@
 #include <juce_audio_basics/juce_audio_basics.h>
 #include <juce_audio_formats/juce_audio_formats.h>
 
+#include "../dsp/AnalysisEngine.h"
+
 namespace ml
 {
 /** In-plugin reference A/B player.
@@ -13,9 +15,9 @@ namespace ml
     The first imported reference file is decoded into memory on a worker thread
     and rendered synchronously with the host playhead. It is only audible while
     the user explicitly enables reference playback; otherwise the plug-in stays
-    bit-transparent. Playback uses linear interpolation when the reference file
-    rate differs from the host rate, so 44.1 / 48 / 96 kHz references stay in
-    sync with the project.
+    bit-transparent. Playback uses 4-point Catmull-Rom interpolation when the
+    reference file rate differs from the host rate, so 44.1 / 48 / 96 kHz
+    references stay in sync without the dull top end of linear interpolation.
 */
 class ReferencePlayer : private juce::Thread
 {
@@ -31,6 +33,7 @@ public:
     juce::String getStatus() const;
     juce::String getFileName() const;
     double getDuration() const noexcept { return duration.load (std::memory_order_relaxed); }
+    float getLoudness() const noexcept { return loudnessLufs.load (std::memory_order_relaxed); }
 
     void setEnabled (bool shouldPlay) noexcept { enabled.store (shouldPlay, std::memory_order_release); }
     bool isEnabled() const noexcept { return enabled.load (std::memory_order_acquire); }
@@ -71,5 +74,6 @@ private:
     std::atomic<bool> enabled { false };
     std::atomic<double> duration { 0.0 };
     std::atomic<double> offsetSeconds { 0.0 };
+    std::atomic<float> loudnessLufs { kSilentDb };
 };
 } // namespace ml

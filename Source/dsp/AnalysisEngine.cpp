@@ -362,10 +362,17 @@ void AnalysisEngine::process (const juce::AudioBuffer<float>& buffer, Stats& sta
 
         prevL = l;
         prevR = r;
+
+        // Exact 100 ms partitions: a host block may straddle the boundary, so
+        // close the partial here instead of dropping the overshoot from the
+        // next block. This keeps live M/S windows and the offline pass aligned.
+        ++partialSamples;
+        partialProcessed += 1.0;
+
+        if (partialSamples >= partialLength)
+            finishPartialBlock (stats);
     }
 
-    partialSamples += numSamples;
-    partialProcessed += numSamples;
     elapsedSamples += (juce::uint32) numSamples;
     stats.elapsed = (double) elapsedSamples / fs;
     stats.timeOrigin = timeOrigin;
@@ -377,8 +384,6 @@ void AnalysisEngine::process (const juce::AudioBuffer<float>& buffer, Stats& sta
     else
         stats.tailSilenceSeconds = 0.0f;
 
-    if (partialSamples >= partialLength)
-        finishPartialBlock (stats);
 }
 
 void AnalysisEngine::finish (Stats& stats)

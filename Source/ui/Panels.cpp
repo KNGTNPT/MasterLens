@@ -64,20 +64,28 @@ void ReadoutBand::paintCell (juce::Graphics& g, juce::Rectangle<int> cell,
                              const juce::String& unit, const juce::String& hint, juce::Colour status)
 {
     surface::hairlineH (g, (float) cell.getX(), (float) cell.getRight(), (float) cell.getY());
+
     const bool compact = cell.getHeight() < 48;
-    auto inner = cell.reduced (0, compact ? 3 : 7);
+    const int labelH = compact ? 12 : 14;
+    const int valueH = compact ? 21 : 26;
+    const int groupH = labelH + valueH;
+    const int groupTop = cell.getY() + juce::jmax (0, (cell.getHeight() - groupH) / 2);
+
+    auto labelRow = juce::Rectangle<int> (cell.getX(), groupTop, cell.getWidth(), labelH);
+    auto row = juce::Rectangle<int> (cell.getX(), groupTop + labelH, cell.getWidth(), valueH);
+
     g.setFont (uiFont (compact ? 9.0f : tokens::unit));
     g.setColour (theme::textDim);
-    g.drawText (label, inner.removeFromTop (compact ? 12 : 14), juce::Justification::centredLeft, false);
-    auto row = inner.removeFromTop (juce::jmin (compact ? 21 : 26, inner.getHeight()));
+    g.drawText (label, labelRow, juce::Justification::centredLeft, false);
     g.setFont (monoFont (compact ? 18.0f : 22.0f));
     g.setColour (theme::text);
-    g.drawText (value, row.withTrimmedRight (40), juce::Justification::centredLeft, false);
+    g.drawText (value, row.withTrimmedRight (44), juce::Justification::centredLeft, false);
     g.setFont (monoFont (10.0f));
     g.setColour (theme::textFaint);
-    g.drawText (unit, row.removeFromRight (40), juce::Justification::centredRight, false);
+    auto unitArea = row.removeFromRight (44).withTrimmedRight (12);
+    g.drawText (unit, unitArea, juce::Justification::centredRight, false);
     g.setColour (status);
-    g.fillEllipse ((float) cell.getRight()-4.0f, (float) cell.getY()+13.0f, 4.0f, 4.0f);
+    g.fillEllipse ((float) cell.getRight() - 4.0f, (float) row.getCentreY() - 2.0f, 4.0f, 4.0f);
     juce::ignoreUnused (hint);
 }
 

@@ -44,7 +44,52 @@ void ModuleRail::endBatch()
 
 void ModuleRail::setSelected (int index)
 {
-    selected = juce::jlimit (0, numPages - 1, index);
+    const int next = juce::jlimit (0, numPages - 1, index);
+
+    if (next == selected)
+        return;
+
+    selected = next;
+
+    // Screenshot / headless renders should show the settled state; only the
+    // live editor spends 140 ms sliding the indicator.
+    if (! isShowing())
+    {
+        visualSelected = (float) selected;
+        animationActive = false;
+        stopTimer();
+        repaint();
+        return;
+    }
+
+    animationFrom = visualSelected;
+    animationStarted = juce::Time::getMillisecondCounterHiRes() * 0.001;
+    animationActive = true;
+    startTimerHz (60);
+    repaint();
+}
+
+void ModuleRail::timerCallback()
+{
+    if (! animationActive)
+    {
+        stopTimer();
+        return;
+    }
+
+    constexpr double duration = 0.14;
+    const double elapsed = juce::Time::getMillisecondCounterHiRes() * 0.001 - animationStarted;
+    const float t = (float) juce::jlimit (0.0, 1.0, elapsed / duration);
+    const float eased = 1.0f - std::pow (1.0f - t, 3.0f);
+    visualSelected = animationFrom + ((float) selected - animationFrom) * eased;
+
+    if (t >= 1.0f)
+    {
+        visualSelected = (float) selected;
+        animationActive = false;
+        stopTimer();
+    }
+
     repaint();
 }
 
@@ -68,16 +113,7 @@ void ModuleRail::paint (juce::Graphics& g)
         auto r = rowBounds (i);
         const bool sel = i == selected;
         const auto colour = sel ? theme::accent : (i == hoverRow ? theme::text : theme::textFaint);
-        if (sel)
-        {
-            g.setGradientFill (juce::ColourGradient (theme::accent.withAlpha (0.0f),
-                (float) r.getCentreX(), (float) r.getY(), theme::accent.withAlpha (0.09f),
-                (float) r.getCentreX(), (float) r.getBottom(), false));
-            g.fillRect (r);
-            g.setColour (theme::accent);
-            g.fillRect (r.getX() + 14, r.getBottom() - 2, r.getWidth() - 28, 2);
-        }
-        const float cx = (float) r.getCentreX(), cy = 13.0f;
+        const float cx = (float) r.getCentreX(), cy = (float) r.getY() + 14.0f;
         g.setColour (colour);
         juce::Path icon;
         switch (i)
@@ -108,9 +144,23 @@ void ModuleRail::paint (juce::Graphics& g)
         }
         g.strokePath(icon,juce::PathStrokeType(1.15f));
         g.setFont (uiFont (getWidth()<980 ? 10.0f : 11.0f, sel));
-        g.drawText (T (zh[i], en[i]), r.withTrimmedTop (28).withTrimmedBottom (4),
+        g.drawText (T (zh[i], en[i]), r.withTrimmedTop (27).withTrimmedBottom (3),
                     juce::Justification::centred, false);
     }
+
+    // One sliding indicator, not a hard rectangle jump. The text colours still
+    // switch immediately so the destination is readable during the 140 ms move.
+    const float tabW = (float) getWidth() / (float) numPages;
+    const float x = juce::jlimit (0.0f, (float) getWidth() - tabW,
+                                  (float) getWidth() * visualSelected / (float) numPages);
+    juce::Rectangle<float> indicator (x, 0.0f, tabW, (float) getHeight());
+    g.setGradientFill (juce::ColourGradient (theme::accent.withAlpha (0.0f),
+        indicator.getCentreX(), 0.0f, theme::accent.withAlpha (0.09f),
+        indicator.getCentreX(), indicator.getBottom(), false));
+    g.fillRect (indicator);
+    g.setColour (theme::accent);
+    g.fillRect (indicator.getX() + 14.0f, indicator.getBottom() - 2.0f,
+                juce::jmax (8.0f, indicator.getWidth() - 28.0f), 2.0f);
 }
 
 static const char* moduleHintZh (int index)

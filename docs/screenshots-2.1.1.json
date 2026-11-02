@@ -1,0 +1,217 @@
+{
+  "version": "2.1.1",
+  "platform": "Darwin",
+  "architecture": "arm64",
+  "rendererSha256": "ee202ecce9353dbf06ff6005920cf4c7faf367bbe576bb3fe7d17bffd1dc90f5",
+  "images": [
+    {
+      "path": "docs/light-2.1.1.png",
+      "sha256": "3abff894d6ef79d1b940b9c3f0daa3d6fb02872874a292fa76a556139d5ac849",
+      "width": 2240,
+      "height": 1400,
+      "arguments": [
+        "page0",
+        "light",
+        "size1120",
+        "out=211"
+      ]
+    },
+    {
+      "path": "docs/screenshot-2.1.1.png",
+      "sha256": "800d80fd1de5d9dc7974b936a24d1d8031050189ac39959344b48357f459d4a7",
+      "width": 2240,
+      "height": 1400,
+      "arguments": [
+        "page0",
+        "size1120",
+        "out=211"
+      ]
+    },
+    {
+      "path": "docs/spectrum-2.1.1.png",
+      "sha256": "f5175b0f4acc3a65ab67e37318df9e904363245b4844cf1497f672c7ed6e3bf8",
+      "width": 2240,
+      "height": 1400,
+      "arguments": [
+        "page2",
+        "size1120",
+        "out=211"
+      ]
+    },
+    {
+      "path": "docs/stereo-2.1.1.png",
+      "sha256": "5502648091a3e20710bf9773e2fad4625caa70bbc7a566965a9b1f64123fc875",
+      "width": 2240,
+      "height": 1400,
+      "arguments": [
+        "page3",
+        "size1120",
+        "out=211"
+      ]
+    },
+    {
+      "path": "docs/peak-2.1.1.png",
+      "sha256": "30df39b85289921a7073ec8518ad548bb2372e235af454f1ab1d072acc259a97",
+      "width": 2240,
+      "height": 1400,
+      "arguments": [
+        "page1",
+        "size1120",
+        "out=211"
+      ]
+    },
+    {
+      "path": "docs/delivery-2.1.1.png",
+      "sha256": "6ad5f4bc8ea27fc2ee2283a672e0ed65664e90dd66c0293ac1f5ca207ce13aba",
+      "width": 2240,
+      "height": 1400,
+      "arguments": [
+        "page4",
+        "size1120",
+        "out=211"
+      ]
+    },
+    {
+      "path": "docs/checks-2.1.1.png",
+      "sha256": "df1d66fad13be5ed46f32f9532c1d3936b038cfc1e336003f85a80f4b5e7569e",
+      "width": 2240,
+      "height": 1400,
+      "arguments": [
+        "page7",
+        "size1120",
+        "out=211"
+      ]
+    },
+    {
+      "path": "docs/signal-2.1.1.png",
+      "sha256": "edc0672e8100346e5f798e52cf2c3e30577d12cb1399aea86a4e2c43fd25d065",
+      "width": 2240,
+      "height": 1400,
+      "arguments": [
+        "page6",
+        "size1120",
+        "out=211"
+      ]
+    },
+    {
+      "path": "docs/target-2.1.1.png",
+      "sha256": "75fd692633cf320c7118d9ce28ea54ed289cb29ff423e5b177ea8fb944ec1a7f",
+      "width": 2240,
+      "height": 1400,
+      "arguments": [
+        "page9",
+        "size1120",
+        "out=211"
+      ]
+    },
+    {
+      "path": "docs/timeline-2.1.1.png",
+      "sha256": "01a1c9c9768547e8529cbe4bfb3c51804617467fcea4c982b8f8d90448495bfc",
+      "width": 2240,
+      "height": 1400,
+      "arguments": [
+        "page8",
+        "size1120",
+        "out=211"
+      ]
+    },
+    {
+      "path": "docs/english-2.1.1.png",
+      "sha256": "cd55db04f61a3b026e5a862898e24ea47965bd68aeeb253d81497bb242762a72",
+      "width": 2240,
+      "height": 1400,
+      "arguments": [
+        "page0",
+        "en",
+        "size1120",
+        "out=211"
+      ]
+    },
+    {
+      "path": "docs/settings-2.1.1.png",
+      "sha256": "68e4f6f00c9b77a6f3398be2defa11bc1e80c77cebb3bae8c1483006ef27b32c",
+      "width": 2240,
+      "height": 1400,
+      "arguments": [
+        "page0",
+        "settings",
+        "size1120",
+        "out=211"
+      ]
+    },
+    {
+      "path": "docs/about-2.1.1.png",
+      "sha256": "e8c48c86d91fa55fbb2e1810373076917a10fa6dbfea0d3082b1a5a18e8e1b7b",
+      "width": 2240,
+      "height": 1400,
+      "arguments": [
+        "page0",
+        "about",
+        "size1120",
+        "out=211"
+      ]
+    },
+    {
+      "path": "docs/album-2.1.1.png",
+      "sha256": "637cfd575183c6f309b8cb20c133736971fb783013a39a7a73df0ad03752d92c",
+      "width": 2240,
+      "height": 1400,
+      "arguments": [
+        "page5",
+        "albumcap",
+        "size1120",
+        "out=211album"
+      ]
+    },
+    {
+      "path": "docs/fileqc-2.1.1.png",
+      "sha256": "10790015bc0ac44c06b9d170cbfe5c33d65e4d7fb4209ce46e48033cc276db35",
+      "width": 2240,
+      "height": 1400,
+      "arguments": [
+        "page10",
+        "fileqc",
+        "size1120",
+        "out=211files"
+      ]
+    },
+    {
+      "path": "docs/file-mono-2.1.1.png",
+      "sha256": "591c79ae0f6fc3d2d8ba7eabe8ec05bf7b13ea745a29c96fd7200e27e21061f3",
+      "width": 2240,
+      "height": 1400,
+      "arguments": [
+        "page10",
+        "fileqc",
+        "fileview1",
+        "size1120",
+        "out=211mono"
+      ]
+    },
+    {
+      "path": "docs/file-gain-2.1.1.png",
+      "sha256": "ac68248ce2f5d3bd6b68c79e8e28bf79ead2f6fe8c189201d71c2a2e0e67d05c",
+      "width": 2240,
+      "height": 1400,
+      "arguments": [
+        "page10",
+        "fileqc",
+        "fileview2",
+        "size1120",
+        "out=211gain"
+      ]
+    },
+    {
+      "path": "docs/waterfall-2.1.1.png",
+      "sha256": "d79ea827cb68eb55bb5d54febf1a5d1558f08a5c76d9243060db09f0442e89fc",
+      "width": 2240,
+      "height": 1400,
+      "arguments": [
+        "page2",
+        "spectrumview1",
+        "size1120",
+        "out=211waterfall"
+      ]
+    }
+  ]
+}

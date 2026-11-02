@@ -1,11 +1,11 @@
 ; MasterLens Windows installer (NSIS)
 ; 由 CI 调用：
-;   makensis /DVERSION=2.1.0 /DARCH=x64 /DSTAGE=<abs stage> /DOUTFILE=<abs out> packaging/installer.nsi
+;   makensis /DVERSION=2.1.1 /DARCH=x64 /DSTAGE=<abs stage> /DOUTFILE=<abs out> packaging/installer.nsi
 Unicode true
 !include "MUI2.nsh"
 
 !ifndef VERSION
-  !define VERSION "2.1.0"
+  !define VERSION "2.1.1"
 !endif
 !ifndef ARCH
   !define ARCH "x64"

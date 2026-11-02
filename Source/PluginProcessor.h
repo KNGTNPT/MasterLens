@@ -1,5 +1,9 @@
 #pragma once
 
+#include <array>
+#include <atomic>
+#include <cstdint>
+
 #include <juce_audio_processors/juce_audio_processors.h>
 
 #include "dsp/AnalysisEngine.h"
@@ -69,6 +73,10 @@ public:
 
     bool isMonitorMatch() const { return getBool ("monitorMatch"); }
     float getMonitorTrimDb() const { return stats.monitorTrimDb.load(); }
+    void setMonitorTargetLufs (float lufs) noexcept
+    {
+        monitorTargetLufs.store (juce::jlimit (-36.0f, 0.0f, lufs), std::memory_order_relaxed);
+    }
 
     void startAudition (double startSeconds, double endSeconds, float lowHz, float highHz, bool monoFold)
     {
@@ -101,7 +109,21 @@ private:
         return false;
     }
 
+    // Coverage is measured as the union of host-time intervals actually seen,
+    // not as elapsed processing time. Looping the same eight bars therefore
+    // cannot make a four-minute track look 100 % measured.
+    static constexpr double coverageBucketSeconds = 0.1;
+    static constexpr int coverageBucketCount = 144000; // 4 hours at 10 Hz
+    static constexpr int coverageWordCount = (coverageBucketCount + 63) / 64;
+
+    void resetHostCoverage() noexcept;
+    void markHostCoverage (double startSeconds, double endSeconds) noexcept;
+
+    std::array<std::atomic<std::uint64_t>, coverageWordCount> hostCoverage {};
+    std::atomic<int> coveredBuckets { 0 };
+
     std::atomic<int> pendingUiCommand { 0 };
+    std::atomic<float> monitorTargetLufs { -14.0f };
     int lastTransportPlaying = -1;
     int lastCommandValue = 0;
 

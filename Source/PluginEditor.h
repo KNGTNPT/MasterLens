@@ -68,6 +68,8 @@ private:
     void updateRail();
     void applyPreset (int index);
     void showGenreInfo();
+    void revealOverlay (juce::Component&);
+    void hideOverlay (juce::Component&);
     void syncPresetToParameters();
     void refreshAlbum();
     void captureAlbum();
@@ -129,6 +131,7 @@ private:
     MasterLensAudioProcessor& processor;
     ml::MasterLensLookAndFeel lnf;
     juce::TooltipWindow tooltipWindow { this, 650 };
+    juce::ComponentAnimator animator;
 
     juce::ComboBox presetBox;
     juce::TextButton infoButton;

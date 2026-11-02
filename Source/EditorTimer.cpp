@@ -24,12 +24,27 @@ double MasterLensAudioProcessorEditor::timelineTotal() const
 
 void MasterLensAudioProcessorEditor::setPage (int index)
 {
-    selectedPage = juce::jlimit (0, ml::numPages - 1, index);
+    const int next = juce::jlimit (0, ml::numPages - 1, index);
+    const bool changed = next != selectedPage;
+
+    selectedPage = next;
     rail.setSelected (selectedPage);
     detail.setPage ((ml::PageId) selectedPage);
 
     timeline.setVisible (false);
     resized();
+
+    // A lightweight page enter: the destination is readable immediately and
+    // settles from 0 to 1 alpha over 140 ms. Headless captures stay instant.
+    if (changed && isShowing())
+    {
+        animator.cancelAnimation (&detail, true);
+        detail.setAlpha (0.0f);
+        animator.animateComponent (&detail, detail.getBounds(), 1.0f, 140, false, 0.0, 1.0);
+    }
+    else
+        detail.setAlpha (1.0f);
+
     repaint();
 }
 
@@ -161,6 +176,7 @@ void MasterLensAudioProcessorEditor::timerCallback()
 
     const float target = basis.hasComparison() ? basis.comparisonLufs()
                        : (basis.mode == ml::BasisMode::manual ? manualTarget : -14.0f);
+    processor.setMonitorTargetLufs (target);
 
     if (selectedPage == (int) ml::PageId::files)
     {

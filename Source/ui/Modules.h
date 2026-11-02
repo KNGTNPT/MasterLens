@@ -109,7 +109,8 @@ constexpr int numPages = 11;
 //==============================================================================
 /** Left hand module list: verdict header + one 40 px row per module. */
 class ModuleRail : public juce::Component,
-                   public juce::SettableTooltipClient
+                   public juce::SettableTooltipClient,
+                   private juce::Timer
 {
 public:
     ModuleRail();
@@ -141,6 +142,7 @@ private:
     };
 
     juce::Rectangle<int> rowBounds (int index) const;
+    void timerCallback() override;
 
     std::array<Item, numPages> items;
     juce::String verdictHeadline, verdictSubline;
@@ -148,6 +150,10 @@ private:
     int selected = 0;
     int hoverRow = -1;
     int batchDepth = 0;
+    float visualSelected = 0.0f;
+    float animationFrom = 0.0f;
+    double animationStarted = 0.0;
+    bool animationActive = false;
 };
 
 //==============================================================================

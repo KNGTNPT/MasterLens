@@ -100,7 +100,7 @@ MasterLensAudioProcessorEditor::MasterLensAudioProcessorEditor (MasterLensAudioP
 
     buildControls();
 
-    aboutPanel.onClose = [this] { aboutPanel.setVisibleAndFocus (false); };
+    aboutPanel.onClose = [this] { hideOverlay (aboutPanel); };
     addChildComponent (aboutPanel);
     aboutPanel.setVisible (false);
 
@@ -113,7 +113,7 @@ MasterLensAudioProcessorEditor::MasterLensAudioProcessorEditor (MasterLensAudioP
     if (storedTrackLength > 0.0)
         detail.setTrackLengthText (juce::String (storedTrackLength, 1));
 
-    genrePanel.onClose = [this] { genrePanel.setVisibleAndFocus (false); };
+    genrePanel.onClose = [this] { hideOverlay (genrePanel); };
     genrePanel.onSettingsChanged = [this] (float lraTarget, float clipAllow)
     {
         lraTargetSetting = lraTarget;
@@ -128,7 +128,7 @@ MasterLensAudioProcessorEditor::MasterLensAudioProcessorEditor (MasterLensAudioP
     addChildComponent (genrePanel);
     genrePanel.setVisible (false);
 
-    settingsPanel.onClose = [this] { settingsPanel.setVisibleAndFocus (false); };
+    settingsPanel.onClose = [this] { hideOverlay (settingsPanel); };
     settingsPanel.onScaleChanged = [this] (float s) { setUiScale (s, true); };
     settingsPanel.setScale (uiScale);
     addChildComponent (settingsPanel);

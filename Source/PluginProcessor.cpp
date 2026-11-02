@@ -62,6 +62,43 @@ juce::AudioProcessorValueTreeState::ParameterLayout MasterLensAudioProcessor::cr
 }
 
 //==============================================================================
+void MasterLensAudioProcessor::resetHostCoverage() noexcept
+{
+    for (auto& word : hostCoverage)
+        word.store (0, std::memory_order_relaxed);
+
+    coveredBuckets.store (0, std::memory_order_relaxed);
+}
+
+void MasterLensAudioProcessor::markHostCoverage (double startSeconds, double endSeconds) noexcept
+{
+    if (! std::isfinite (startSeconds) || ! std::isfinite (endSeconds) || endSeconds <= startSeconds)
+        return;
+
+    const int first = juce::jlimit (0, coverageBucketCount - 1,
+                                    (int) std::floor (startSeconds / coverageBucketSeconds));
+    const int last = juce::jlimit (0, coverageBucketCount - 1,
+                                   (int) std::floor ((endSeconds - 1.0e-9) / coverageBucketSeconds));
+
+    for (int bucket = first; bucket <= last; ++bucket)
+    {
+        auto& word = hostCoverage[(size_t) (bucket / 64)];
+        const auto mask = (std::uint64_t) 1 << (bucket % 64);
+        auto old = word.load (std::memory_order_relaxed);
+
+        while ((old & mask) == 0)
+        {
+            if (word.compare_exchange_weak (old, old | mask,
+                                            std::memory_order_relaxed,
+                                            std::memory_order_relaxed))
+            {
+                coveredBuckets.fetch_add (1, std::memory_order_relaxed);
+                break;
+            }
+        }
+    }
+}
+
 void MasterLensAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
 {
     juce::ignoreUnused (samplesPerBlock);
@@ -72,6 +109,8 @@ void MasterLensAudioProcessor::prepareToPlay (double sampleRate, int samplesPerB
     auditionEngine.prepare (currentSampleRate, 2);
     ml::resetStats (stats);
     spectrumRing.reset();
+    resetHostCoverage();
+    monitorTargetLufs.store (getTargetLufs(), std::memory_order_relaxed);
 
     resetRequested.store (false);
 }
@@ -155,6 +194,7 @@ void MasterLensAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, j
         ml::resetStats (stats);
         spectrumRing.reset();
         auditionEngine.reset();
+        resetHostCoverage();
     }
     else if (hostValid && stats.elapsed.load() <= 0.0)
     {
@@ -183,27 +223,43 @@ void MasterLensAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, j
     if (hostValid)
         stats.hostPosition = hostPosition;
 
-    stats.coveragePct = knownLength > 0.01
-                            ? (float) juce::jlimit (0.0, 100.0,
-                                  100.0 * stats.elapsed.load() / knownLength)
-                            : 100.0f;
+    if (hostValid && playing)
+        markHostCoverage (hostPosition, hostPosition + (double) numSamples / currentSampleRate);
+
+    if (knownLength > 0.01)
+    {
+        const double coveredSeconds = hostValid
+            ? (double) coveredBuckets.load (std::memory_order_relaxed) * coverageBucketSeconds
+            : stats.elapsed.load();
+        stats.coveragePct = (float) juce::jlimit (0.0, 100.0, 100.0 * coveredSeconds / knownLength);
+    }
+    else
+        stats.coveragePct = 100.0f;
 
     // Optional loudness-matched monitor. It is deliberately off by default and
     // only changes the output when the user explicitly engages it; analysis has
     // already consumed the untouched signal above.
-    float trimDb = 0.0f;
+    const bool monitor = getBool (monitorId);
+    const float matchTarget = monitorTargetLufs.load (std::memory_order_relaxed);
+    float inputTrimDb = 0.0f;
 
-    if (getBool (monitorId) && stats.integrated.load() > -70.0f)
-        trimDb = juce::jlimit (-24.0f, 12.0f, getTargetLufs() - stats.integrated.load());
+    if (monitor && stats.integrated.load() > -70.0f)
+        inputTrimDb = juce::jlimit (-24.0f, 12.0f, matchTarget - stats.integrated.load());
 
-    stats.monitorTrimDb = trimDb;
+    stats.monitorTrimDb = inputTrimDb;
 
-    // Reference A/B replaces the bus while engaged (host-position synced) and
-    // receives the same equal-loudness trim. Otherwise the usual monitor trim
-    // is applied to the input only when explicitly enabled.
-    if (! referencePlayer.render (buffer, hostValid ? hostPosition : 0.0, playing, trimDb))
-        if (std::abs (trimDb) > 0.001f)
-            buffer.applyGain (juce::Decibels::decibelsToGain (trimDb));
+    // The reference is already mastered. Matching the input to the reference
+    // and then applying the input's trim to the reference would double-trim it;
+    // give each path its own target trim instead.
+    float referenceTrimDb = 0.0f;
+
+    if (monitor && referencePlayer.isReady() && referencePlayer.getLoudness() > -70.0f)
+        referenceTrimDb = juce::jlimit (-24.0f, 12.0f,
+                                       matchTarget - referencePlayer.getLoudness());
+
+    if (! referencePlayer.render (buffer, hostValid ? hostPosition : 0.0, playing, referenceTrimDb))
+        if (std::abs (inputTrimDb) > 0.001f)
+            buffer.applyGain (juce::Decibels::decibelsToGain (inputTrimDb));
 
     for (int ch = 2; ch < buffer.getNumChannels(); ++ch)
         buffer.clear (ch, 0, numSamples);

@@ -62,6 +62,7 @@ void ReferencePlayer::clear()
     enabled.store (false, std::memory_order_release);
     duration.store (0.0, std::memory_order_relaxed);
     offsetSeconds.store (0.0, std::memory_order_relaxed);
+    loudnessLufs.store (kSilentDb, std::memory_order_relaxed);
 }
 
 juce::String ReferencePlayer::getStatus() const
@@ -103,6 +104,26 @@ bool ReferencePlayer::render (juce::AudioBuffer<float>& output, double hostSecon
     const double ratio = d->sourceRate / juce::jmax (1.0, targetRate.load (std::memory_order_relaxed));
     double pos = (hostSeconds + offsetSeconds.load (std::memory_order_relaxed)) * d->sourceRate;
     const float gain = juce::Decibels::decibelsToGain (extraGainDb, -60.0f);
+    const auto length = (int) d->length;
+
+    // Catmull-Rom (4-point cubic) keeps 44.1 / 48 / 88.2 / 96 kHz references
+    // musical; linear interpolation was audible on highs at 2:1 ratios.
+    const auto sampleCubic = [&src, length] (int ch, double p)
+    {
+        const int i1 = juce::jlimit (0, length - 1, (int) std::floor (p));
+        const int i0 = juce::jmax (0, i1 - 1);
+        const int i2 = juce::jmin (length - 1, i1 + 1);
+        const int i3 = juce::jmin (length - 1, i1 + 2);
+        const float t = (float) (p - (double) i1);
+        const float p0 = src.getSample (ch, i0);
+        const float p1 = src.getSample (ch, i1);
+        const float p2 = src.getSample (ch, i2);
+        const float p3 = src.getSample (ch, i3);
+        const float a = -0.5f * p0 + 1.5f * p1 - 1.5f * p2 + 0.5f * p3;
+        const float b = p0 - 2.5f * p1 + 2.0f * p2 - 0.5f * p3;
+        const float c = -0.5f * p0 + 0.5f * p2;
+        return ((a * t + b) * t + c) * t + p1;
+    };
 
     for (int i = 0; i < output.getNumSamples(); ++i)
     {
@@ -114,15 +135,8 @@ bool ReferencePlayer::render (juce::AudioBuffer<float>& output, double hostSecon
             continue;
         }
 
-        const auto next = juce::jmin (index + 1, d->length - 1);
-        const float frac = (float) (pos - (double) index);
-
-        const float l = src.getSample (0, (int) index) * (1.0f - frac)
-                      + src.getSample (0, (int) next) * frac;
-        const float r = sourceChannels > 1
-                            ? src.getSample (1, (int) index) * (1.0f - frac)
-                                + src.getSample (1, (int) next) * frac
-                            : l;
+        const float l = sampleCubic (0, pos);
+        const float r = sourceChannels > 1 ? sampleCubic (1, pos) : l;
 
         if (output.getNumChannels() == 1)
             output.setSample (0, i, juce::jlimit (-1.0f, 1.0f, 0.5f * (l + r) * gain));
@@ -172,6 +186,16 @@ void ReferencePlayer::run()
     if (threadShouldExit())
         return;
 
+    // Measure the reference on the worker thread so the monitor can match its
+    // loudness instead of applying the input's trim to an already-mastered file.
+    ml::AnalysisEngine measure;
+    ml::Stats referenceStats;
+    ml::resetStats (referenceStats);
+    measure.prepare (loaded->sourceRate, channels);
+    measure.process (loaded->audio, referenceStats, length);
+    measure.finish (referenceStats);
+    const auto measuredLoudness = ml::snapshot (referenceStats).integrated;
+
     {
         const juce::SpinLock::ScopedLockType sl (lock);
         data = std::move (loaded);
@@ -179,6 +203,7 @@ void ReferencePlayer::run()
         fileName = file.getFileName();
     }
 
+    loudnessLufs.store (measuredLoudness, std::memory_order_relaxed);
     duration.store ((double) length / juce::jmax (1.0, reader->sampleRate),
                     std::memory_order_relaxed);
     ready.store (true, std::memory_order_release);

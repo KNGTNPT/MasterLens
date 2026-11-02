@@ -141,11 +141,11 @@ bool MasterLensAudioProcessorEditor::keyPressed (const juce::KeyPress& key)
     if (key == juce::KeyPress::escapeKey)
     {
         if (settingsPanel.isVisible())
-            settingsPanel.setVisibleAndFocus (false);
+            hideOverlay (settingsPanel);
         else if (aboutPanel.isVisible())
-            aboutPanel.setVisibleAndFocus (false);
+            hideOverlay (aboutPanel);
         else if (genrePanel.isVisible())
-            genrePanel.setVisibleAndFocus (false);
+            hideOverlay (genrePanel);
         else
             setHold (false, false);
 

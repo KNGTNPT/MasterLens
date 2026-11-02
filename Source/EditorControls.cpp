@@ -3,6 +3,29 @@
 using ml::T;
 
 //==============================================================================
+void MasterLensAudioProcessorEditor::revealOverlay (juce::Component& overlay)
+{
+    animator.cancelAnimation (&overlay, true);
+
+    if (! isShowing())
+    {
+        overlay.setAlpha (1.0f);
+        return;
+    }
+
+    overlay.setAlpha (0.0f);
+    overlay.repaint();
+    animator.animateComponent (&overlay, overlay.getBounds(), 1.0f, 140, false, 0.0, 1.0);
+}
+
+void MasterLensAudioProcessorEditor::hideOverlay (juce::Component& overlay)
+{
+    animator.cancelAnimation (&overlay, true);
+    overlay.setAlpha (1.0f);
+    overlay.setVisible (false);
+}
+
+//==============================================================================
 void MasterLensAudioProcessorEditor::buildControls()
 {
     presetBox.onChange = [this] { applyPreset (presetBox.getSelectedId() - 1); };
@@ -76,16 +99,33 @@ void MasterLensAudioProcessorEditor::buildControls()
 
     aboutButton.onClick = [this]
     {
-        settingsPanel.setVisibleAndFocus (false);
-        aboutPanel.setVisibleAndFocus (! aboutPanel.isVisible());
+        const bool show = ! aboutPanel.isVisible();
+        hideOverlay (settingsPanel);
+        hideOverlay (genrePanel);
+
+        if (show)
+        {
+            aboutPanel.setVisibleAndFocus (true);
+            revealOverlay (aboutPanel);
+        }
+        else
+            hideOverlay (aboutPanel);
     };
     addAndMakeVisible (aboutButton);
 
     settingsButton.onClick = [this]
     {
-        aboutPanel.setVisibleAndFocus (false);
-        genrePanel.setVisibleAndFocus (false);
-        settingsPanel.setVisibleAndFocus (! settingsPanel.isVisible());
+        const bool show = ! settingsPanel.isVisible();
+        hideOverlay (aboutPanel);
+        hideOverlay (genrePanel);
+
+        if (show)
+        {
+            settingsPanel.setVisibleAndFocus (true);
+            revealOverlay (settingsPanel);
+        }
+        else
+            hideOverlay (settingsPanel);
     };
     addAndMakeVisible (settingsButton);
 

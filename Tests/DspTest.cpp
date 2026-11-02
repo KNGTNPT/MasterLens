@@ -81,6 +81,51 @@ int main()
     }
 
     // ---------------------------------------------------------------------
+    // 1a) The same tone must measure the same regardless of host block size.
+    // This is the 2.1.1 exact-100 ms-window regression.
+    // ---------------------------------------------------------------------
+    {
+        const auto run = [&] (int block)
+        {
+            ml::Stats stats;
+            ml::AnalysisEngine engine;
+            engine.prepare (sr, 2);
+            juce::AudioBuffer<float> buffer (2, block);
+            double phase = 0.0;
+            const int total = (int) (sr * 5.0);
+            int done = 0;
+
+            while (done < total)
+            {
+                const int n = juce::jmin (block, total - done);
+                buffer.clear();
+
+                for (int i = 0; i < n; ++i)
+                {
+                    const float v = (float) (0.1 * std::sin (phase));
+                    buffer.setSample (0, i, v);
+                    buffer.setSample (1, i, v);
+                    phase += 2.0 * juce::MathConstants<double>::pi * 997.0 / sr;
+                }
+
+                engine.process (buffer, stats, n);
+                done += n;
+            }
+
+            return ml::snapshot (stats);
+        };
+
+        const auto reference = run (256);
+
+        for (int block : { 511, 4800 })
+        {
+            const auto s = run (block);
+            check ("block-size I @" + juce::String (block), s.integrated, reference.integrated, 0.05);
+            check ("block-size M @" + juce::String (block), s.momentary, reference.momentary, 0.05);
+        }
+    }
+
+    // ---------------------------------------------------------------------
     // 1b) Mono 997 Hz sine at -20 dBFS -> exactly -23.0 LUFS (R128 reference)
     // ---------------------------------------------------------------------
     {
@@ -691,6 +736,7 @@ int main()
                     energy += (double) out.getSample (0, i) * out.getSample (0, i);
 
                 check ("reference player synced", energy > 1.0e-4 ? 1.0 : 0.0, 1.0, 0.0);
+                check ("reference loudness", player.getLoudness(), -23.0, 0.6);
                 player.clear();
             }
 
