@@ -99,6 +99,20 @@ MasterLensAudioProcessorEditor::MasterLensAudioProcessorEditor (MasterLensAudioP
     detail.onAddFileResultsToAlbum = [this] { addFileResultsToAlbum(); };
     detail.onClearFileResults = [this] { clearFileResults(); };
     detail.onExportFileTable = [this] { exportFileTable(); };
+    detail.onPreviewFile = [this] (const juce::String& path, double seconds)
+    {
+        processor.startFilePreview (juce::File (path), juce::jmax (0.0, seconds - 1.5),
+                                    seconds + 2.5, true);
+        footerStatusText = T ("试听文件证据 · 双击再次定位，Esc 停止",
+                              "Previewing file evidence · double-click again, Esc stops");
+        footerStatusColour = ml::theme::accent;
+        repaint();
+    };
+    detail.onRevealFile = [] (const juce::String& path)
+    {
+        juce::File (path).revealToUser();
+    };
+    detail.onProjectMenu = [this] { showProjectMenu(); };
     timeline.onDoubleClick   = [this] (double t) { addManualMarker (t); };
     timeline.onSelectionChanged = [this] (double start, double end) { measureRegion (start, end); };
 

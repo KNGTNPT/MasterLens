@@ -5,6 +5,8 @@
 #include <juce_core/juce_core.h>
 #include "Version.h"
 #include "file/FileAnalyzer.h"
+#include "file/DeliverySpec.h"
+#include "file/CodecCheck.h"
 
 namespace
 {
@@ -22,9 +24,10 @@ bool number (const char* text, float& out)
 int main (int argc, char** argv)
 {
     juce::StringArray paths;
-    juce::String jsonPath, failOn;
+    juce::String jsonPath, failOn, specPath, codec;
     bool csv = false, options = true;
     float target = -14.0f, ceiling = -1.0f;
+    ml::DeliverySpec deliverySpec;
     for (int i = 1; i < argc; ++i)
     {
         const juce::String arg (argv[i]);
@@ -38,6 +41,8 @@ int main (int argc, char** argv)
                          "  --ceiling dBTP      Gain-budget ceiling [-12, 0], default -1\n"
                          "  --fail-on error     Exit 2 for QC blockers / peaks over ceiling\n"
                          "  --fail-on warning   Also fail on review findings / mono loss >= 6 dB\n"
+                         "  --spec spec.json    Client sample-rate / bit-depth / loudness / naming spec\n"
+                         "  --codec aac|mp3     Optional ffmpeg round-trip true-peak recheck\n"
                          "  --                  End options (for paths starting with -)\n"
                          "Exit 0=analysed, 1=input / decode / report error, 2=QC gate failed.\n"
                          "Gain budgets estimate constant gain only; no audio is written.\n", ml::kVersion);
@@ -46,11 +51,14 @@ int main (int argc, char** argv)
         if (options && arg == "--") { options = false; continue; }
         if (options && arg == "analyze") continue;
         if (options && arg == "--csv") { csv = true; continue; }
-        if (options && (arg == "--json" || arg == "--target" || arg == "--ceiling" || arg == "--fail-on"))
+        if (options && (arg == "--json" || arg == "--target" || arg == "--ceiling"
+                        || arg == "--fail-on" || arg == "--spec" || arg == "--codec"))
         {
             if (++i >= argc) { std::fprintf (stderr, "Missing value for %s\n", arg.toRawUTF8()); return 1; }
             if (arg == "--json") jsonPath = argv[i];
             else if (arg == "--fail-on") failOn = argv[i];
+            else if (arg == "--spec") specPath = argv[i];
+            else if (arg == "--codec") codec = argv[i];
             else if (! number (argv[i], arg == "--target" ? target : ceiling))
             { std::fprintf (stderr, "Invalid number for %s\n", arg.toRawUTF8()); return 1; }
             continue;
@@ -65,6 +73,27 @@ int main (int argc, char** argv)
     for (const auto& path : paths)
         if (ml::FileAnalyzer::expandPaths ({ path }).isEmpty())
         { std::fprintf (stderr, "No supported files at: %s\n", path.toRawUTF8()); return 1; }
+
+    if (codec.isNotEmpty() && codec != "aac" && codec != "mp3")
+    {
+        std::fprintf (stderr, "--codec must be aac or mp3\n");
+        return 1;
+    }
+
+    if (specPath.isNotEmpty())
+    {
+        const juce::File specFile (specPath);
+        if (! specFile.existsAsFile())
+        { std::fprintf (stderr, "Spec file not found: %s\n", specPath.toRawUTF8()); return 1; }
+        const auto parsed = juce::JSON::parse (specFile.loadFileAsString());
+        if (auto* root = parsed.getDynamicObject())
+        {
+            deliverySpec = ml::DeliverySpec::fromVar (parsed);
+            deliverySpec.enabled = true;
+        }
+        else
+        { std::fprintf (stderr, "Invalid spec JSON\n"); return 1; }
+    }
     if (jsonPath.isNotEmpty())
         for (const auto& path : ml::FileAnalyzer::expandPaths (paths))
             if (juce::File (jsonPath) == juce::File (path))
@@ -81,9 +110,34 @@ int main (int argc, char** argv)
         bool warning = ! r.forensic.findings.empty();
         for (size_t b = 0; b < 10; ++b)
             warning |= r.forensic.bandAvailable[b] && r.forensic.monoLossDb[b] >= 6.0f;
+        const auto specCheck = ml::evaluateSpec (r, deliverySpec);
         blocked |= r.forensic.blockers() > 0 || r.stats.truePeakDb > ceiling + 0.05f
+                   || (deliverySpec.enabled && ! specCheck.ok)
                    || (failOn == "warning" && warning);
     }
+    juce::Array<juce::var> codecChecks;
+
+    if (codec.isNotEmpty())
+    {
+        const auto tempDir = juce::File::getSpecialLocation (juce::File::tempDirectory);
+        for (const auto& r : results)
+        {
+            if (! r.ok)
+                continue;
+
+            const auto cc = ml::runCodecCheck (juce::File (r.path), codec, tempDir);
+            auto* o = new juce::DynamicObject();
+            o->setProperty ("file", r.fileName);
+            o->setProperty ("codec", codec);
+            o->setProperty ("ok", cc.ok);
+            o->setProperty ("error", cc.error);
+            o->setProperty ("decodedPath", cc.decodedPath);
+            o->setProperty ("integratedLufs", cc.integratedLufs);
+            o->setProperty ("truePeakDbtp", cc.truePeakDbtp);
+            codecChecks.add (juce::var (o));
+        }
+    }
+
     if (csv)
         std::printf ("%s", ml::fileResultsCsv (results, target, ceiling).toRawUTF8());
     else
@@ -103,8 +157,11 @@ int main (int argc, char** argv)
         root->setProperty ("gatePolicy", failOn.isEmpty() ? "none" : failOn);
         root->setProperty ("gateFailed", failOn.isNotEmpty() && blocked);
         juce::Array<juce::var> files;
-        for (const auto& r : results) files.add (ml::fileResultToVar (r, target, ceiling));
+        for (const auto& r : results)
+            files.add (ml::fileResultToVar (r, target, ceiling, &deliverySpec));
         root->setProperty ("files", files);
+        root->setProperty ("deliverySpec", deliverySpec.toVar());
+        root->setProperty ("codecChecks", codecChecks);
         if (! juce::File (jsonPath).replaceWithText (juce::JSON::toString (juce::var (root), true)))
         { std::fprintf (stderr, "Could not write JSON: %s\n", jsonPath.toRawUTF8()); return 1; }
         std::fprintf (stderr, "JSON: %s\n", jsonPath.toRawUTF8());

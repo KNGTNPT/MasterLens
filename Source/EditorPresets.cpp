@@ -201,7 +201,7 @@ void MasterLensAudioProcessorEditor::captureAlbum()
                            : "Track " + juce::String ((int) snap.tracks.size() + 1);
 
     ml::album::TrackRecord t;
-    t.id = juce::String::toHexString (juce::Time::getCurrentTime().toMilliseconds());
+    t.id = ml::album::stableTrackId (label, "live bus");
     t.label = label;
     t.capturedAt = juce::Time::getCurrentTime().toISO8601 (true);
     t.stats = stats;

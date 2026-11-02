@@ -13,6 +13,7 @@
 #include "../Basis.h"
 #include "../album/AlbumSession.h"
 #include "../file/FileAnalyzer.h"
+#include "../file/DeliverySpec.h"
 #include "Advisor.h"
 #include "Theme.h"
 #include "Widgets.h"
@@ -228,6 +229,7 @@ public:
     std::function<void()> onAlbumExportProof;
     std::function<void()> onAlbumImport;
     std::function<void()> onAlbumClear;
+    std::function<void()> onProjectMenu;
     std::function<void (int, bool)> onAlbumRuleChanged;
     std::function<void (double)> onTrackLengthChanged;
     std::function<void (int)> onAuditionSignal;
@@ -242,11 +244,15 @@ public:
     std::function<void()> onAddFileResultsToAlbum;
     std::function<void()> onClearFileResults;
     std::function<void()> onExportFileTable;
+    std::function<void (const juce::String&, double)> onPreviewFile;
+    std::function<void (const juce::String&)> onRevealFile;
 
     void setFileResults (std::vector<FileAnalysisResult> results, bool busy,
                          int done, int total, const juce::String& status);
     void setSpectrumSplit (int height, int bandHeight) { spectrumSplit = height; spectrumBandHeight = bandHeight; resized(); }
     void setFileView (int view) { fileView = juce::jlimit (0, 2, view); resized(); repaint(); }
+    void setDeliverySpec (const DeliverySpec& s) { spec = s; repaint(); }
+    const std::vector<FileAnalysisResult>& getFileResults() const noexcept { return fileResults; }
     const FileAnalysisResult* selectedFile() const
     {
         return fileSelected >= 0 && fileSelected < (int) fileResults.size()
@@ -312,7 +318,7 @@ private:
     juce::TextButton refImport, refClear, refPlay, refAlign, reportButton, markButton;
     bool refPlaying = false;
     juce::TextButton markerExport, markerImport;
-    juce::TextButton albumCapture, albumProof, albumImport, albumClearButton;
+    juce::TextButton albumCapture, albumProof, albumImport, albumClearButton, albumProject;
     juce::TextButton albumExportMarkers, albumImportMarkers;
     std::array<juce::TextButton, 5> albumRuleButtons;
     juce::TextEditor albumTrackName, albumNameEditor, albumTrackLength;
@@ -324,6 +330,7 @@ private:
     juce::TextButton fileChoose, fileFolder, fileAddAlbum, fileClear, fileExport;
     std::array<juce::TextButton, 3> fileViewButtons;
     std::vector<FileAnalysisResult> fileResults;
+    DeliverySpec spec;
     juce::String fileStatus;
     bool fileBusy = false;
     int fileDone = 0, fileTotal = 0;
@@ -332,11 +339,13 @@ private:
     bool fileSortAscending = true;
     int fileSelected = -1;
     int fileView = 0, fileFindingScroll = 0;
+    std::vector<juce::Rectangle<int>> fileFindingRows;
 
     juce::Rectangle<int> fileTableBounds() const;
     juce::Rectangle<int> fileInspectorBounds() const;
     void paintFileInspector (juce::Graphics&);
     bool handleFileMouseDown (const juce::MouseEvent&);
+    void handleFileDoubleClick (const juce::MouseEvent&);
     void handleFileWheel (const juce::MouseWheelDetails&);
 
     juce::Rectangle<int> signalProblemRowBounds, signalAttributionBounds, signalGridBounds;

@@ -5,7 +5,7 @@
 **母带响度 / 文件 QC / 频谱 / 声场 / 专辑交付 / CLI**<br>
 by **BerryStudio** · developer **KNGTNPT 兰**<br>
 macOS / Windows · VST3 / AU / 独立版 · C++17 + JUCE 8<br>
-当前版本：**2.3beta**
+当前版本：**2.3.0**
 
 MasterLens 是放在母带链末尾的小检查员：这首歌有多响、峰值会不会顶过头、立体声合成单声道后会不会变薄、交出去之前还有哪里值得听一遍，它都帮你留意着。把它插在 Master / Stereo Out 的最后一级就好。
 
@@ -13,41 +13,45 @@ MasterLens 是放在母带链末尾的小检查员：这首歌有多响、峰值
 
 歌该做成什么样，还是你的耳朵说了算。数字有点多也没关系，我们一项项看；它负责把容易漏掉的小细节摊开，陪你把交付前的最后一遍检查做完。
 
-## 2.3beta：让曲线站在前面，名字安静一点
+## 2.3.0：曲线站前面，工作流也接起来喵
 
-这一版先把界面的尺子和层级收整好：频谱曲线更突出，文字和按钮轻一点；顶部标识放大 30%，上下留白对齐。BERRYSTUDIO 换上小一号的等宽字，开发者与版本也排在同一行，不用再到处找啦。中文显示 KNGTNPT 兰，英文显示 KNGTNPT LAN。
+2.3.0 是正式版：界面换成 Precision Instrument，文件 QC 到项目交付的那条路也补齐了。频谱曲线站到最亮的一层，文字和按钮退后；顶部标识放大 30%，BERRYSTUDIO、开发者和版本排在同一行。频谱页保留 32px 安全留白，读数和控制落在 4px 网格上；输出 SpectrumFifo 已接通，原有响度、真峰值、M/S 与旁路行为保持不变。
 
-频谱页保留 32px 安全留白，读数和控制按统一网格排布。新输出频谱 FIFO 已接通，原来的响度、真峰值与 M/S 测量保持原样。完全本地运行，声音还是交给你决定。
+**项目与版本**
 
-这是本地保存的 beta 快照，验证与限制见 [界面验收记录](docs/instrument-ui.md)。
+- 专辑页右上角新增「项目」菜单：保存 / 打开项目文件、导出差异证明、导入交付规格、监控文件夹。
+- 项目文件把专辑快照、稳定曲目 ID、版本号、参考和证据放在一起；曲目 ID 由“曲目名 + 来源”生成，不再用毫秒时间戳，改一版不会换身份。
+- 版本差异继续比较上一版曲目风险，项目文件里的 `projectVersion` 和 `revision` 一起留档。
 
-![MasterLens 2.3beta 频谱界面](docs/instrument-spectrum.png)
+**文件 QC 证据**
 
-## 2.1.1：先把尺子摆正，再让界面伸个懒腰
+- 证据行右侧有复核圆点：点一下标记为已复核，导出 CSV / JSON 会带上 `reviewed`。
+- 双击证据行会在插件输出里循环预听事件前后 4 秒；双击文件行在 Finder / 文件管理器中定位原文件。Esc 停止预听。
+- 复核状态、样本地址、源文件 SHA256 和前后预听位置仍在同一条证据链里。
 
-2.1 已经会把“哪里可能有问题”说到秒、声道和样本地址。2.1.1 是个补丁版，不换新的声音魔法，先把几件会影响信任感的小事捋直：读数窗口、覆盖度，还有那排总让人想伸手扶一下的顶栏。
+**交付规格与监控**
 
-- **顶栏和左栏重新对中**：响度到文件那 11 个标签的图标、文字和选中条现在按同一条中线排；真峰值、响度范围、峰响比、平台最大衰减的数字也不再贴着上沿，整组读数在行高里坐正。先量过，再放下。
-- **菜单和窗口有过渡了**：切页时标签底下那根青绿短线会滑过去，内容用 140 ms 淡入；关于、设置这类小窗打开时也会轻轻淡入，不再“啪”地跳出来。没有弹簧、没有弹跳，也不拿动画遮住数据。
-- **100 ms 窗口修正**：宿主块大小不再把响度分析窗撑成 101/106 ms，M/S 和离线文件分析回到同一把尺子上。实时读数更像离线读数，这是 2.1.1 最该做的事。
-- **覆盖度按真实时间区间算**：循环同一段八小节，不会再假装整首歌都测过了。覆盖度统计的是宿主时间轴上真正经过的区间并集，进度不会替你虚报。
-- **参考轨重采样升级**：44.1 / 48 / 88.2 / 96 kHz 参考 A/B 从线性插值换成 4 点 Catmull-Rom，比较时高频不再先被插值磨钝。等响监听的增益仍然只作用于试听输出，不碰测量。
+- 支持导入 JSON 交付规格：目标 / 上限 / 响度容差、采样率、位深、声道数、命名模板。文件 QC 会显示 `DELIVERY SPEC: PASS/FAIL`，项目菜单也能导出模板。
+- 文件夹监控使用文件大小 + 修改时间指纹缓存；导出后文件发生变化会自动重新分析。报告中的源文件 SHA256 仍是最终指纹。
+- CLI 增加 `--spec` 与 `--codec aac|mp3`。后者需要本机安装 ffmpeg：先编码再解码成临时 WAV，重新测量真峰值，不会假装替代编码器试听。
 
-2.1 的文件 QC 三个详情页还在：**样本证据**（秒、声道、样本地址）、**分频折叠**（10 段单声道损失与 Side 比例）、**增益预算**（目标所需、峰值允许、预计可达、还差多少）。导出仍是 CSV + JSON，源文件 SHA256 会进入专辑证明。SHA256 是“这份文件”的指纹，不是签名，也不替你做试听判断。
+**参考与局部**
 
-这些检查都在本地跑，不用上传音频、不用数据集、不用模型。平台页继续把“想变响”和“峰值有没有地方放”分开说；Apple 曲尾固定一秒的旧门禁不会被重新塞回来。算法来源、阈值和边界见 [2.1.1 调研与算法说明](docs/research-2.1.1.md)。
+1–4 条参考轨、区域标记和问题片段循环沿用已有实现；多参考谱是能量汇总，不是把几条参考拼成一条假母带。局部精确重算仍以文件 QC / 离线分析为准，实时选区继续是 100 ms 包络估算，避免把估算写成精确值。
 
-**这次不做的事**：自定义交付规格、文件夹监控、编码后试听、多参考曲与局部精确重算属于 P1/P2，不会在 2.1.1 里假装完成。先把 P0 的读数坐稳，剩下的再一项项来。
+验证、限制和本地测量见 [2.3 验证记录](docs/performance-2.3.0.md) 与 [界面验收记录](docs/instrument-ui.md)。
 
-验证方法与实际耗时见 [2.1.1 验证记录](docs/performance-2.1.1.md)。
+![MasterLens 2.3.0 响度与动态](docs/screenshot-2.3.0.png)
 
-![MasterLens 2.1.1 响度与动态](docs/screenshot-2.1.1.png)
+![MasterLens 2.3.0 频谱平衡](docs/spectrum-2.3.0.png)
 
-![MasterLens 2.1.1 频谱平衡](docs/spectrum-2.1.1.png)
+![MasterLens 2.3.0 声场与相位](docs/stereo-2.3.0.png)
 
-![MasterLens 2.1.1 声场与相位](docs/stereo-2.1.1.png)
+![MasterLens 2.3.0 文件 QC](docs/fileqc-2.3.0.png)
 
-![MasterLens 2.1.1 文件 QC](docs/fileqc-2.1.1.png)
+## 从 2.1.1 到 2.3.0
+
+2.1.1 的读数基线和 100 ms 窗口修正保留；2.3.0 在此基础上换成 Precision Instrument 界面，并接上项目、证据复核、交付规格、文件夹监控和可选编码后复测。2.1.1 的详细变更仍可在 git tag `v2.1.1` 和 `docs/performance-2.1.1.md` 查看，不再把旧截图混进当前版本说明。
 
 ## 它会帮你留意这些
 
@@ -68,7 +72,7 @@ MasterLens 是放在母带链末尾的小检查员：这首歌有多响、峰值
 
 ### 先装好，再播一首
 
-[下载 2.1.1](https://github.com/KNGTNPT/MasterLens/releases/tag/v2.1.1)。macOS 打开 DMG，运行「安装 Install.command」；Windows 运行对应 x64 / ARM64 的 EXE，然后重启 DAW。
+[下载 2.3.0](https://github.com/KNGTNPT/MasterLens/releases/tag/v2.3.0)。macOS 打开 DMG，运行「安装 Install.command」；Windows 运行对应 x64 / ARM64 的 EXE，然后重启 DAW。
 
 把 MasterLens 插在母带链最后，先播 20–30 秒，跟它打个招呼。左侧的综合响度看整体有多响，真峰值看最高处有没有越线；LRA 看强弱变化的范围，PLR 看峰值与平均响度之间还留了多少空间。中央曲线会把变化过程画出来。
 
@@ -108,6 +112,8 @@ MasterLens 是放在母带链末尾的小检查员：这首歌有多响、峰值
 MasterLensCli analyze /path/to/album --json report.json
 MasterLensCli analyze track.wav --csv
 MasterLensCli analyze /path/to/album --target -14 --ceiling -1 --fail-on error --json qc.json
+MasterLensCli analyze track.wav --spec delivery-spec.json --json spec-qc.json
+MasterLensCli analyze track.wav --codec mp3 --json codec-qc.json
 ```
 
 支持多个路径与递归文件夹。`--fail-on error` 对样本阻断或超过自选 TP 上限返回 2；`--fail-on warning` 连需要试听的提示与明显分频抵消也一起拦下。0 是分析完成，1 是输入、解码或写报告失败，2 是 QC 未通过。默认不开门禁，适合先拿报告再判断。
@@ -120,29 +126,29 @@ MasterLensCli analyze /path/to/album --target -14 --ceiling -1 --fail-on error -
 
 | 分频单声道折叠 | 增益预算 |
 | --- | --- |
-| ![2.1 分频折叠](docs/file-mono-2.1.1.png) | ![2.1 增益预算](docs/file-gain-2.1.1.png) |
+| ![2.3 分频折叠](docs/file-mono-2.3.0.png) | ![2.3 增益预算](docs/file-gain-2.3.0.png) |
 
 ## 其它页面
 
 | English | 专辑门禁 |
 | --- | --- |
-| ![2.1.1 English](docs/english-2.1.1.png) | ![2.1.1 Album](docs/album-2.1.1.png) |
+| ![2.3.0 English](docs/english-2.3.0.png) | ![2.3.0 Album](docs/album-2.3.0.png) |
 
 | 信号健康 | 平台归一化 |
 | --- | --- |
-| ![2.1.1 Signal](docs/signal-2.1.1.png) | ![2.1.1 Delivery](docs/delivery-2.1.1.png) |
+| ![2.3.0 Signal](docs/signal-2.3.0.png) | ![2.3.0 Delivery](docs/delivery-2.3.0.png) |
 
 | 混音诊断 | 曲风目标 |
 | --- | --- |
-| ![2.1.1 Checks](docs/checks-2.1.1.png) | ![2.1.1 Target](docs/target-2.1.1.png) |
+| ![2.3.0 Checks](docs/checks-2.3.0.png) | ![2.3.0 Target](docs/target-2.3.0.png) |
 
 | 时间线 | 设置 |
 | --- | --- |
-| ![2.1.1 Timeline](docs/timeline-2.1.1.png) | ![2.1.1 Settings](docs/settings-2.1.1.png) |
+| ![2.3.0 Timeline](docs/timeline-2.3.0.png) | ![2.3.0 Settings](docs/settings-2.3.0.png) |
 
 | 关于 | 浅色 |
 | --- | --- |
-| ![2.1 关于](docs/about-2.1.1.png) | ![2.1 浅色](docs/light-2.1.1.png) |
+| ![2.3 关于](docs/about-2.3.0.png) | ![2.3 浅色](docs/light-2.3.0.png) |
 
 ## 构建与验证
 
@@ -170,7 +176,7 @@ cmake --build build --config Release --target MasterLensUiShot -j 4
 
 无显示服务的 Linux 需要 Xvfb 和中文字体。同一个构建目录请串行执行 CMake / Ninja。
 
-本次本地验证包含 **108 项 DSP / 证据断言**、**41 项 CLI 集成检查**、默认旁路 / 零延迟检查、各页面布局、五档缩放及离屏性能。原生 macOS / Windows 安装包由 [GitHub Actions](https://github.com/KNGTNPT/MasterLens/actions) 构建；三个发布目标全部成功后才上传 Release，附带 `SHA256SUMS.txt`。离屏检查和构建不能代替真实 DAW 与音频硬件回归。
+本次本地验证包含 **115 项 DSP / 证据断言**、**41 项 CLI 集成检查**、默认旁路 / 零延迟检查、各页面布局、五档缩放及离屏性能。原生 macOS / Windows 安装包由 [GitHub Actions](https://github.com/KNGTNPT/MasterLens/actions) 构建；三个发布目标全部成功后才上传 Release，附带 `SHA256SUMS.txt`。离屏检查和构建不能代替真实 DAW 与音频硬件回归。
 
 ## 工程结构
 
@@ -194,13 +200,11 @@ MasterLens 不做总线 ARA：多数宿主只向音频轨开放 ARA，总线整�
 
 ## English summary
 
-MasterLens 2.1.1 is a little extra pair of eyes at the end of your mastering chain. It helps you check loudness, peaks, stereo balance and delivery risks on macOS and Windows, with VST3, AU, Standalone and a file-QC CLI. By default, it adds no latency and leaves your audio untouched. Auditioning, loudness matching and reference A/B only change the output when you turn them on.
+MasterLens 2.3.0 is a little extra pair of eyes at the end of your mastering chain. It helps you check loudness, peaks, stereo balance and delivery risks on macOS and Windows, with VST3, AU, Standalone and a file-QC CLI. By default, it adds no latency and leaves your audio untouched. Auditioning, loudness matching and reference A/B only change the output when you turn them on.
 
-Version 2.1 helps you find the spot worth another listen, see which frequency bands lose energy in mono, and work out how much gain fits below your peak ceiling. Reports keep sample addresses, a SHA256 file fingerprint, ten-band mono-fold results and gain estimates in CSV + JSON; album evidence is saved too. The CLI adds target / ceiling controls and optional QC failure policies, with explicit errors for invalid inputs, unsupported channel layouts and failed report writes. Every new check runs locally: no datasets, models or external encoders needed.
+The 2.3 Precision Instrument editor puts the spectrum first, uses embedded Geist typography and keeps a 32 px safety anchor around the graph. Project files now carry the album snapshot, stable track IDs and a version label; the File QC evidence rows can be reviewed, previewed around the event, looped, and opened at their source. A JSON delivery spec checks sample rate, bit depth, channels, naming, loudness tolerance and true peak. Folder watch rechecks changed exports using a size + mtime fingerprint cache, while SHA256 remains the final source identity. The CLI adds `--spec` and optional `--codec aac|mp3` ffmpeg round-trip true-peak rechecks.
 
-2.1.1 is a small-patch release with a cat-ear bow on top: the loudness rail and left readout are vertically centred, menu switches and overlay windows get a restrained 140 ms transition, the live M/S window is cut on exact 100 ms sample boundaries, coverage is measured as the union of host-time intervals (looping eight bars no longer counts as the whole song), and reference A/B resampling uses four-point Catmull-Rom instead of linear interpolation. No new measurement magic was smuggled in; P1/P2 features stay out of this patch.
-
-The graphite / celadon editor gains shallow lighting and scale-relative type spacing, checked from 100% through 200%. All README screenshots come from the 2.1.1 renderer. See the [research and algorithm notes](docs/research-2.1.1.md) and [validation record](docs/performance-2.1.1.md) for scope and limits.
+Multi-reference files (1–4), region markers and problem-loop audition remain part of the workflow. Multi-reference spectra are energy aggregates, not a synthetic “reference master”; live region figures remain 100 ms envelope estimates, while file QC stays the exact offline path. No dataset, model or cloud inference is used. See the [research and algorithm notes](docs/research-2.3.0.md) and [validation record](docs/performance-2.3.0.md) for scope and limits.
 
 JUCE 8.0.15 使用 AGPLv3 / 商业双许可；本项目按 AGPLv3 使用 JUCE。
 

@@ -194,6 +194,12 @@ void DetailArea::paintTimeline (juce::Graphics& g)
 
 void DetailArea::mouseDoubleClick (const juce::MouseEvent& e)
 {
+    if (page == PageId::files)
+    {
+        handleFileDoubleClick (e);
+        return;
+    }
+
     if (page != PageId::timeline)
         return;
 

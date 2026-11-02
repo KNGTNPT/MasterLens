@@ -1,12 +1,14 @@
 #pragma once
 
 #include <juce_audio_processors/juce_audio_processors.h>
+#include <map>
 
 #include "PluginProcessor.h"
 #include "Text.h"
 #include "Basis.h"
 #include "album/AlbumSession.h"
 #include "dsp/ReferenceSpectrum.h"
+#include "file/DeliverySpec.h"
 #include "ui/Modules.h"
 #include "ui/Theme.h"
 #include "ui/Widgets.h"
@@ -80,6 +82,13 @@ private:
     void updateRail();
     void applyPreset (int index);
     void showGenreInfo();
+    void showProjectMenu();
+    void saveProjectAs();
+    void openProject();
+    void toggleFolderWatch();
+    void pollFolderWatch();
+    void loadDeliverySpec();
+    void exportDeliverySpecTemplate();
     void revealOverlay (juce::Component&);
     void hideOverlay (juce::Component&);
     void syncPresetToParameters();
@@ -174,6 +183,11 @@ private:
     std::vector<ml::FileAnalysisResult> fileResults;
     juce::String fileAnalysisStatus;
     juce::String pendingAlbumName;
+    ml::DeliverySpec deliverySpec;
+    juce::File watchedFolder;
+    std::map<juce::String, std::pair<juce::int64, juce::int64>> watchedStamps;
+    bool watchFolderEnabled = false;
+    double lastWatchScanMs = 0.0;
 
     struct RawSeriesPoint
     {

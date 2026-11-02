@@ -1,0 +1,188 @@
+{
+  "version": "2.3.0",
+  "platform": "Darwin",
+  "architecture": "arm64",
+  "renderer": "MasterLensUiShot 2.3.0",
+  "images": [
+    {
+      "path": "docs/screenshot-2.3.0.png",
+      "sha256": "57b9d139b52c86d2bf6dfeb50bb8250f8959c04a956a493df26060845eca0fb8",
+      "width": 2240,
+      "height": 1400,
+      "arguments": [
+        "screenshot",
+        "2.3.0"
+      ]
+    },
+    {
+      "path": "docs/spectrum-2.3.0.png",
+      "sha256": "8aab3e6d35624638f83d1e2d73e20386cc3e8cb30e7bca164a230d6ac14a68dc",
+      "width": 2240,
+      "height": 1400,
+      "arguments": [
+        "spectrum",
+        "2.3.0"
+      ]
+    },
+    {
+      "path": "docs/stereo-2.3.0.png",
+      "sha256": "152ffa231556d97caf610be67f1a8ef1bd9c09c8aef8963987f174253168e521",
+      "width": 2240,
+      "height": 1400,
+      "arguments": [
+        "stereo",
+        "2.3.0"
+      ]
+    },
+    {
+      "path": "docs/fileqc-2.3.0.png",
+      "sha256": "7b47cb50c203827eb56be562703815357e9cb0beed18ae759d77e708540dd82b",
+      "width": 2240,
+      "height": 1400,
+      "arguments": [
+        "fileqc",
+        "2.3.0"
+      ]
+    },
+    {
+      "path": "docs/peak-2.3.0.png",
+      "sha256": "41a9d76f041e87ed185c50aec8ef9b4988f71298660d68a563fd8e3cb61c984b",
+      "width": 2240,
+      "height": 1400,
+      "arguments": [
+        "peak",
+        "2.3.0"
+      ]
+    },
+    {
+      "path": "docs/delivery-2.3.0.png",
+      "sha256": "41a9bf899f40a605f3358e1a25c2f4785cbee143f3f4fef1c095647362068bbc",
+      "width": 2240,
+      "height": 1400,
+      "arguments": [
+        "delivery",
+        "2.3.0"
+      ]
+    },
+    {
+      "path": "docs/checks-2.3.0.png",
+      "sha256": "ad75e0cba192876ff38173b68984a334705b81c9211c481b36dc2e13467e4817",
+      "width": 2240,
+      "height": 1400,
+      "arguments": [
+        "checks",
+        "2.3.0"
+      ]
+    },
+    {
+      "path": "docs/signal-2.3.0.png",
+      "sha256": "25dec2b2cc9e44b0f7d2bd5cc12d18d315987f92d31f4cfce80114bef3492935",
+      "width": 2240,
+      "height": 1400,
+      "arguments": [
+        "signal",
+        "2.3.0"
+      ]
+    },
+    {
+      "path": "docs/target-2.3.0.png",
+      "sha256": "11784b658e322d412ecfc9d6c08313f77d8408e1a4042a7a27e875df895b6254",
+      "width": 2240,
+      "height": 1400,
+      "arguments": [
+        "target",
+        "2.3.0"
+      ]
+    },
+    {
+      "path": "docs/timeline-2.3.0.png",
+      "sha256": "3ce354d2afaa791f67244ddd25259a87f5327147d61c51ae733482585be70466",
+      "width": 2240,
+      "height": 1400,
+      "arguments": [
+        "timeline",
+        "2.3.0"
+      ]
+    },
+    {
+      "path": "docs/english-2.3.0.png",
+      "sha256": "f8d19b9fa794a971e83741a991dd1ffbf7b3928be02f1e7f3448a281fda7539d",
+      "width": 2240,
+      "height": 1400,
+      "arguments": [
+        "english",
+        "2.3.0"
+      ]
+    },
+    {
+      "path": "docs/settings-2.3.0.png",
+      "sha256": "0e4505102ca0a6a3e9bb517ab1fe0d54016cb1085321b23a85672e90c839192a",
+      "width": 2240,
+      "height": 1400,
+      "arguments": [
+        "settings",
+        "2.3.0"
+      ]
+    },
+    {
+      "path": "docs/about-2.3.0.png",
+      "sha256": "5e84a8816ebad7e475f553562a0446089d0ae2c53a6bfed8c352dddcf9216498",
+      "width": 2240,
+      "height": 1400,
+      "arguments": [
+        "about",
+        "2.3.0"
+      ]
+    },
+    {
+      "path": "docs/album-2.3.0.png",
+      "sha256": "213387fe2906becc2fae94e7a75de3e5605cdae2010b45d47c7677333e05477a",
+      "width": 2240,
+      "height": 1400,
+      "arguments": [
+        "album",
+        "2.3.0"
+      ]
+    },
+    {
+      "path": "docs/light-2.3.0.png",
+      "sha256": "fa35620fe011851ff923c08c977bbea5b2659f07c52de7bf84fbbf80671732ea",
+      "width": 2240,
+      "height": 1400,
+      "arguments": [
+        "light",
+        "2.3.0"
+      ]
+    },
+    {
+      "path": "docs/file-mono-2.3.0.png",
+      "sha256": "012bb49dbbc256fee165c873c2d630875f9017400a56f05b3f573429cfcb2a9e",
+      "width": 2240,
+      "height": 1400,
+      "arguments": [
+        "file-mono",
+        "2.3.0"
+      ]
+    },
+    {
+      "path": "docs/file-gain-2.3.0.png",
+      "sha256": "d8b8e8eb6f27816eace5613f5263515f8032ac0753db53554d3403ddfbc35b4a",
+      "width": 2240,
+      "height": 1400,
+      "arguments": [
+        "file-gain",
+        "2.3.0"
+      ]
+    },
+    {
+      "path": "docs/waterfall-2.3.0.png",
+      "sha256": "45041b11f0ecf685128601e59c7211985117bcfec72e583347683975aa6d5959",
+      "width": 2240,
+      "height": 1400,
+      "arguments": [
+        "waterfall",
+        "2.3.0"
+      ]
+    }
+  ]
+}

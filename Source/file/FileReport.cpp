@@ -1,8 +1,12 @@
 #include "FileAnalyzer.h"
+#include "DeliverySpec.h"
+
+#include <algorithm>
 
 namespace ml
 {
-juce::var fileResultToVar (const FileAnalysisResult& r, float target, float ceiling)
+juce::var fileResultToVar (const FileAnalysisResult& r, float target, float ceiling,
+                           const DeliverySpec* spec)
 {
     auto* o = new juce::DynamicObject();
     o->setProperty ("file", r.fileName);
@@ -58,6 +62,13 @@ juce::var fileResultToVar (const FileAnalysisResult& r, float target, float ceil
     auto budget = gainBudget (r.stats.integrated, r.stats.truePeakDb, target, ceiling);
     budget.valid = budget.valid && r.ok;
     o->setProperty ("gainBudget", budget.toVar());
+
+    if (spec != nullptr && spec->enabled)
+    {
+        o->setProperty ("deliverySpec", spec->toVar());
+        o->setProperty ("specCheck", evaluateSpec (r, *spec).toVar());
+    }
+
     return juce::var (o);
 }
 
@@ -65,7 +76,7 @@ juce::var fileResultToVar (const FileAnalysisResult& r, float target, float ceil
 juce::String fileResultsCsv (const std::vector<FileAnalysisResult>& results, float target, float ceiling)
 {
     juce::StringArray lines;
-    lines.add ("file,status,error,sample_rate_hz,bit_depth,channels,duration_s,integrated_lufs,true_peak_dbtp,lra_lu,plr_db,blockers,reported_findings,leading_silence_s,trailing_silence_s,dc_left,dc_right,internal_silences,clipped_runs,target_lufs,ceiling_dbtp,safe_gain_db,achieved_lufs_estimate,shortfall_lu,sha256");
+    lines.add ("file,status,error,sample_rate_hz,bit_depth,channels,duration_s,integrated_lufs,true_peak_dbtp,lra_lu,plr_db,blockers,reported_findings,reviewed_findings,leading_silence_s,trailing_silence_s,dc_left,dc_right,internal_silences,clipped_runs,target_lufs,ceiling_dbtp,safe_gain_db,achieved_lufs_estimate,shortfall_lu,sha256");
     const auto quote = [] (const juce::String& text) { return "\"" + text.replace ("\"", "\"\"") + "\""; };
     for (const auto& r : results)
     {
@@ -77,6 +88,7 @@ juce::String fileResultsCsv (const std::vector<FileAnalysisResult>& results, flo
         row.add (juce::String (r.durationSeconds, 6));
         for (float v : { r.stats.integrated, r.stats.truePeakDb, r.stats.lra, r.stats.getPlr() }) row.add (r.ok ? juce::String (v, 3) : "");
         row.add (juce::String (q.blockers())); row.add (juce::String ((int) q.findings.size()));
+        row.add (juce::String ((int) std::count_if (q.findings.begin(), q.findings.end(), [] (const auto& f) { return f.reviewed; })));
         row.add (juce::String (q.leadingSilenceSeconds, 6)); row.add (juce::String (q.trailingSilenceSeconds, 6));
         row.add (juce::String (q.dcOffset[0], 8)); row.add (juce::String (q.dcOffset[1], 8));
         row.add (juce::String (q.internalSilenceCount)); row.add (juce::String (q.clippedRunCount));

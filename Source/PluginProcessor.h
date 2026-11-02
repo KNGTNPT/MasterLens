@@ -10,6 +10,7 @@
 #include "dsp/SpectrumAnalyzer.h"
 #include "dsp/SpectrumFifo.h"
 #include "audio/AuditionEngine.h"
+#include "audio/FilePreviewPlayer.h"
 #include "audio/ReferencePlayer.h"
 
 class MasterLensAudioProcessor : public juce::AudioProcessor
@@ -49,6 +50,7 @@ public:
     ml::SpectrumFifo outputSpectrumFifo;
     ml::AuditionEngine auditionEngine;
     ml::ReferencePlayer referencePlayer;
+    ml::FilePreviewPlayer filePreviewPlayer;
 
     ml::StatsSnapshot getStatsSnapshot() const { return ml::snapshot (stats); }
     void requestReset() { resetRequested.store (true); }
@@ -89,6 +91,15 @@ public:
     {
         auditionEngine.startLive (lowHz, highHz, monoFold);
     }
+
+    void startFilePreview (const juce::File& file, double start, double end, bool loop)
+    {
+        filePreviewPlayer.start (file, start, end, loop);
+    }
+
+    void stopFilePreview() { filePreviewPlayer.stop(); }
+    bool isFilePreviewActive() const noexcept { return filePreviewPlayer.isActive(); }
+    juce::String getFilePreviewStatus() const { return filePreviewPlayer.getStatus(); }
 
     void stopAudition() { auditionEngine.stop(); }
     bool isAuditionActive() const noexcept { return auditionEngine.isActive(); }

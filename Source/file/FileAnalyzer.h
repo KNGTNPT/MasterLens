@@ -39,8 +39,11 @@ struct FileAnalysisResult
     bool ok = false;
 };
 
+struct DeliverySpec;
+
 // Shared by the GUI sidecar and CLI; one schema for the same measurements.
-juce::var fileResultToVar (const FileAnalysisResult&, float target = -14.0f, float ceiling = -1.0f);
+juce::var fileResultToVar (const FileAnalysisResult&, float target = -14.0f, float ceiling = -1.0f,
+                           const DeliverySpec* spec = nullptr);
 juce::String fileResultsCsv (const std::vector<FileAnalysisResult>&, float target = -14.0f, float ceiling = -1.0f);
 
 /** Background WAV / AIFF / FLAC analyser with a tiny thread-safe result queue.

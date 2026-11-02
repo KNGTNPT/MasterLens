@@ -157,6 +157,8 @@ bool MasterLensAudioProcessorEditor::keyPressed (const juce::KeyPress& key)
             hideOverlay (aboutPanel);
         else if (genrePanel.isVisible())
             hideOverlay (genrePanel);
+        else if (processor.isFilePreviewActive())
+            processor.stopFilePreview();
         else
             setHold (false, false);
 

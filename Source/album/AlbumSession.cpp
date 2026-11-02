@@ -427,6 +427,8 @@ juce::String Session::toJson (const Snapshot& s, bool includeHash) const
     root->setProperty ("schemaVersion", s.schemaVersion);
     root->setProperty ("revision", s.revision);
     root->setProperty ("albumName", s.albumName);
+    root->setProperty ("projectId", s.projectId);
+    root->setProperty ("projectVersion", s.projectVersion);
     root->setProperty ("updatedAt", s.updatedAt);
     root->setProperty ("rules", rulesToVar (s.rules));
 
@@ -483,6 +485,8 @@ bool Session::fromJson (const juce::String& text, Snapshot& s) const
     s.schemaVersion = (int) root->getProperty ("schemaVersion");
     s.revision = (int) root->getProperty ("revision");
     s.albumName = root->getProperty ("albumName").toString();
+    s.projectId = root->getProperty ("projectId").toString();
+    s.projectVersion = root->getProperty ("projectVersion").toString();
     s.updatedAt = root->getProperty ("updatedAt").toString();
     s.hash = root->getProperty ("hash").toString();
     s.rules = rulesFromVar (root->getProperty ("rules"));
@@ -652,6 +656,40 @@ bool Session::importJson (const juce::File& file)
     Snapshot imported;
 
     if (! fromJson (file.loadFileAsString(), imported))
+        return false;
+
+    ++imported.revision;
+    save (imported);
+    return true;
+}
+
+bool Session::saveProject (const juce::File& file, const juce::String& versionLabel)
+{
+    auto s = snapshot();
+
+    if (s.projectId.isEmpty())
+    {
+        const auto seed = s.albumName + "|"
+                          + (s.tracks.empty() ? juce::String ("empty") : s.tracks.front().id);
+        s.projectId = "prj-" + juce::SHA256 (seed.toRawUTF8(),
+                                             (size_t) seed.getNumBytesAsUTF8()).toHexString().substring (0, 16);
+    }
+
+    s.projectVersion = versionLabel.isNotEmpty() ? versionLabel : "1.0";
+    s.updatedAt = juce::Time::getCurrentTime().toISO8601 (true);
+
+    const auto json = toJson (s, true);
+    return file.replaceWithText (json);
+}
+
+bool Session::loadProject (const juce::File& file)
+{
+    if (! file.existsAsFile())
+        return false;
+
+    Snapshot imported;
+
+    if (! fromJson (file.loadFileAsString(), imported) || imported.tracks.empty())
         return false;
 
     ++imported.revision;
@@ -1051,6 +1089,13 @@ juce::String Session::exportProofText() const
 
     text << "\nSnapshot hash: " << s.hash << "\n";
     return text;
+}
+
+juce::String stableTrackId (const juce::String& label, const juce::String& source)
+{
+    const auto key = label.trim().toLowerCase() + "|" + source;
+    return "trk-" + juce::SHA256 (key.toRawUTF8(),
+                                 (size_t) key.getNumBytesAsUTF8()).toHexString().substring (0, 16);
 }
 } // namespace ml::album
 

@@ -69,16 +69,16 @@ cmake --build build-debug --target MasterLensUiShot MasterLens_Standalone -j 4
 
 这不是完整的实时安全认证：既有 `ReferencePlayer::render` 会获取 SpinLock 并复制 shared_ptr，涉及阻塞 / 最后一次引用销毁的潜在风险。本次按只调整视觉权重的范围保留，未修改响度、真峰值、M-S 或参考播放处理。
 
-## 2.3beta 顶栏与本地快照（2026-11-02）
+## 2.3.0 顶栏与本地快照（2026-11-02）
 
 - 顶部图形从 32px 放大为 41.6px（130%），在 44px 网格槽内居中；MASTERLENS 的现有 Geist Medium 字形统一缩放 130%，等效 16.9px，保留 0.16em 字距。
 - 主副行按各自真实字形边界计算总高度，行间 8px，整个文字组关于 64px 页头中线对称，上下墨迹留白一致。图形与文字间距 16px。
-- 副行使用新内嵌的 Geist Mono Regular 11px / 0.12em，依次显示 BERRYSTUDIO、开发者、2.3beta；中文使用 KNGTNPT 兰，英文使用 KNGTNPT LAN。「关于」的开发者字段同步切换。
+- 副行使用新内嵌的 Geist Mono Regular 11px / 0.12em，依次显示 BERRYSTUDIO、开发者、2.3.0；中文使用 KNGTNPT 兰，英文使用 KNGTNPT LAN。「关于」的开发者字段同步切换。
 - 中英文及英文最小 880×560 窗口已检查，无截断 / 重叠；字体和边界自动回归仍为 13,150 项、零失败。
-- 界面版本为 2.3beta，AU / VST3 等数值版本为 2.3.0。新增字体同样来自已固定提交的 vercel/geist-font，附带 SIL OFL 许可，运行时无需下载。
+- 界面版本为 2.3.0，AU / VST3 等数值版本为 2.3.0。新增字体同样来自已固定提交的 vercel/geist-font，附带 SIL OFL 许可，运行时无需下载。
 
 ![英文最小窗口](instrument-spectrum-en.png)
 
-本地保存结果：Release 的 AU / VST3 / Standalone / UiShot 已以 arm64 + x86_64 Universal 构建；Debug arm64 UiShot 构建与布局检查通过。输出 FIFO 回归通过（49 帧，原始误差 0，Blackman 误差 6.15e-8，bypass PASS）。包内数值版本已核对为 2.3.0，分发名称为 2.3beta。截图来自本次 Universal Release 实际渲染。Intel 切片已构建并检查架构，尚未在 Intel 硬件 / 所有 DAW 中实测；既有 Debug 退出 DynamicObject 断言保留。
+本地保存结果：Release 的 AU / VST3 / Standalone / UiShot 已以 arm64 + x86_64 Universal 构建；Debug arm64 UiShot 构建与布局检查通过。输出 FIFO 回归通过（49 帧，原始误差 0，Blackman 误差 6.15e-8，bypass PASS）。包内数值版本已核对为 2.3.0，分发名称为 2.3.0。截图来自本次 Universal Release 实际渲染。Intel 切片已构建并检查架构，尚未在 Intel 硬件 / 所有 DAW 中实测；既有 Debug 退出 DynamicObject 断言保留。
 
-安装包保存到仓库的 `dist/MasterLens-2.3beta-macOS.dmg`，独立 AU / VST3 / Standalone 包与源码归档在 `dist/2.3beta/`；`dist/` 沿用仓库忽略规则，不把构建二进制写入 Git 历史。源码以本地 `v2.3beta` 标签保存。
+安装包保存到仓库的 `dist/MasterLens-2.3.0-macOS.dmg`，独立 AU / VST3 / Standalone 包与源码归档在 `dist/2.3.0/`；`dist/` 沿用仓库忽略规则，不把构建二进制写入 Git 历史。源码以本地 `v2.3.0` 标签保存。

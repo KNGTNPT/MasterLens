@@ -109,6 +109,7 @@ void MasterLensAudioProcessor::prepareToPlay (double sampleRate, int samplesPerB
 
     engine.prepare (currentSampleRate, juce::jmax (1, getTotalNumInputChannels()));
     auditionEngine.prepare (currentSampleRate, 2);
+    filePreviewPlayer.prepare (currentSampleRate);
     ml::resetStats (stats);
     spectrumRing.reset();
     resetHostCoverage();
@@ -218,6 +219,11 @@ void MasterLensAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, j
 
     engine.process (buffer, stats, numSamples);
     auditionEngine.process (buffer);
+
+    // File QC evidence preview is an explicit, user-triggered output override.
+    // Measurements above still see the untouched bus.
+    if (filePreviewPlayer.render (buffer))
+        return;
 
     const double knownLength = trackLengthSeconds.load (std::memory_order_relaxed);
     stats.hostLength = knownLength;

@@ -116,6 +116,9 @@ void MasterLensAudioProcessorEditor::timerCallback()
     if ((frameCounter % 6) == 0)
         pollFileAnalysis();
 
+    if ((frameCounter % 120) == 0)
+        pollFolderWatch();
+
     if ((frameCounter % 12) == 0)
         detail.setReferencePlaybackState (processor.referencePlayer.isEnabled()
                                               && processor.referencePlayer.isReady(),

@@ -2,6 +2,7 @@
 #include "../Delivery.h"
 #include "../GenreWar.h"
 
+#include <set>
 #include <utility>
 
 namespace ml
@@ -126,6 +127,8 @@ DetailArea::DetailArea()
     albumProof.onClick = [this] { if (onAlbumExportProof != nullptr) onAlbumExportProof(); };
     albumImport.onClick = [this] { if (onAlbumImport != nullptr) onAlbumImport(); };
     albumClearButton.onClick = [this] { if (onAlbumClear != nullptr) onAlbumClear(); };
+    albumProject.onClick = [this] { if (onProjectMenu != nullptr) onProjectMenu(); };
+    addChildComponent (albumProject);
 
     for (int i = 0; i < (int) albumRuleButtons.size(); ++i)
     {
@@ -188,6 +191,9 @@ void DetailArea::refreshTexts()
     albumProof.setButtonText (ml::grid::controlText (T ("导出证明", "Proof")));
     albumImport.setButtonText (ml::grid::controlText (T ("导入基准", "Import")));
     albumClearButton.setButtonText (ml::grid::controlText (T ("清空", "Clear")));
+    albumProject.setButtonText (ml::grid::controlText (T ("项目", "Project")));
+    albumProject.setTooltip (T ("项目文件、版本差异、交付规格与文件夹监控",
+                                 "Project file, version diff, delivery spec and folder watch"));
     albumExportMarkers.setButtonText (ml::grid::controlText (T ("导出标记", "Export markers")));
     albumImportMarkers.setButtonText (ml::grid::controlText (T ("导入标记", "Import markers")));
 
@@ -266,6 +272,7 @@ void DetailArea::hideAllChildren()
     albumProof.setVisible (false);
     albumImport.setVisible (false);
     albumClearButton.setVisible (false);
+    albumProject.setVisible (false);
     albumExportMarkers.setVisible (false);
     albumImportMarkers.setVisible (false);
     albumTrackName.setVisible (false);
@@ -375,7 +382,20 @@ void DetailArea::setFileResults (std::vector<FileAnalysisResult> results, bool b
                                  int done, int total, const juce::String& status)
 {
     const bool layoutChanged = fileResults.empty() != results.empty();
+    std::set<juce::String> reviewed;
+
+    if (! layoutChanged)
+        for (const auto& old : fileResults)
+            for (const auto& f : old.forensic.findings)
+                if (f.reviewed)
+                    reviewed.insert (old.path + "|" + juce::String (f.startSample) + "|" + f.code);
+
     fileResults = std::move (results);
+
+    for (auto& r : fileResults)
+        for (auto& f : r.forensic.findings)
+            if (reviewed.count (r.path + "|" + juce::String (f.startSample) + "|" + f.code) > 0)
+                f.reviewed = true;
     fileBusy = busy;
     fileDone = done;
     fileTotal = total;
@@ -653,6 +673,8 @@ void DetailArea::resized()
             albumTrackLength.setBounds (top.removeFromLeft (64).reduced (0, 2));
             top.removeFromLeft (8);
 
+            albumProject.setBounds (top.removeFromRight (56).reduced (0, 1));
+            top.removeFromRight (8);
             albumProof.setBounds (top.removeFromRight (88).reduced (0, 1));
             top.removeFromRight (8);
             albumCapture.setBounds (top.removeFromRight (100).reduced (0, 1));
@@ -676,6 +698,7 @@ void DetailArea::resized()
                              static_cast<juce::Component*> (&albumProof),
                              static_cast<juce::Component*> (&albumImport),
                              static_cast<juce::Component*> (&albumClearButton),
+                             static_cast<juce::Component*> (&albumProject),
                              static_cast<juce::Component*> (&albumTrackName),
                              static_cast<juce::Component*> (&albumNameEditor),
                              static_cast<juce::Component*> (&albumTrackLength) })

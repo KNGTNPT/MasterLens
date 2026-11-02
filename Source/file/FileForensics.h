@@ -13,6 +13,7 @@ struct FileFinding
     juce::int64 startSample = 0, lengthSamples = 0;
     int channel = -1; // -1 = all, otherwise zero-based
     double value = 0.0;
+    bool reviewed = false; // UI review state; exported with the evidence
 };
 
 struct FileForensics

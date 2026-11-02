@@ -301,9 +301,10 @@ juce::Rectangle<int> DetailArea::fileInspectorBounds() const
 
 void DetailArea::paintFileInspector (juce::Graphics& g)
 {
+    fileFindingRows.clear();
     if (fileSelected < 0 || fileSelected >= (int) fileResults.size()) return;
-    const auto& r = fileResults[(size_t) fileSelected];
-    const auto& q = r.forensic;
+    auto& r = fileResults[(size_t) fileSelected];
+    auto& q = r.forensic;
     auto panel = fileInspectorBounds();
     surface::recessed (g, panel.toFloat());
     auto area = panel.reduced (10, 0);
@@ -328,6 +329,18 @@ void DetailArea::paintFileInspector (juce::Graphics& g)
                     + juce::String (100.0 * q.dcOffset[0], 2) + " / " + juce::String (100.0 * q.dcOffset[1], 2)
                     + "%   " + T ("满刻度段 ", "FS RUNS ") + juce::String (q.clippedRunCount),
                     summary, juce::Justification::centredLeft, true);
+        if (spec.enabled)
+        {
+            const auto sc = evaluateSpec (r, spec);
+            auto specRow = area.removeFromTop (20);
+            g.setFont (getValueFont());
+            g.setColour (sc.ok ? theme::good : theme::bad);
+            g.drawText (sc.ok ? T ("交付规格：通过", "DELIVERY SPEC: PASS")
+                              : T ("交付规格：未通过 · ", "DELIVERY SPEC: FAIL · ")
+                                    + sc.failures.joinIntoString ("; "),
+                        specRow, juce::Justification::centredLeft, true);
+        }
+
         auto hash = area.getHeight() >= 64 ? area.removeFromBottom (20) : juce::Rectangle<int>();
         g.setColour (theme::textFaint);
         g.setFont (getValueFont());
@@ -345,8 +358,13 @@ void DetailArea::paintFileInspector (juce::Graphics& g)
         }
         for (int i = fileFindingScroll; i < (int) q.findings.size() && i < fileFindingScroll + rows; ++i)
         {
-            const auto& f = q.findings[(size_t) i];
+            auto& f = q.findings[(size_t) i];
             auto row = area.removeFromTop (24);
+            fileFindingRows.push_back (row);
+            auto check = row.removeFromRight (24);
+            g.setColour (f.reviewed ? theme::good : theme::textFaint);
+            g.setFont (getValueFont());
+            g.drawText (f.reviewed ? "[x]" : "[ ]", check, juce::Justification::centred, false);
             auto time = row.removeFromLeft (92);
             g.setColour (f.severity == 2 ? theme::bad : theme::warn);
             g.setFont (getValueFont());
@@ -357,7 +375,7 @@ void DetailArea::paintFileInspector (juce::Graphics& g)
             g.drawText ("#" + juce::String (f.startSample) + " +" + juce::String (f.lengthSamples)
                         + (f.channel >= 0 ? (f.channel == 0 ? " L" : " R") : " LR"),
                         address, juce::Justification::centredRight, true);
-            g.setColour (theme::textDim);
+            g.setColour (f.reviewed ? theme::textDim : theme::text);
             g.setFont (getLabelFont());
             g.drawText (findingText (f, Localisation::isEnglish()), row, juce::Justification::centredLeft, true);
         }
@@ -422,6 +440,27 @@ bool DetailArea::handleFileMouseDown (const juce::MouseEvent& e)
     if (page != PageId::files)
         return false;
 
+    // The right-hand circle is the review checkbox. Clicking elsewhere on a
+    // finding keeps selection/scroll behaviour intact; double-click previews it.
+    if (fileView == 0 && fileInspectorBounds().contains (e.getPosition())
+        && fileSelected >= 0 && fileSelected < (int) fileResults.size())
+    {
+        auto& findings = fileResults[(size_t) fileSelected].forensic.findings;
+
+        for (int i = 0; i < (int) fileFindingRows.size() && i < (int) findings.size(); ++i)
+            if (fileFindingRows[(size_t) i].contains (e.getPosition()))
+            {
+                if (e.x >= fileFindingRows[(size_t) i].getRight() - 28)
+                {
+                    findings[(size_t) i].reviewed = ! findings[(size_t) i].reviewed;
+                    repaint();
+                    return true;
+                }
+
+                return false;
+            }
+    }
+
     auto table = fileTableBounds();
 
     if (table.getWidth() <= 0 || table.getHeight() <= 0)
@@ -473,6 +512,44 @@ bool DetailArea::handleFileMouseDown (const juce::MouseEvent& e)
     }
 
     return false;
+}
+
+void DetailArea::handleFileDoubleClick (const juce::MouseEvent& e)
+{
+    if (page != PageId::files)
+    {
+        Component::mouseDoubleClick (e);
+        return;
+    }
+
+    if (fileView == 0 && fileSelected >= 0 && fileSelected < (int) fileResults.size()
+        && fileInspectorBounds().contains (e.getPosition()))
+    {
+        auto& r = fileResults[(size_t) fileSelected];
+        auto& findings = r.forensic.findings;
+
+        for (int i = 0; i < (int) fileFindingRows.size() && i < (int) findings.size(); ++i)
+            if (fileFindingRows[(size_t) i].contains (e.getPosition()))
+            {
+                if (onPreviewFile != nullptr && r.sampleRate > 0.0)
+                    onPreviewFile (r.path, findings[(size_t) i].startSample / r.sampleRate);
+                return;
+            }
+    }
+
+    auto table = fileTableBounds();
+    auto tableBody = table;
+    tableBody.removeFromTop (kFileHeaderHeight);
+
+    if (tableBody.contains (e.getPosition()) && fileSelected >= 0
+        && fileSelected < (int) fileResults.size())
+    {
+        if (onRevealFile != nullptr)
+            onRevealFile (fileResults[(size_t) fileSelected].path);
+        return;
+    }
+
+    Component::mouseDoubleClick (e);
 }
 
 void DetailArea::handleFileWheel (const juce::MouseWheelDetails& wheel)

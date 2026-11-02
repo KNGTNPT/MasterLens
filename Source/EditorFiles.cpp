@@ -183,9 +183,8 @@ void MasterLensAudioProcessorEditor::addFileResultToAlbum (const ml::FileAnalysi
     }
 
     ml::album::TrackRecord t;
-    t.id = juce::String::toHexString (juce::Time::getCurrentTime().toMilliseconds())
-           + "-" + result.fileName;
     t.label = juce::File (result.fileName).getFileNameWithoutExtension();
+    t.id = ml::album::stableTrackId (t.label, result.path);
     t.capturedAt = juce::Time::getCurrentTime().toISO8601 (true);
     t.stats = result.stats;
     t.defects = result.defects;
@@ -237,7 +236,7 @@ void MasterLensAudioProcessorEditor::clearFileResults()
 
 void MasterLensAudioProcessorEditor::exportFileTable()
 {
-    if (fileResults.empty())
+    if (detail.getFileResults().empty())
     {
         footerStatusText = T ("没有可导出的文件结果", "No file results to export");
         footerStatusColour = ml::theme::warn;
@@ -255,6 +254,7 @@ void MasterLensAudioProcessorEditor::exportFileTable()
                                   | juce::FileBrowserComponent::warnAboutOverwriting,
                               [this] (const juce::FileChooser& fc)
                               {
+                                  const auto& exportResults = detail.getFileResults();
                                   auto file = fc.getResult();
 
                                   if (file == juce::File())
@@ -263,7 +263,7 @@ void MasterLensAudioProcessorEditor::exportFileTable()
                                   file = file.withFileExtension ("csv");
 
                                   const auto jsonFile = file.withFileExtension ("json");
-                                  for (const auto& r : fileResults)
+                                  for (const auto& r : exportResults)
                                       if (file == juce::File (r.path) || jsonFile == juce::File (r.path))
                                       {
                                           footerStatusText = T ("报告不能覆盖音频源文件", "Report cannot overwrite audio sources");
@@ -280,10 +280,11 @@ void MasterLensAudioProcessorEditor::exportFileTable()
                                   const float target = basis.hasComparison() ? basis.comparisonLufs()
                                       : (basis.mode == ml::BasisMode::manual ? processor.getTargetLufs() : -14.0f);
                                   juce::Array<juce::var> files;
-                                  for (const auto& r : fileResults)
-                                      files.add (ml::fileResultToVar (r, target, processor.getCeilingDb()));
+                                  for (const auto& r : exportResults)
+                                      files.add (ml::fileResultToVar (r, target, processor.getCeilingDb(), &deliverySpec));
                                   root->setProperty ("files", files);
-                                  if (file.replaceWithText (ml::fileResultsCsv (fileResults, target, processor.getCeilingDb()))
+                                  root->setProperty ("deliverySpec", deliverySpec.toVar());
+                                  if (file.replaceWithText (ml::fileResultsCsv (exportResults, target, processor.getCeilingDb()))
                                       && jsonFile.replaceWithText (juce::JSON::toString (juce::var (root), true)))
                                   {
                                       footerStatusText = T ("CSV + JSON 已导出 · ", "CSV + JSON exported · ")

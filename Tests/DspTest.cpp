@@ -10,6 +10,7 @@
 #include "audio/AuditionEngine.h"
 #include "audio/ReferencePlayer.h"
 #include "file/FileAnalyzer.h"
+#include "file/DeliverySpec.h"
 #include "Delivery.h"
 #include "album/AlbumSession.h"
 
@@ -884,6 +885,38 @@ int main()
         check ("album source hash retained", restored.tracks[0].fileForensics["sha256"].toString() == evidence.sha256 ? 1 : 0, 1, 0);
         const auto proof = juce::JSON::parse (session.exportProofJson());
         check ("album proof embeds QC", proof["snapshot"]["tracks"][0]["fileForensics"]["sha256"].toString() == evidence.sha256 ? 1 : 0, 1, 0);
+
+        const auto idA = ml::album::stableTrackId ("QC regression", "/tmp/a.wav");
+        const auto idB = ml::album::stableTrackId ("qc regression", "/tmp/a.wav");
+        check ("stable track id", idA == idB ? 1 : 0, 1, 0);
+
+        ml::FileAnalysisResult specResult;
+        specResult.ok = true;
+        specResult.fileName = "delivery.wav";
+        specResult.sampleRate = 48000;
+        specResult.bitDepth = 24;
+        specResult.numChannels = 2;
+        specResult.stats.integrated = -14.0f;
+        specResult.stats.truePeakDb = -1.0f;
+        ml::DeliverySpec spec;
+        spec.enabled = true;
+        spec.sampleRate = 48000;
+        spec.bitDepth = 24;
+        spec.channels = 2;
+        spec.targetLufs = -14.0f;
+        spec.ceilingDbtp = -1.0f;
+        spec.loudnessToleranceLu = 0.3f;
+        check ("delivery spec pass", ml::evaluateSpec (specResult, spec).ok ? 1 : 0, 1, 0);
+        spec.bitDepth = 16;
+        check ("delivery spec bit depth", ml::evaluateSpec (specResult, spec).ok ? 1 : 0, 0, 0);
+
+        const auto projectFile = dir.getChildFile ("project.json");
+        check ("project save", session.saveProject (projectFile, "v-test") ? 1 : 0, 1, 0);
+        const auto savedProject = juce::JSON::parse (projectFile.loadFileAsString());
+        check ("project stable file", savedProject["projectId"].toString().startsWith ("prj-") ? 1 : 0, 1, 0);
+        check ("project version", savedProject["projectVersion"].toString() == "v-test" ? 1 : 0, 1, 0);
+        check ("project load", session.loadProject (projectFile) ? 1 : 0, 1, 0);
+
         dir.deleteRecursively();
     }
 

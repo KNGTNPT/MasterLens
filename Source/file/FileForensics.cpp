@@ -177,6 +177,7 @@ juce::var FileForensics::toVar (double sr) const
         e->setProperty ("durationSeconds", sr > 0.0 ? f.lengthSamples / sr : 0.0);
         e->setProperty ("channel", f.channel);
         e->setProperty ("value", f.value);
+        e->setProperty ("reviewed", f.reviewed);
         events.add (juce::var (e));
     }
     o->setProperty ("findings", events);

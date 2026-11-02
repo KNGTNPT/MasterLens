@@ -58,6 +58,8 @@ struct Snapshot
     int schemaVersion = 1;
     int revision = 0;
     juce::String albumName { "Album" };
+    juce::String projectId;
+    juce::String projectVersion { "1.0" };
     juce::String updatedAt;
     juce::String hash;
 
@@ -126,6 +128,11 @@ public:
 
     bool importJson (const juce::File& file);
 
+    /** Project files keep the album snapshot, stable track IDs and a user-facing
+        version label together. They are deliberately separate from album.json. */
+    bool saveProject (const juce::File& file, const juce::String& versionLabel);
+    bool loadProject (const juce::File& file);
+
     /** Project-state persistence: the host saves this string inside APVTS, while
         album.json remains the "last used" cache shared by instances. */
     juce::String serializeState() const;
@@ -151,6 +158,10 @@ private:
     juce::int64 cachedStamp = 0;
     bool loaded = false;
 };
+
+/** Stable across project revisions: derived from track label + source identity,
+    not from the current measurement values. */
+juce::String stableTrackId (const juce::String& label, const juce::String& source);
 
 /** Convenience: median of a numeric vector (empty -> 0). */
 float medianOf (std::vector<float> values);

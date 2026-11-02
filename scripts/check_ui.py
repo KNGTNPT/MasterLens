@@ -35,12 +35,12 @@ cases += [
 ]
 results = []
 for i, flags in enumerate(cases):
-    command = [str(renderer), *flags, f'out=qa211_{i:02d}']
+    command = [str(renderer), *flags, f'out=qa230_{i:02d}']
     result = subprocess.run(command, cwd=ROOT, capture_output=True, text=True)
     results.append({'arguments': command[1:], 'returncode': result.returncode,
                     'stdout': result.stdout, 'stderr': result.stderr})
     print(f'{i+1}/{len(cases)} exit={result.returncode}: {" ".join(flags)}', flush=True)
-report = ROOT / 'docs/layout-2.1.1.json'
+report = ROOT / 'docs/layout-2.3.0.json'
 report.write_text(json.dumps({'platform': platform.system(), 'cases': results}, indent=2) + '\n')
 failures = [x for x in results if x['returncode'] != 0]
 for failure in failures:
