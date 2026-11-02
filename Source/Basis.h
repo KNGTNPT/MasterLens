@@ -83,7 +83,7 @@ struct PlatformSummary
 {
     float maxCutDb = 0.0f;       // positive number of dB the service will attenuate
     float maxBoostDb = 0.0f;     // positive number the service will raise
-    float maxLimitedDb = 0.0f;   // peak reduction the service limiter must do
+    float maxLimitedDb = 0.0f;   // legacy name: largest peak-constrained target shortfall
     float maxWastedDb = 0.0f;    // loudness bought that normalisation throws away
     int overCount = 0;
     int warningCount = 0;

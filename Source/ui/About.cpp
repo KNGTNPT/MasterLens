@@ -159,7 +159,7 @@ void AboutPanel::paint (juce::Graphics& g)
     };
 
     drawRow (T ("版本", "Version"), kVersion, theme::text);
-    drawRow (T ("开发者", "Developer"), kDeveloper, theme::accent);
+    drawRow (T ("开发者", "Developer"), juce::String::fromUTF8 (kDeveloper), theme::accent);
     drawRow (T ("机构", "Organisation"), kOrganisation, theme::violet);
 
     inner.removeFromTop (8);

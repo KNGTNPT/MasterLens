@@ -186,7 +186,7 @@ void SettingsPanel::paint (juce::Graphics& g)
 
     g.setColour (theme::textFaint);
     g.setFont (uiFont (tokens::unit));
-    g.drawText ("BerryStudio  |  " + juce::String (ml::kDeveloper),
+    g.drawText ("BerryStudio  |  " + juce::String::fromUTF8 (ml::kDeveloper),
                 l.footer.withTrimmedRight (120), juce::Justification::centredRight, false);
 }
 

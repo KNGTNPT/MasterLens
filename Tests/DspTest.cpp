@@ -1,6 +1,7 @@
 #include <juce_audio_basics/juce_audio_basics.h>
 #include <cstdio>
 #include <cmath>
+#include <limits>
 
 #include "dsp/AnalysisEngine.h"
 #include "dsp/SpectrumAnalyzer.h"
@@ -10,6 +11,7 @@
 #include "audio/ReferencePlayer.h"
 #include "file/FileAnalyzer.h"
 #include "Delivery.h"
+#include "album/AlbumSession.h"
 
 #include <juce_audio_formats/juce_audio_formats.h>
 
@@ -279,10 +281,14 @@ int main()
         s.truePeakDb = -1.0f;
         const auto over = ml::evaluate (s, ml::platform (0));
         check ("delivery raw TP (over)", over.predictedTpRaw, 1.0, 0.001);
-        check ("delivery predicted TP (limiter)", over.predictedTp, -1.0, 0.001);
-        check ("delivery service limiting", over.limitedDb, 2.0, 0.001);
+        check ("delivery constrained TP", over.predictedTp, -1.0, 0.001);
+        check ("delivery target shortfall", over.limitedDb, 2.0, 0.001);
         check ("delivery state over", (double) over.state, (double) ml::DeliveryState::over, 0.0);
 
+        s.integrated = -20.0f; s.truePeakDb = -5.0f;
+        const auto headroom = ml::evaluate (s, ml::platform (0));
+        check ("Spotify Normal gain", headroom.gainDb, 4.0, 0.001);
+        check ("Spotify attainable LUFS", s.integrated + headroom.gainDb, -16.0, 0.001);
         s.integrated = -100.0f;
         s.truePeakDb = -100.0f;
         const auto silent = ml::evaluate (s, ml::platform (0));
@@ -742,6 +748,97 @@ int main()
         check("TP direct convolution",maximumError,0.0,1.0e-6);
         detector.reset();
         check("TP reset clears mirror",detector.process(0.0f),0.0,0.0);
+    }
+
+    // 2.1: sample-addressed QC must be invariant to callback / file chunk size.
+    {
+        juce::AudioBuffer<float> audio (2, 48000);
+        audio.clear();
+        for (int i = 2400; i < 45600; ++i)
+        {
+            const float v = 0.2f * (float) std::cos (2.0 * juce::MathConstants<double>::pi * 1000.0 * i / sr);
+            audio.setSample (0, i, v); audio.setSample (1, i, v);
+        }
+        for (int i = 12000; i < 12960; ++i) { audio.setSample (0, i, 0); audio.setSample (1, i, 0); }
+        for (int i = 23998; i < 24008; ++i) audio.setSample (0, i, 1.0f);
+        const auto scan = [&] (int hop)
+        {
+            ml::FileForensicsScanner scanner (sr, 2, 24);
+            for (int pos = 0; pos < audio.getNumSamples(); pos += hop)
+            {
+                const int count = juce::jmin (hop, audio.getNumSamples() - pos);
+                juce::AudioBuffer<float> block (2, count);
+                for (int ch = 0; ch < 2; ++ch) block.copyFrom (ch, 0, audio, ch, pos, count);
+                scanner.process (block, count);
+            }
+            return scanner.finish();
+        };
+        const auto q = scan (257), whole = scan (48000);
+        check ("QC first active sample", q.firstActiveSample, 2400, 0);
+        check ("QC last active sample", q.lastActiveSample, 45599, 0);
+        check ("QC head silence", q.leadingSilenceSeconds, 0.05, 0.000001);
+        check ("QC tail silence", q.trailingSilenceSeconds, 0.05, 0.000001);
+        check ("QC internal silence", q.internalSilenceCount, 1, 0);
+        check ("QC clipped runs", q.clippedRunCount, 1, 0);
+        check ("QC clip across blocks", q.longestFullScaleRun[0], 10, 0);
+        check ("QC clip sample count", q.fullScaleSamples[0], 10, 0);
+        check ("QC chunk invariance", juce::JSON::toString (q.toVar (sr)) == juce::JSON::toString (whole.toVar (sr)) ? 1 : 0, 1, 0);
+        bool gap = false, clip = false;
+        for (const auto& f : q.findings)
+        {
+            if (f.code == "internal_digital_silence") gap = f.startSample == 12000 && f.lengthSamples == 960;
+            if (f.code == "full_scale_run") clip = f.startSample == 23998 && f.lengthSamples == 10;
+        }
+        check ("QC gap sample address", gap ? 1 : 0, 1, 0);
+        check ("QC clip sample address", clip ? 1 : 0, 1, 0);
+        audio.clear();
+        ml::FileForensicsScanner silent (sr, 2, 24);
+        silent.process (audio, audio.getNumSamples());
+        const auto silence = silent.finish();
+        check ("QC silence blocker", silence.blockers(), 1, 0);
+        check ("QC no false dropouts", silence.internalSilenceCount, 0, 0);
+        for (int i = 0; i < 48000; ++i) audio.setSample (0, i, 0.02f);
+        ml::FileForensicsScanner dc (sr, 2, 24);
+        dc.process (audio, audio.getNumSamples());
+        check ("QC DC measured", dc.finish().dcOffset[0], 0.02, 0.000001);
+        audio.setSample (0, 123, std::numeric_limits<float>::quiet_NaN());
+        ml::FileForensicsScanner invalid (sr, 2, 24);
+        check ("QC reject NaN", invalid.process (audio, 48000) ? 1 : 0, 0, 0);
+        check ("QC count NaN", invalid.finish().nonFiniteSamples, 1, 0);
+        const auto p = ml::gainBudget (-20, -5, -14, -1);
+        check ("budget requested", p.requestedGainDb, 6, 0.0001);
+        check ("budget safe gain", p.safeGainDb, 4, 0.0001);
+        check ("budget shortfall", p.shortfallLu, 2, 0.0001);
+        check ("budget peak ceiling", p.predictedTpDbtp, -1, 0.0001);
+        check ("budget silence invalid", ml::gainBudget (-100, -100, -14, -1).valid ? 1 : 0, 0, 0);
+        check ("budget attenuation", ml::gainBudget (-10, -0.2f, -14, -1).safeGainDb, -4, 0.0001);
+
+        // The offline evidence must survive the same session serialization used
+        // by DAW state and the independently exported album proof.
+        const auto dir = juce::File::getSpecialLocation (juce::File::tempDirectory)
+                             .getChildFile ("MasterLens-evidence-" + juce::Uuid().toString());
+        dir.createDirectory();
+       #if JUCE_WINDOWS
+        _putenv_s ("MASTERLENS_ALBUM_FILE", dir.getChildFile ("album.json").getFullPathName().toRawUTF8());
+       #else
+        setenv ("MASTERLENS_ALBUM_FILE", dir.getChildFile ("album.json").getFullPathName().toRawUTF8(), 1);
+       #endif
+        auto& session = ml::album::Session::get();
+        ml::album::TrackRecord track;
+        track.label = "QC regression";
+        track.stats.hasSignal = true; track.stats.integrated = -14; track.stats.truePeakDb = -6;
+        auto evidence = q;
+        evidence.sha256 = juce::String::repeatedString ("a", 64);
+        track.fileForensics = evidence.toVar (sr);
+        session.addTrack (track);
+        check ("album QC blocks delivery", ml::album::Session::evaluate (session.snapshot()).blockers, 1, 0);
+        const auto state = session.serializeState();
+        check ("album restore evidence", session.restoreState (state) ? 1 : 0, 1, 0);
+        const auto restored = session.snapshot();
+        check ("album source hash retained", restored.tracks[0].fileForensics["sha256"].toString() == evidence.sha256 ? 1 : 0, 1, 0);
+        const auto proof = juce::JSON::parse (session.exportProofJson());
+        check ("album proof embeds QC", proof["snapshot"]["tracks"][0]["fileForensics"]["sha256"].toString() == evidence.sha256 ? 1 : 0, 1, 0);
+        dir.deleteRecursively();
     }
 
     // ---------------------------------------------------------------------

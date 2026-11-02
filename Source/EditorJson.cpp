@@ -12,11 +12,19 @@ juce::String MasterLensAudioProcessorEditor::buildReportJson() const
 
     root->setProperty ("product", "MasterLens");
     root->setProperty ("version", ml::kVersion);
-    root->setProperty ("developer", ml::kDeveloper);
+    root->setProperty ("developer", juce::String::fromUTF8 (ml::kDeveloper));
     root->setProperty ("organisation", ml::kOrganisation);
     root->setProperty ("generatedAt", juce::Time::getCurrentTime().toISO8601 (true));
     root->setProperty ("sampleRate", processor.getSampleRateValue());
     root->setProperty ("channels", stats.stereo ? 2 : 1);
+
+    juce::Array<juce::var> offline;
+    const auto fileBasis = currentBasis();
+    const float fileTarget = fileBasis.hasComparison() ? fileBasis.comparisonLufs()
+        : (fileBasis.mode == ml::BasisMode::manual ? processor.getTargetLufs() : -14.0f);
+    for (const auto& r : fileResults)
+        offline.add (ml::fileResultToVar (r, fileTarget, processor.getCeilingDb()));
+    root->setProperty ("fileQC", offline);
 
     auto* loud = new juce::DynamicObject();
     loud->setProperty ("integratedLufs", stats.integrated);
@@ -153,6 +161,10 @@ juce::String MasterLensAudioProcessorEditor::buildReportJson() const
         o->setProperty ("predictedTp", res.predictedTp);
         o->setProperty ("predictedTpBeforeLimiter", res.predictedTpRaw);
         o->setProperty ("serviceLimitingDb", res.limitedDb);
+        o->setProperty ("serviceLimitingDbIsLegacyShortfall", true);
+        o->setProperty ("requestedGainDb", res.requestedGainDb);
+        o->setProperty ("targetShortfallLu", res.limitedDb);
+        o->setProperty ("scenarioOnly", true);
         o->setProperty ("wastedLoudnessDb", res.wastedLoudnessDb);
         o->setProperty ("normalises", p.normalises);
         o->setProperty ("codec", T (p.codecZh, p.codecEn));

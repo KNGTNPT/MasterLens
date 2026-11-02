@@ -37,6 +37,7 @@ public:
     void setPresetForSnapshot (int index) { presetBox.setSelectedId (index + 1, juce::dontSendNotification); applyPreset (index); }
     void expandFirstIssueForSnapshot();
     void setPageForSnapshot (int page);
+    void setFileViewForSnapshot (int view) { detail.setFileView (view); }
     void setThemeForSnapshot (bool useDark);
     void setScaleForSnapshot (float scale) { setUiScale (scale, false); }
     void captureSnapshotForSnapshot (int slot);

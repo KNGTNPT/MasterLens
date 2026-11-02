@@ -170,7 +170,7 @@ void DetailArea::paintDelivery (juce::Graphics& g)
     g.setFont (uiFont (tokens::aux));
     g.drawText (T ("可行 ", "OK ") + juce::String (okCount) + ml::sep()
                 + T ("临界 ", "Warning ") + juce::String (warnCount) + ml::sep()
-                + T ("需限幅 ", "Limited ") + juce::String (limitedCount),
+                + T ("目标受限 ", "Constrained ") + juce::String (limitedCount),
                 summary, juce::Justification::centredLeft);
 
     g.setColour (theme::textFaint);
@@ -179,6 +179,11 @@ void DetailArea::paintDelivery (juce::Graphics& g)
                 + num (s.truePeakDb) + " dBTP",
                 summary, juce::Justification::centredRight);
 
+    auto scenario = area.removeFromTop (22);
+    g.setFont (uiFont (tokens::unit));
+    g.setColour (theme::textFaint);
+    g.drawText (T ("本机交付情景；安全增益受峰值约束，差额不代表服务端限幅。", "Local scenarios; gain is peak-constrained. Gap does not imply a service limiter."),
+                scenario, juce::Justification::centredLeft, true);
     area.removeFromTop (6);
 
     const int tableW = juce::roundToInt ((float) area.getWidth() * 0.60f);
@@ -200,9 +205,9 @@ void DetailArea::paintDelivery (juce::Graphics& g)
     auto h = header;
     g.drawText (T ("平台", "Platform"), h.removeFromLeft (wPlatform), juce::Justification::centredLeft);
     g.drawText (T ("目标", "Target"), h.removeFromLeft (wTarget), juce::Justification::centredRight);
-    g.drawText (T ("增益", "Gain"), h.removeFromLeft (wGain), juce::Justification::centredRight);
+    g.drawText (T ("安全增益", "Safe gain"), h.removeFromLeft (wGain), juce::Justification::centredRight);
     g.drawText (T ("预测 TP", "Pred. TP"), h.removeFromLeft (wPredicted), juce::Justification::centredRight);
-    g.drawText (T ("服务限幅", "Limited"), h.removeFromLeft (wLimited), juce::Justification::centredRight);
+    g.drawText (T ("差额 LU", "Gap LU"), h.removeFromLeft (wLimited), juce::Justification::centredRight);
     g.drawText (T ("状态", "Status"), h, juce::Justification::centredRight);
 
     for (int i = 0; i < numPlatforms; ++i)
@@ -251,11 +256,11 @@ void DetailArea::paintDelivery (juce::Graphics& g)
                     juce::Justification::centredRight);
 
         g.setColour (r.limitedDb > 0.05f ? theme::bad : theme::textFaint);
-        g.drawText (r.limitedDb > 0.05f ? minusSign() + num (r.limitedDb) + " dB" : noValue(),
+        g.drawText (r.limitedDb > 0.05f ? num (r.limitedDb) : noValue(),
                     r0.removeFromLeft (wLimited), juce::Justification::centredRight);
 
         g.setFont (uiFont (tokens::unit));
-        g.drawText (r.state == DeliveryState::over ? T ("超限", "Over")
+        g.drawText (r.state == DeliveryState::over ? T ("受限", "Gap")
                   : r.state == DeliveryState::warning ? T ("临界", "Warning") : T ("可行", "OK"),
                     r0, juce::Justification::centredRight);
     }
@@ -264,8 +269,8 @@ void DetailArea::paintDelivery (juce::Graphics& g)
     {
         g.setColour (theme::bad);
         g.setFont (uiFont (tokens::unit));
-        g.drawText (TF (T ("归一化后仍需服务端限幅 {n} 个平台，最高 {l} dB；最多丢弃 {w} LU 的响度",
-                           "Still limited by the service after gain: {n} platforms, up to {l} dB; "
+        g.drawText (TF (T ("本机情景：{n} 项因峰值余量未达目标，最多差 {l} LU；衰减最多 {w} LU",
+                           "Local scenarios: {n} targets constrained, gap up to {l} LU; "
                            "wasted loudness up to {w} LU"),
                         { { "n", juce::String (limitedCount) },
                           { "l", num (maxLimited) },

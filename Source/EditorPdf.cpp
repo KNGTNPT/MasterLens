@@ -82,7 +82,7 @@ juce::MemoryBlock MasterLensAudioProcessorEditor::buildReportPdf() const
     lines.push_back ("");
     lines.push_back ("PLATFORM NORMALISATION");
     lines.push_back ("Worst cut: " + ml::fmt1 (platform.maxCutDb) + " dB   wasted "
-                     + ml::fmt1 (platform.maxWastedDb) + " LU   service limiting "
+                     + ml::fmt1 (platform.maxWastedDb) + " LU   target shortfall "
                      + ml::fmt1 (platform.maxLimitedDb) + " dB");
 
     for (int i = 0; i < ml::numPlatforms; ++i)

@@ -23,7 +23,7 @@ std::vector<int> sortedFileOrder (const std::vector<FileAnalysisResult>& results
 
     const auto risk = [] (const FileAnalysisResult& r)
     {
-        return r.ok ? r.defects.worstRisk() : 9999.0f;
+        return r.ok ? r.defects.worstRisk() + 100.0f * r.forensic.blockers() : 9999.0f;
     };
 
     std::sort (order.begin(), order.end(), [&] (int a, int b)
@@ -79,11 +79,11 @@ juce::Rectangle<int> DetailArea::fileTableBounds() const
     area.removeFromBottom (kFileButtonRow);
     area.removeFromTop (kFileBandRow + kFileDropGap);
 
-    const int dropH = fileResults.empty() ? 88 : 34;
+    const int dropH = fileResults.empty() ? 76 : 28;
     area.removeFromTop (dropH + kFileDropGap);
 
-    if (fileSelected >= 0 && area.getHeight() > 190)
-        area.removeFromBottom (62);
+    if (fileSelected >= 0)
+        area.setBottom (fileInspectorBounds().getY() - 8);
 
     return area;
 }
@@ -173,7 +173,7 @@ void DetailArea::paintFiles (juce::Graphics& g)
 
 
     auto header = table.removeFromTop (kFileHeaderHeight);
-    FileColumns cols (header);
+    FileColumns cols (header.withTrimmedRight (8).reduced (10, 0));
 
     const char* labelsZh[] { "文件", "采样率 / 位深", "时长", "LUFS", "TP", "LRA", "风险" };
     const char* labelsEn[] { "FILE", "RATE / DEPTH", "LEN", "LUFS", "TP", "LRA", "RISK" };
@@ -238,15 +238,16 @@ void DetailArea::paintFiles (juce::Graphics& g)
 
         g.setColour (r.ok ? theme::text : theme::bad);
         g.setFont (uiFont (tokens::aux));
-        g.drawFittedText (r.fileName, rowCols.cells[0].withTrimmedRight (8),
-                          juce::Justification::centredLeft, 1);
+        g.drawText (r.fileName, rowCols.cells[0].withTrimmedRight (8),
+                    juce::Justification::centredLeft, true);
 
         g.setColour (theme::textFaint);
         g.setFont (monoFont (tokens::unit));
 
         const auto rate = r.sampleRate > 0.0
-                              ? juce::String (r.sampleRate / 1000.0, 1) + " kHz / "
-                                    + juce::String (r.bitDepth) + "-bit"
+                              ? juce::String (r.sampleRate / 1000.0, 1)
+                                    + (rowCols.cells[1].getWidth() < 125 ? "k / " : " kHz / ")
+                                    + juce::String (r.bitDepth)
                               : juce::String ("-");
         g.drawText (rate, rowCols.cells[1], juce::Justification::centredLeft, false);
         g.drawText (fmtTime (r.durationSeconds), rowCols.cells[2], juce::Justification::centredRight, false);
@@ -268,7 +269,8 @@ void DetailArea::paintFiles (juce::Graphics& g)
         const int risk = juce::roundToInt (r.defects.worstRisk());
         g.setColour (risk >= 65 ? theme::bad : (risk >= 35 ? theme::warn : theme::good));
         g.setFont (uiFont (tokens::unit, true));
-        g.drawText (T ("风险 ", "risk ") + juce::String (risk) + "/100",
+        g.setColour (r.forensic.blockers() > 0 ? theme::bad : theme::textDim);
+        g.drawText (r.forensic.blockers() > 0 ? T ("QC 阻断", "QC block") : T ("风险 ", "risk ") + juce::String (risk),
                     rowCols.cells[6], juce::Justification::centredRight, false);
     }
 
@@ -276,7 +278,7 @@ void DetailArea::paintFiles (juce::Graphics& g)
     // ---- visible scrollbar ---------------------------------------------------
     if (maxScroll > 0)
     {
-        auto rail = table.withTrimmedTop (kFileHeaderHeight).withTrimmedRight (2).withWidth (4);
+        auto rail = table.removeFromRight (5);
         const float trackH = (float) rail.getHeight();
         const float thumbH = juce::jmax (20.0f, trackH * (float) visibleRows / (float) order.size());
         const float t = (float) fileScroll / (float) maxScroll;
@@ -287,33 +289,131 @@ void DetailArea::paintFiles (juce::Graphics& g)
                                     .withHeight (thumbH), 2.0f);
     }
 
-    // ---- selected row detail ------------------------------------------------
-    if (fileSelected >= 0 && fileSelected < (int) fileResults.size())
+    paintFileInspector (g);
+}
+
+juce::Rectangle<int> DetailArea::fileInspectorBounds() const
+{
+    auto area = contentArea().withTrimmedTop (30 + kFileBandRow + kFileDropGap + 28 + kFileDropGap);
+    area.removeFromBottom (kFileButtonRow);
+    return area.removeFromBottom (juce::jlimit (88, 240, juce::roundToInt (area.getHeight() * 0.58f)));
+}
+
+void DetailArea::paintFileInspector (juce::Graphics& g)
+{
+    if (fileSelected < 0 || fileSelected >= (int) fileResults.size()) return;
+    const auto& r = fileResults[(size_t) fileSelected];
+    const auto& q = r.forensic;
+    auto panel = fileInspectorBounds();
+    surface::recessed (g, panel.toFloat());
+    auto area = panel.reduced (10, 0);
+    auto title = area.removeFromTop (30).withTrimmedLeft (318);
+    g.setFont (uiFont (tokens::aux, true));
+    g.setColour (r.ok ? theme::textDim : theme::bad);
+    g.drawText (r.fileName, title, juce::Justification::centredRight, true);
+    area.reduce (2, 4);
+    if (! r.ok)
     {
-        const auto& r = fileResults[(size_t) fileSelected];
-        auto detail = table.withY (table.getBottom() + 8).withHeight (54);
-
-        surface::hairlineH (g, (float) detail.getX(), (float) detail.getRight(),
-                            (float) detail.getY());
-        surface::hairlineH (g, (float) detail.getX(), (float) detail.getRight(),
-                            (float) detail.getBottom() - 1.0f);
-        auto inner = detail.reduced (10, 7);
-
-        g.setColour (theme::text);
-        g.setFont (uiFont (tokens::label, true));
-        g.drawText (juce::File (r.fileName).getFileNameWithoutExtension(),
-                    inner.removeFromTop (17), juce::Justification::centredLeft, false);
-
-        g.setColour (theme::textFaint);
+        g.setColour (theme::bad);
+        g.drawText (r.error, area, juce::Justification::topLeft, true);
+        return;
+    }
+    if (fileView == 0)
+    {
+        auto summary = area.removeFromTop (22);
         g.setFont (monoFont (tokens::unit));
-        g.drawText (r.ok ? T ("LUFS ", "LUFS ") + num (r.stats.integrated)
-                               + "   TP " + num (r.stats.truePeakDb)
-                               + "   LRA " + num (r.stats.lra)
-                               + "   PLR " + num (r.stats.getPlr())
-                               + "   " + T ("风险 ", "risk ")
-                               + juce::String (juce::roundToInt (r.defects.worstRisk())) + "/100"
-                         : r.error,
-                    inner, juce::Justification::centredLeft, false);
+        g.setColour (theme::textDim);
+        g.drawText (T ("头 / 尾 ", "HEAD / TAIL ") + juce::String (q.leadingSilenceSeconds, 3)
+                    + " / " + juce::String (q.trailingSilenceSeconds, 3) + " s   DC "
+                    + juce::String (100.0 * q.dcOffset[0], 2) + " / " + juce::String (100.0 * q.dcOffset[1], 2)
+                    + "%   " + T ("满刻度段 ", "FS RUNS ") + juce::String (q.clippedRunCount),
+                    summary, juce::Justification::centredLeft, true);
+        auto hash = area.getHeight() >= 64 ? area.removeFromBottom (18) : juce::Rectangle<int>();
+        g.setColour (theme::textFaint);
+        g.setFont (monoFont (10.0f));
+        g.drawText ("SHA256 " + q.sha256.substring (0, 24) + "...  "
+                    + T ("完整证据见导出 QC", "full evidence: Export QC"), hash,
+                    juce::Justification::centredLeft, true);
+        const int rows = juce::jmax (1, area.getHeight() / 23);
+        fileFindingScroll = juce::jlimit (0, juce::jmax (0, (int) q.findings.size() - rows), fileFindingScroll);
+        if (q.findings.empty())
+        {
+            g.setColour (theme::good);
+            g.setFont (uiFont (tokens::aux));
+            g.drawText (T ("未发现样本门禁问题；仍请完整试听。", "No sample-gate findings; listen through the master."),
+                        area, juce::Justification::centredLeft, true);
+        }
+        for (int i = fileFindingScroll; i < (int) q.findings.size() && i < fileFindingScroll + rows; ++i)
+        {
+            const auto& f = q.findings[(size_t) i];
+            auto row = area.removeFromTop (23);
+            auto time = row.removeFromLeft (92);
+            g.setColour (f.severity == 2 ? theme::bad : theme::warn);
+            g.setFont (monoFont (tokens::unit));
+            g.drawText (juce::String (f.startSample / r.sampleRate, 3) + " s", time,
+                        juce::Justification::centredLeft, true);
+            auto address = row.removeFromRight (juce::jmin (190, row.getWidth() / 3));
+            g.setColour (theme::textFaint);
+            g.drawText ("#" + juce::String (f.startSample) + " +" + juce::String (f.lengthSamples)
+                        + (f.channel >= 0 ? (f.channel == 0 ? " L" : " R") : " LR"),
+                        address, juce::Justification::centredRight, true);
+            g.setColour (theme::textDim);
+            g.setFont (uiFont (tokens::aux));
+            g.drawText (findingText (f, Localisation::isEnglish()), row, juce::Justification::centredLeft, true);
+        }
+    }
+    else if (fileView == 1)
+    {
+        auto note = area.removeFromBottom (area.getHeight() < 80 ? 16 : 22);
+        g.setFont (uiFont (tokens::unit));
+        g.setColour (theme::textFaint);
+        g.drawText (T ("(L+R)/2 · 同相 0 dB，无关约 3 dB；灰色 = 能量不足 0.1%；6 dB 以上请试听",
+                       "(L+R)/2 · mono 0 dB, uncorrelated ~3 dB · grey <0.1% energy · review above 6 dB"),
+                    note, juce::Justification::centredLeft, true);
+        const int w = area.getWidth() / 10;
+        for (size_t b = 0; b < 10; ++b)
+        {
+            auto cell = area.removeFromLeft (w).reduced (4, 0);
+            const auto& info = SpectrumAnalyzer::getBandInfo ((int) b);
+            g.setFont (monoFont (tokens::unit));
+            g.setColour (q.bandAvailable[b] ? theme::text : theme::textFaint);
+            g.drawText (q.bandAvailable[b] ? num (q.monoLossDb[b]) : noValue(), cell.removeFromTop (18), juce::Justification::centred);
+            auto label = cell.removeFromBottom (16);
+            const auto hz = info.lo >= 1000 ? juce::String (info.lo / 1000.0f, 1) + "k" : juce::String ((int) info.lo);
+            g.setColour (theme::textFaint);
+            g.drawText (hz, label, juce::Justification::centred);
+            if (cell.getHeight() < 8) continue;
+            auto track = cell.toFloat().reduced ((float) cell.getWidth() * 0.30f, 3.0f);
+            surface::recessed (g, track, 2.0f);
+            const float h = track.getHeight() * juce::jlimit (0.0f, 1.0f, q.monoLossDb[b] / 12.0f);
+            g.setColour (! q.bandAvailable[b] ? theme::border : q.monoLossDb[b] >= 6 ? theme::warn : theme::accent);
+            g.fillRoundedRectangle (track.withTop (track.getBottom() - juce::jmax (2.0f, h)), 2.0f);
+        }
+    }
+    else
+    {
+        const auto p = gainBudget (r.stats.integrated, r.stats.truePeakDb, state.target, state.ceiling);
+        const bool compact = area.getHeight() < 80;
+        auto note = area.removeFromBottom (compact ? 18 : (area.getHeight() > 100 ? 36 : 30));
+        const char* zh[] { "目标所需", "峰值允许的增益", "预计可达 LUFS", "距目标还差 LU" };
+        const char* en[] { "REQUESTED dB", "SAFE GAIN dB", "EST. LUFS", "SHORTFALL LU" };
+        const float v[] { p.requestedGainDb, p.safeGainDb, p.achievedLufsEstimate, p.shortfallLu };
+        const int w = area.getWidth() / 4;
+        for (int i = 0; i < 4; ++i)
+        {
+            auto cell = area.removeFromLeft (w).reduced (8, 2);
+            g.setFont (uiFont (tokens::unit));
+            g.setColour (theme::textFaint);
+            g.drawText (T (zh[i], en[i]), cell.removeFromTop (compact ? 14 : 20), juce::Justification::centredLeft, true);
+            g.setFont (monoFont (compact ? 16.0f : 21.0f));
+            g.setColour (i == 3 && p.shortfallLu > 0.1f ? theme::warn : theme::text);
+            g.drawText (p.valid ? (i < 2 ? sgn (v[i]) : num (v[i])) : noValue(), cell, juce::Justification::centredLeft, true);
+        }
+        g.setFont (uiFont (tokens::unit));
+        g.setColour (theme::textDim);
+        g.drawText ("REF " + num (state.target) + " LUFS / CEIL " + num (state.ceiling) + " dBTP  "
+                    + T ("仅计算恒定增益；响度为估算，不写音频。", "Constant-gain estimate; no audio is written."),
+                    note, juce::Justification::centredLeft, true);
     }
 }
 
@@ -331,7 +431,7 @@ bool DetailArea::handleFileMouseDown (const juce::MouseEvent& e)
 
     if (header.contains (e.getPosition()))
     {
-        FileColumns cols (header);
+        FileColumns cols (header.withTrimmedRight (8).reduced (10, 0));
 
         for (int i = 0; i < 7; ++i)
             if (cols.cells[(size_t) i].contains (e.getPosition()))
@@ -366,6 +466,8 @@ bool DetailArea::handleFileMouseDown (const juce::MouseEvent& e)
     if (row >= 0 && row < visibleRows && index < (int) order.size())
     {
         fileSelected = order[(size_t) index];
+        fileFindingScroll = 0;
+        resized();
         repaint();
         return true;
     }
@@ -393,7 +495,14 @@ void DetailArea::handleFileWheel (const juce::MouseWheelDetails& wheel)
 void DetailArea::mouseWheelMove (const juce::MouseEvent& e, const juce::MouseWheelDetails& wheel)
 {
     if (page == PageId::files)
-        handleFileWheel (wheel);
+    {
+        if (fileInspectorBounds().contains (e.getPosition()) && fileView == 0)
+        {
+            fileFindingScroll = juce::jmax (0, fileFindingScroll - juce::roundToInt (wheel.deltaY * 12.0f));
+            repaint();
+        }
+        else handleFileWheel (wheel);
+    }
     else
         Component::mouseWheelMove (e, wheel);
 }

@@ -65,8 +65,8 @@ std::vector<CheckResult> buildChecklist (const StatsSnapshot& s,
                  valid ? num (s.integrated) + " LUFS" : noValue(), sev,
                  valid ? T ("归一化后感知不变；最坏衰减 ", "Level unchanged; worst cut ")
                              + num (platform.maxCutDb) + T (" dB，丢弃 ", " dB, wasted ")
-                             + num (platform.maxWastedDb) + " LU" + T ("，服务限幅 ", ", service limit ")
-                             + num (platform.maxLimitedDb) + " dB"
+                             + num (platform.maxWastedDb) + " LU" + T ("，目标差额 ", ", target shortfall ")
+                             + num (platform.maxLimitedDb) + " LU"
                        : T ("等待信号", "Waiting for signal"));
         }
     }

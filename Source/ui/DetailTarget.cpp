@@ -208,9 +208,9 @@ void DetailArea::paintTarget (juce::Graphics& g)
 
         g.setColour (theme::textFaint);
         g.setFont (uiFont (tokens::unit));
-        g.drawFittedText (T ("Apple Digital Masters：24-bit 源、TP ≤ -1 dBTP、无削波，曲尾至少 1 s 无波形 / 数字静音（以发行商最终规范为准）。"
+        g.drawFittedText (T ("Apple Digital Masters：优先高质量 24-bit 源，使用 Apple 工具检查编码后削波；尾部按发行商规范。"
                              "Spotify：-14 LUFS；若母带更响，TP 建议低于 -2 dBTP。",
-                             "Apple Digital Masters: 24-bit source, TP <= -1 dBTP, no clipping, and at least 1 s of silence at the tail (verify the distributor's final spec). "
+                             "ADM: use high-quality 24-bit sources and Apple tools to check encoded clipping; follow distributor specs for tail silence. "
                              "Spotify: -14 LUFS; if the master is louder, keep TP below -2 dBTP."),
                           inner.removeFromTop (juce::jmin (compact ? 32 : 44, inner.getHeight())),
                           juce::Justification::topLeft, 3);

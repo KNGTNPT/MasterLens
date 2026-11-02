@@ -85,7 +85,7 @@ juce::String MasterLensAudioProcessorEditor::buildReport() const
         r << "  " << T (p.nameZh, p.nameEn) << " : "
           << T ("增益 ", "gain ") << ml::sgn (res.gainDb) << " dB, "
           << T ("预测 TP ", "predicted TP ") << ml::fmt1 (res.predictedTp) << " dBTP, "
-          << T ("服务限幅 ", "limited ") << ml::fmt1 (res.limitedDb) << " dB, "
+          << T ("目标尚差 ", "target shortfall ") << ml::fmt1 (res.limitedDb) << " dB, "
           << T ("被丢弃响度 ", "wasted loudness ") << ml::fmt1 (res.wastedLoudnessDb) << " LU, "
           << (res.state == ml::DeliveryState::over ? T ("超限", "OVER")
             : res.state == ml::DeliveryState::warning ? T ("临界", "WARNING") : T ("可行", "OK")) << "\n";
@@ -197,7 +197,7 @@ juce::String MasterLensAudioProcessorEditor::buildReport() const
           << T ("，改善 ", ", better ") << albumDiff.improved << "\n";
     }
 
-    r << "\n" << T ("开发者 ", "Developer ") << ml::kDeveloper
+    r << "\n" << T ("开发者 ", "Developer ") << juce::String::fromUTF8 (ml::kDeveloper)
       << T (" · 机构 ", " · Organisation ") << ml::kOrganisation << " · v" << ml::kVersion << "\n";
 
     return r;

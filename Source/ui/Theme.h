@@ -112,8 +112,8 @@ void apply (bool useDark);
 /** Instrument surfaces: exactly three materials.
 
     Flat     data / curves / type - no texture, no gradient.
-    Raised   panels and buttons - one top highlight, two-stop <=5% gradient,
-             one 0 1px 2px shadow. No live blur.
+    Raised   panels and buttons - broad shallow light, a fine top highlight,
+             and three short contact-shadow strips. No live blur.
     Recessed tracks, fields and table bodies - top inner shadow, bottom highlight.
 
     Decoration is limited to hairlines, 3 px chart corner ticks and 01/02 group

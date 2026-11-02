@@ -79,11 +79,12 @@ void MasterLensAudioProcessorEditor::resized()
     detail.setBounds (body);
 
     auto h = headerArea.reduced (22, 16);
+    const bool english = ml::Localisation::isEnglish();
     languageButton.setBounds (h.removeFromRight (36));
     h.removeFromRight (6);
-    settingsButton.setBounds (h.removeFromRight (48));
+    settingsButton.setBounds (h.removeFromRight (english ? 68 : 48));
     h.removeFromRight (6);
-    aboutButton.setBounds (h.removeFromRight (38));
+    aboutButton.setBounds (h.removeFromRight (english ? 52 : 38));
     h.removeFromRight (6);
     themeButton.setBounds (h.removeFromRight (42));
 
@@ -111,9 +112,9 @@ void MasterLensAudioProcessorEditor::resized()
     actions.removeFromRight (8);
     monitorButton.setBounds (actions.removeFromRight (base.getWidth() < 1000 ? 64 : 88));
     actions.removeFromRight (8);
-    clearButton.setBounds (actions.removeFromRight (40));
+    clearButton.setBounds (actions.removeFromRight (english ? 48 : 40));
     actions.removeFromRight (4);
-    holdButton.setBounds (actions.removeFromRight (34));
+    holdButton.setBounds (actions.removeFromRight (english ? 42 : 34));
 
     aboutPanel.setBounds (base);
     genrePanel.setBounds (base);

@@ -31,7 +31,7 @@ public:
             return;
         }
 
-        english = commandLine.containsIgnoreCase ("en");
+        english = juce::StringArray::fromTokens (commandLine, true).contains ("en", true);
         aboutShot = commandLine.containsIgnoreCase ("about");
         expandedShot = commandLine.containsIgnoreCase ("expand");
         smallShot = commandLine.containsIgnoreCase ("small");
@@ -110,6 +110,7 @@ public:
         processor->apvts.state.setProperty ("uiScale", scale, nullptr);
 
         editor = std::make_unique<MasterLensAudioProcessorEditor> (*processor);
+        editor->setScaleForSnapshot (scale);
         const bool standardShot = commandLine.containsIgnoreCase ("size1120");
         const float shotW = minShot ? 880.0f : (smallShot ? 900.0f : (standardShot ? 1120.0f : 1280.0f));
         const float shotH = minShot ? 560.0f : (smallShot ? 620.0f : (standardShot ? 700.0f : 820.0f));
@@ -123,6 +124,8 @@ public:
 
         if (fileQcShot)
             runFileQcDemo (*editor);
+        if (commandLine.containsIgnoreCase ("fileview1")) editor->setFileViewForSnapshot (1);
+        if (commandLine.containsIgnoreCase ("fileview2")) editor->setFileViewForSnapshot (2);
 
         if (commandLine.containsIgnoreCase ("spectrumview1"))
         {
@@ -268,8 +271,9 @@ private:
                 const double t = (double) i / rates[f];
                 const float v = (float) (0.085 * std::sin (2.0 * juce::MathConstants<double>::pi * 110.0 * t)
                                          + 0.025 * std::sin (2.0 * juce::MathConstants<double>::pi * 997.0 * t));
-                buffer.setSample (0, i, v);
-                buffer.setSample (1, i, v * 0.92f);
+                const bool silence = t < 0.05 || t >= 3.85 || (t >= 1.2 && t < 1.225);
+                buffer.setSample (0, i, silence ? 0.0f : v);
+                buffer.setSample (1, i, silence ? 0.0f : (f == 0 ? -v * 0.65f : v * 0.92f));
             }
 
             if (auto out = file.createOutputStream())

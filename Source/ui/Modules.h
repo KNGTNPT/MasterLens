@@ -237,6 +237,12 @@ public:
 
     void setFileResults (std::vector<FileAnalysisResult> results, bool busy,
                          int done, int total, const juce::String& status);
+    void setFileView (int view) { fileView = juce::jlimit (0, 2, view); resized(); repaint(); }
+    const FileAnalysisResult* selectedFile() const
+    {
+        return fileSelected >= 0 && fileSelected < (int) fileResults.size()
+            ? &fileResults[(size_t) fileSelected] : nullptr;
+    }
 
     juce::TextButton& getImportButton() noexcept { return refImport; }
     juce::TextButton& getClearButton() noexcept { return refClear; }
@@ -257,7 +263,6 @@ public:
     void mouseWheelMove (const juce::MouseEvent&, const juce::MouseWheelDetails&) override;
 
 private:
-    void layoutForPage();
     void hideAllChildren();
     juce::Rectangle<int> contentArea() const;
     void paintPageHeader (juce::Graphics&, const juce::String& meta);
@@ -308,6 +313,7 @@ private:
     juce::TextButton applyTarget;
 
     juce::TextButton fileChoose, fileFolder, fileAddAlbum, fileClear, fileExport;
+    std::array<juce::TextButton, 3> fileViewButtons;
     std::vector<FileAnalysisResult> fileResults;
     juce::String fileStatus;
     bool fileBusy = false;
@@ -316,8 +322,11 @@ private:
     int fileSortColumn = 0;
     bool fileSortAscending = true;
     int fileSelected = -1;
+    int fileView = 0, fileFindingScroll = 0;
 
     juce::Rectangle<int> fileTableBounds() const;
+    juce::Rectangle<int> fileInspectorBounds() const;
+    void paintFileInspector (juce::Graphics&);
     bool handleFileMouseDown (const juce::MouseEvent&);
     void handleFileWheel (const juce::MouseWheelDetails&);
 

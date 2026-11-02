@@ -69,6 +69,7 @@ void MasterLensAudioProcessorEditor::buildControls()
         settingsPanel.refreshTexts();
         detail.refreshTexts();
         detail.invalidateDisplays();
+        resized();
         repaint();
     };
     addAndMakeVisible (languageButton);

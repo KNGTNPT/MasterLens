@@ -32,6 +32,7 @@ struct TrackRecord
     double sampleRate = 0.0;
     int bitDepth = 0;
     float coveragePct = 100.0f;
+    juce::var fileForensics; // v2.1 source SHA256 + sample-addressed offline evidence
 };
 
 struct Rules

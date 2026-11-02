@@ -148,7 +148,7 @@ void MasterLensAudioProcessorEditor::timerCallback()
         const float trim = processor.getMonitorTrimDb();
         monitorButton.setButtonText (processor.isMonitorMatch()
                                          ? T ("等响 ", "match ") + ml::sgn (trim) + " dB"
-                                         : T ("等响监听", "Loudness match"));
+                                         : T ("等响监听", "Match"));
     }
 
     if ((frameCounter % 30) == 0)
@@ -162,7 +162,13 @@ void MasterLensAudioProcessorEditor::timerCallback()
     const float target = basis.hasComparison() ? basis.comparisonLufs()
                        : (basis.mode == ml::BasisMode::manual ? manualTarget : -14.0f);
 
-    readout.setValues (stats, basis, platform, target, ceiling, stats.hasSignal);
+    if (selectedPage == (int) ml::PageId::files)
+    {
+        const auto* file = detail.selectedFile();
+        const auto offline = file != nullptr && file->ok ? file->stats : ml::StatsSnapshot {};
+        readout.setValues (offline, basis, ml::platformSummary (offline), target, ceiling, offline.hasSignal);
+    }
+    else readout.setValues (stats, basis, platform, target, ceiling, stats.hasSignal);
 
     const auto& resos = analyzer.getResonances();
     if ((frameCounter % 12) == 0)

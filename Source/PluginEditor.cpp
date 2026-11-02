@@ -155,6 +155,8 @@ MasterLensAudioProcessorEditor::MasterLensAudioProcessorEditor (MasterLensAudioP
     setSize (ml::ui::scaled (start.x), ml::ui::scaled (start.y));
 
     updateTexts();
+    detail.refreshTexts();
+    settingsPanel.refreshTexts();
     syncPresetToParameters();
     updateSnapshotChips();
     refreshAlbum();

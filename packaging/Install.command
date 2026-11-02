@@ -8,7 +8,7 @@ AU_DIR="$HOME/Library/Audio/Plug-Ins/Components"
 APP_DIR="$HOME/Applications"
 
 echo "MasterLens · 母带响度 / 平台归一化 / 信号健康"
-echo "by BerryStudio · Developer KNGTNPT"
+echo "by BerryStudio · Developer KNGTNPT 兰"
 echo "========================================"
 
 mkdir -p "$VST3_DIR" "$AU_DIR" "$APP_DIR"

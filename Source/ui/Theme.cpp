@@ -78,14 +78,20 @@ static juce::Colour sink (juce::Colour c, float amount)
 
 void raised (juce::Graphics& g, juce::Rectangle<float> area, float radius)
 {
-    // One light from above-left: top is a hair lighter, bottom a hair darker.
-    g.setGradientFill (juce::ColourGradient (lift (theme::raised, 0.035f),
+    // Shallow, broad light from above-left. Analytic gradients, no per-frame blur.
+    for (int i = 3; i > 0; --i)
+    {
+        g.setColour (juce::Colours::black.withAlpha ((theme::dark ? 0.045f : 0.025f) * (4 - i)));
+        g.fillRoundedRectangle (area.reduced (0.6f).translated (0.0f, (float) i), radius);
+    }
+    g.setGradientFill (juce::ColourGradient (lift (theme::raised, theme::dark ? 0.055f : 0.30f),
                                              area.getX(), area.getY(),
-                                             sink (theme::raised, 0.035f),
-                                             area.getX(), area.getBottom(), false));
+                                             sink (theme::raised, theme::dark ? 0.065f : 0.045f),
+                                             area.getRight() * 0.35f + area.getX() * 0.65f,
+                                             area.getBottom(), false));
     g.fillRoundedRectangle (area, radius);
 
-    g.setColour (juce::Colours::white.withAlpha (theme::dark ? 0.06f : 0.30f));
+    g.setColour (juce::Colours::white.withAlpha (theme::dark ? 0.13f : 0.70f));
     g.drawHorizontalLine (juce::roundToInt (area.getY() + 0.5f),
                           area.getX() + radius, area.getRight() - radius);
 
@@ -100,14 +106,16 @@ void raised (juce::Graphics& g, juce::Rectangle<float> area, float radius)
 
 void recessed (juce::Graphics& g, juce::Rectangle<float> area, float radius)
 {
-    g.setColour (theme::card);
+    g.setGradientFill (juce::ColourGradient (sink (theme::card, theme::dark ? 0.22f : 0.055f),
+                                             area.getX(), area.getY(), theme::card,
+                                             area.getX(), area.getY() + juce::jmin (22.0f, area.getHeight()), false));
     g.fillRoundedRectangle (area, radius);
 
-    g.setColour (juce::Colours::black.withAlpha (0.45f));
+    g.setColour (juce::Colours::black.withAlpha (theme::dark ? 0.34f : 0.10f));
     g.drawHorizontalLine (juce::roundToInt (area.getY() + 0.5f),
                           area.getX() + radius, area.getRight() - radius);
 
-    g.setColour (juce::Colours::white.withAlpha (0.04f));
+    g.setColour (juce::Colours::white.withAlpha (theme::dark ? 0.08f : 0.65f));
     g.drawHorizontalLine (juce::roundToInt (area.getBottom() - 0.5f),
                           area.getX() + radius, area.getRight() - radius);
 }
@@ -160,11 +168,14 @@ void panel (juce::Graphics& g, juce::Rectangle<float> r, bool isRaised)
     }
     else
     {
-        g.setColour (theme::card);
+        g.setGradientFill (juce::ColourGradient (lift (theme::card, theme::dark ? 0.023f : 0.0f),
+                                                 r.getX(), r.getY(), theme::card,
+                                                 r.getX() + r.getWidth() * 0.30f,
+                                                 r.getY() + juce::jmin (160.0f, r.getHeight()), false));
         g.fillRoundedRectangle (r, tokens::radiusCard);
 
         // A 1 px inner top highlight keeps the panel from reading as a hole.
-        g.setColour (juce::Colours::white.withAlpha (theme::dark ? 0.045f : 0.30f));
+        g.setColour (juce::Colours::white.withAlpha (theme::dark ? 0.085f : 0.65f));
         g.drawHorizontalLine (juce::roundToInt (r.getY() + 0.5f),
                               r.getX() + tokens::radiusCard, r.getRight() - tokens::radiusCard);
     }
@@ -190,7 +201,7 @@ juce::String typefaceName()
 {
     static const juce::String name = []
     {
-        const juce::StringArray preferred { "PingFang SC", "Hiragino Sans GB", "Heiti SC",
+        const juce::StringArray preferred { "PingFang SC", "Microsoft YaHei UI", "Microsoft YaHei", "Hiragino Sans GB", "Heiti SC",
                                             "Noto Sans CJK SC", "Helvetica Neue", "DejaVu Sans" };
         const auto all = juce::Font::findAllTypefaceNames();
 
@@ -230,7 +241,11 @@ juce::Font uiFont (float height, bool bold)
 
     juce::Font font (juce::FontOptions (typefaceName(), height * 1.22f,
                                         bold ? juce::Font::bold : juce::Font::plain)
-                         .withFallbacks ({ "PingFang SC", "Hiragino Sans GB", "Noto Sans CJK SC", "Arial Unicode MS" }));
+                         .withFallbacks ({ "PingFang SC", "Microsoft YaHei UI", "Microsoft YaHei", "Hiragino Sans GB", "Noto Sans CJK SC", "Arial Unicode MS" }));
+
+    // Tracking lives in font units, so fractional zoom keeps identical rhythm.
+    // Small labels get air; large numbers retain their tabular advances.
+    font.setExtraKerningFactor (height <= tokens::aux ? 0.018f : 0.008f);
 
     cache.emplace (key, font);
     return font;

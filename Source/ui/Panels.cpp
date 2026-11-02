@@ -64,12 +64,13 @@ void ReadoutBand::paintCell (juce::Graphics& g, juce::Rectangle<int> cell,
                              const juce::String& unit, const juce::String& hint, juce::Colour status)
 {
     surface::hairlineH (g, (float) cell.getX(), (float) cell.getRight(), (float) cell.getY());
-    auto inner = cell.reduced (0, 7);
-    g.setFont (uiFont (tokens::unit));
+    const bool compact = cell.getHeight() < 48;
+    auto inner = cell.reduced (0, compact ? 3 : 7);
+    g.setFont (uiFont (compact ? 9.0f : tokens::unit));
     g.setColour (theme::textDim);
-    g.drawText (label, inner.removeFromTop (14), juce::Justification::centredLeft, false);
-    auto row = inner.removeFromTop (26);
-    g.setFont (monoFont (22.0f));
+    g.drawText (label, inner.removeFromTop (compact ? 12 : 14), juce::Justification::centredLeft, false);
+    auto row = inner.removeFromTop (juce::jmin (compact ? 21 : 26, inner.getHeight()));
+    g.setFont (monoFont (compact ? 18.0f : 22.0f));
     g.setColour (theme::text);
     g.drawText (value, row.withTrimmedRight (40), juce::Justification::centredLeft, false);
     g.setFont (monoFont (10.0f));

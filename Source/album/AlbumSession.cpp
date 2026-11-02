@@ -237,6 +237,7 @@ namespace
         o->setProperty ("sampleRate", t.sampleRate);
         o->setProperty ("bitDepth", t.bitDepth);
         o->setProperty ("coveragePct", t.coveragePct);
+        o->setProperty ("fileForensics", t.fileForensics);
 
         juce::Array<juce::var> issueArray;
 
@@ -278,6 +279,7 @@ namespace
             t.sampleRate = (double) o->getProperty ("sampleRate");
             t.bitDepth = (int) o->getProperty ("bitDepth");
             t.coveragePct = (float) (double) o->getProperty ("coveragePct");
+            t.fileForensics = o->getProperty ("fileForensics");
 
             if (auto* issues = o->getProperty ("issues").getArray())
                 for (const auto& item : *issues)
@@ -710,8 +712,8 @@ GateResult Session::evaluate (const Snapshot& input)
             add (s.rules.blockPlatform ? 2 : 1,
                  100.0f + t.platformLimitedDb * 12.0f + (float) t.platformOverCount * 5.0f,
                  T ("平台归一化", "platform normalisation"),
-                 T ("服务端仍需限幅 ", "service still limits ")
-                     + juce::String (t.platformLimitedDb, 1) + T (" dB；", " dB; ")
+                 T ("情景目标尚差 ", "scenario target shortfall ")
+                     + juce::String (t.platformLimitedDb, 1) + T (" LU；", " LU; ")
                      + T ("被丢弃 ", "wasted ") + juce::String (t.wastedLoudnessDb, 1) + " LU");
 
         const float ceiling = t.tpCeiling <= -90.0f ? -1.0f : t.tpCeiling;
@@ -734,6 +736,15 @@ GateResult Session::evaluate (const Snapshot& input)
             add (s.rules.blockSignal ? 2 : 1, 100.0f + signalRisk,
                  T ("信号缺陷", "signal integrity"),
                  T ("最高风险 ", "max risk ") + juce::String (juce::roundToInt (signalRisk)));
+
+        if (auto* qc = t.fileForensics.getDynamicObject())
+        {
+            const int count = (int) qc->getProperty ("blockers");
+            if (count > 0)
+                add (s.rules.blockSignal ? 2 : 1, 160.0f + count,
+                     T ("文件样本 QC", "file sample QC"),
+                     juce::String (count) + T (" 类阻断证据；详见文件 QC / JSON", " blocker classes; see File QC / JSON"));
+        }
 
         if (t.stats.monoFoldLossDb >= s.rules.maxMonoLoss)
             add (s.rules.blockMono ? 2 : 1, 100.0f + t.stats.monoFoldLossDb * 10.0f,

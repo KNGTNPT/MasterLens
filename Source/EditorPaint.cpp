@@ -23,7 +23,7 @@ void MasterLensAudioProcessorEditor::paint (juce::Graphics& g)
                 juce::Justification::centredLeft, false);
     g.setFont (ml::monoFont (9.0f));
     g.setColour (ml::theme::textFaint);
-    g.drawText ("BERRY STUDIO  /  " + juce::String (ml::kVersion), brand.withWidth (240),
+    g.drawText ("BERRYSTUDIO  /  " + juce::String (ml::kVersion), brand.withWidth (240),
                 juce::Justification::centredLeft, false);
     ml::surface::hairlineH (g, 18.0f, width - 18.0f, 111.0f);
 

@@ -121,7 +121,7 @@ static const char* moduleHintZh (int index)
         case 1: return "4× 过采样真峰值与跨采样过载事件";
         case 2: return "10 段能量相对粉噪 / 参考谱的偏差";
         case 3: return "相关性、宽度与三段分频侧向能量";
-        case 4: return "8 个平台归一化后的实际后果：增益、预测峰值与服务限幅";
+        case 4: return "8 个本机交付情景：安全增益、预测峰值与目标差额";
         case 5: return "专辑中位快照、跨曲目偏离、风险聚合与可复现交付门禁";
         case 6: return "失真、混叠、超低堆积、瞬态、单声道折叠、中频掩蔽与联动归因";
         case 7: return "全部静态阈值检查清单，可逐条核对";
@@ -139,7 +139,7 @@ static const char* moduleHintEn (int index)
         case 1: return "4x oversampled true peak and inter-sample overs";
         case 2: return "10 band energy deviation against pink noise / reference";
         case 3: return "Correlation, width and three-band side energy";
-        case 4: return "Normalisation consequences for eight platforms: gain, predicted peak, service limiting";
+        case 4: return "Eight local delivery scenarios: safe gain, predicted peak and target shortfall";
         case 5: return "Album median snapshot, cross-track deviations, risk aggregation and reproducible release gate";
         case 6: return "THD/IMD, aliasing, sub build-up, transients, mono fold, mid masking and attribution";
         case 7: return "Full checklist of every static threshold";

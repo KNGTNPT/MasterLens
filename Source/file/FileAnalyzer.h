@@ -8,6 +8,7 @@
 
 #include "../dsp/AnalysisEngine.h"
 #include "../dsp/DefectAnalyzer.h"
+#include "FileForensics.h"
 
 namespace ml
 {
@@ -33,9 +34,14 @@ struct FileAnalysisResult
     StatsSnapshot stats;
     std::array<float, 10> bandDb {};
     SignalDefects defects;
+    FileForensics forensic;
 
     bool ok = false;
 };
+
+// Shared by the GUI sidecar and CLI; one schema for the same measurements.
+juce::var fileResultToVar (const FileAnalysisResult&, float target = -14.0f, float ceiling = -1.0f);
+juce::String fileResultsCsv (const std::vector<FileAnalysisResult>&, float target = -14.0f, float ceiling = -1.0f);
 
 /** Background WAV / AIFF / FLAC analyser with a tiny thread-safe result queue.
 

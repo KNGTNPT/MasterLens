@@ -20,7 +20,7 @@ juce::String MasterLensAudioProcessorEditor::buildReportCsv() const
     csv << "section,item,value\n";
     line ("meta", "generatedAt", stamp);
     line ("meta", "version", ml::kVersion);
-    line ("meta", "developer", ml::kDeveloper);
+    line ("meta", "developer", juce::String::fromUTF8 (ml::kDeveloper));
     line ("meta", "organisation", ml::kOrganisation);
     line ("meta", "sampleRate", juce::String (processor.getSampleRateValue(), 0));
     line ("meta", "timeOrigin", ml::num (stats.timeOrigin, 3));
@@ -76,6 +76,9 @@ juce::String MasterLensAudioProcessorEditor::buildReportCsv() const
         line ("platform", name + " gainDb", ml::sgn (res.gainDb));
         line ("platform", name + " predictedTp", ml::num (res.predictedTp));
         line ("platform", name + " serviceLimitingDb", ml::num (res.limitedDb));
+        line ("platform", name + " targetShortfallLu", ml::num (res.limitedDb));
+        line ("platform", name + " requestedGainDb", ml::num (res.requestedGainDb));
+        line ("platform", name + " scenarioOnly", "true");
         line ("platform", name + " wastedLoudnessLu", ml::num (res.wastedLoudnessDb));
         line ("platform", name + " state",
               res.state == ml::DeliveryState::over ? "over"

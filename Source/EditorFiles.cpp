@@ -203,6 +203,10 @@ void MasterLensAudioProcessorEditor::addFileResultToAlbum (const ml::FileAnalysi
     t.sampleRate = result.sampleRate;
     t.bitDepth = result.bitDepth;
     t.coveragePct = 100.0f;
+    t.fileForensics = result.forensic.toVar (result.sampleRate);
+    for (const auto& f : result.forensic.findings)
+        t.issues.emplace_back (f.startSample / result.sampleRate,
+                                ml::findingText (f, ml::Localisation::isEnglish()));
 
     session.addTrack (t);
 }
@@ -256,32 +260,33 @@ void MasterLensAudioProcessorEditor::exportFileTable()
                                   if (file == juce::File())
                                       return;
 
-                                  if (file.getFileExtension().isEmpty())
-                                      file = file.withFileExtension ("csv");
+                                  file = file.withFileExtension ("csv");
 
-                                  juce::StringArray lines;
-                                  lines.add ("file,sample_rate_hz,bit_depth,duration_s,integrated_lufs,"
-                                             "true_peak_dbtp,lra_lu,plr_db,risk,result");
-
+                                  const auto jsonFile = file.withFileExtension ("json");
                                   for (const auto& r : fileResults)
+                                      if (file == juce::File (r.path) || jsonFile == juce::File (r.path))
+                                      {
+                                          footerStatusText = T ("报告不能覆盖音频源文件", "Report cannot overwrite audio sources");
+                                          footerStatusColour = ml::theme::bad;
+                                          repaint();
+                                          return;
+                                      }
+                                  auto* root = new juce::DynamicObject();
+                                  root->setProperty ("product", "MasterLens");
+                                  root->setProperty ("version", ml::kVersion);
+                                  root->setProperty ("schemaVersion", 3);
+                                  root->setProperty ("generatedAt", juce::Time::getCurrentTime().toISO8601 (true));
+                                  const auto basis = currentBasis();
+                                  const float target = basis.hasComparison() ? basis.comparisonLufs()
+                                      : (basis.mode == ml::BasisMode::manual ? processor.getTargetLufs() : -14.0f);
+                                  juce::Array<juce::var> files;
+                                  for (const auto& r : fileResults)
+                                      files.add (ml::fileResultToVar (r, target, processor.getCeilingDb()));
+                                  root->setProperty ("files", files);
+                                  if (file.replaceWithText (ml::fileResultsCsv (fileResults, target, processor.getCeilingDb()))
+                                      && jsonFile.replaceWithText (juce::JSON::toString (juce::var (root), true)))
                                   {
-                                      const auto name = "\"" + r.fileName.replace ("\"", "\"\"") + "\"";
-                                      const auto result = r.ok ? "ok" : "\"" + r.error.replace ("\"", "\"\"") + "\"";
-
-                                      lines.add (name + "," + juce::String (r.sampleRate, 0) + ","
-                                                 + juce::String (r.bitDepth) + ","
-                                                 + juce::String (r.durationSeconds, 3) + ","
-                                                 + juce::String (r.stats.integrated, 2) + ","
-                                                 + juce::String (r.stats.truePeakDb, 2) + ","
-                                                 + juce::String (r.stats.lra, 2) + ","
-                                                 + juce::String (r.stats.getPlr(), 2) + ","
-                                                 + juce::String (r.ok ? juce::roundToInt (r.defects.worstRisk()) : -1)
-                                                 + "," + result);
-                                  }
-
-                                  if (file.replaceWithText (lines.joinIntoString ("\n")))
-                                  {
-                                      footerStatusText = T ("文件表已导出 · ", "File table exported · ")
+                                      footerStatusText = T ("CSV + JSON 已导出 · ", "CSV + JSON exported · ")
                                                          + file.getFileName();
                                       footerStatusColour = ml::theme::good;
                                   }

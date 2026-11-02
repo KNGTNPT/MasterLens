@@ -14,7 +14,7 @@ concurrency:
 
 env:
   JUCE_TAG: "8.0.15"
-  APP_VERSION: "2.0.3"
+  APP_VERSION: "2.1.0"
 
 jobs:
   macos:
@@ -35,6 +35,9 @@ jobs:
 
       - name: DSP regression
         run: ./build/MasterLensDspTest_artefacts/Release/MasterLensDspTest
+
+      - name: File QC integration
+        run: python3 Tests/test_cli.py build/MasterLensCli_artefacts/Release/MasterLensCli
 
       - name: Package DMG
         run: |
@@ -115,6 +118,10 @@ jobs:
       - name: Install NSIS
         run: choco install nsis -y --no-progress
 
+      - name: File QC integration (native x64)
+        if: matrix.arch == 'x64'
+        run: python Tests/test_cli.py build/MasterLensCli_artefacts/Release/MasterLensCli.exe
+
       - name: Stage files
         shell: pwsh
         run: |
@@ -169,4 +176,4 @@ jobs:
           sha256sum *.dmg *.exe > SHA256SUMS.txt
           gh release create "$RELEASE_TAG" *.dmg *.exe SHA256SUMS.txt \
             --verify-tag --title "MasterLens ${APP_VERSION}" \
-            --notes-file ../docs/release-2.0.3.md
+            --notes-file ../docs/release-2.1.0.md

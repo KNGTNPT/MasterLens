@@ -1,11 +1,11 @@
 ; MasterLens Windows installer (NSIS)
 ; 由 CI 调用：
-;   makensis /DVERSION=2.0.3 /DARCH=x64 /DSTAGE=<abs stage> /DOUTFILE=<abs out> packaging/installer.nsi
+;   makensis /DVERSION=2.1.0 /DARCH=x64 /DSTAGE=<abs stage> /DOUTFILE=<abs out> packaging/installer.nsi
 Unicode true
 !include "MUI2.nsh"
 
 !ifndef VERSION
-  !define VERSION "2.0.3"
+  !define VERSION "2.1.0"
 !endif
 !ifndef ARCH
   !define ARCH "x64"
@@ -23,7 +23,7 @@ InstallDir "$PROGRAMFILES64\MasterLens"
 RequestExecutionLevel admin
 
 !define MUI_WELCOMEPAGE_TITLE "MasterLens ${VERSION}"
-!define MUI_WELCOMEPAGE_TEXT "母带响度 · 平台归一化 · 信号健康$\r$\nby BerryStudio · Developer KNGTNPT$\r$\n$\r$\nThis installer places the VST3 plug-in and the standalone analyser."
+!define MUI_WELCOMEPAGE_TEXT "母带响度 · 平台归一化 · 信号健康$\r$\nby BerryStudio · Developer KNGTNPT 兰$\r$\n$\r$\nThis installer places the VST3 plug-in and the standalone analyser."
 
 !insertmacro MUI_PAGE_WELCOME
 !insertmacro MUI_PAGE_DIRECTORY

@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.22)
 
-project(MasterLens VERSION 2.0.3 LANGUAGES C CXX)
+project(MasterLens VERSION 2.1.0 LANGUAGES C CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -14,7 +14,7 @@ endif()
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/.tools/JUCE ${CMAKE_BINARY_DIR}/JUCE EXCLUDE_FROM_ALL)
 
 juce_add_plugin(MasterLens
-    VERSION 2.0.3
+    VERSION 2.1.0
     COMPANY_NAME "BerryStudio"
     BUNDLE_ID "com.berrystudio.masterlens"
     PLUGIN_MANUFACTURER_CODE OrcA
@@ -41,6 +41,8 @@ set(MASTERLENS_SOURCES
     Source/audio/AuditionEngine.cpp
     Source/audio/ReferencePlayer.cpp
     Source/file/FileAnalyzer.cpp
+    Source/file/FileForensics.cpp
+    Source/file/FileReport.cpp
     Source/EditorControls.cpp
     Source/EditorFiles.cpp
     Source/EditorPaint.cpp
@@ -118,6 +120,7 @@ juce_add_console_app(MasterLensDspTest PRODUCT_NAME "MasterLensDspTest")
 
 target_sources(MasterLensDspTest PRIVATE
     Tests/DspTest.cpp
+    Source/album/AlbumSession.cpp
     Source/dsp/AnalysisEngine.cpp
     Source/dsp/SpectrumAnalyzer.cpp
     Source/dsp/DefectAnalyzer.cpp
@@ -125,6 +128,8 @@ target_sources(MasterLensDspTest PRIVATE
     Source/audio/AuditionEngine.cpp
     Source/audio/ReferencePlayer.cpp
     Source/file/FileAnalyzer.cpp
+    Source/file/FileForensics.cpp
+    Source/file/FileReport.cpp
 )
 
 target_include_directories(MasterLensDspTest PRIVATE Source)
@@ -139,6 +144,7 @@ target_link_libraries(MasterLensDspTest
     PRIVATE
         juce::juce_audio_basics
         juce::juce_audio_formats
+        juce::juce_cryptography
         juce::juce_dsp
     PUBLIC
         juce::juce_recommended_config_flags
@@ -155,6 +161,8 @@ target_sources(MasterLensCli PRIVATE
     Source/dsp/SpectrumAnalyzer.cpp
     Source/dsp/DefectAnalyzer.cpp
     Source/file/FileAnalyzer.cpp
+    Source/file/FileForensics.cpp
+    Source/file/FileReport.cpp
 )
 
 target_include_directories(MasterLensCli PRIVATE Source)
@@ -170,6 +178,7 @@ target_link_libraries(MasterLensCli
         juce::juce_audio_basics
         juce::juce_audio_formats
         juce::juce_core
+        juce::juce_cryptography
         juce::juce_dsp
     PUBLIC
         juce::juce_recommended_config_flags

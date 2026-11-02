@@ -32,10 +32,10 @@ inline const PlatformPreset& platform (int index)
           "Ogg Vorbis / AAC", "Ogg Vorbis / AAC",
           "以 -14 LUFS 归一化；母带高于 -14 时建议 TP 低于 -2 dBTP。",
           "Normalises to -14 LUFS; if the master is louder, keep TP below -2 dBTP." },
-        { "apple",     "Apple Music",    "Apple Music",    -16.0f, -1.0f, true, 1000,
+        { "apple",     "Apple Music",    "Apple Music",    -16.0f, -1.0f, true, 0,
           "ALAC / AAC 256k", "ALAC / AAC 256k",
-          "Apple Digital Masters：24-bit 源、TP ≤ -1 dBTP、无削波；曲尾保留至少 1 s 数字静音。",
-          "Apple Digital Masters: 24-bit source, TP <= -1 dBTP, no clipping; leave at least 1 s of digital silence at the tail." },
+          "-16 LUFS / -1 dBTP 为本机比较情景；ADM 使用高质量 24-bit 源并检查编码后的削波。",
+          "-16 LUFS / -1 dBTP is a local comparison scenario; use high-quality 24-bit sources and check encoded clipping for ADM." },
         { "youtube",   "YouTube",        "YouTube",        -14.0f, -1.0f, true, 0,
           "AAC / Opus", "AAC / Opus",
           "按 -14 LUFS 归一化；过响母带会被整体衰减。",
@@ -69,18 +69,19 @@ inline constexpr int numPlatforms = 8;
 
 struct DeliveryResult
 {
-    float gainDb = 0.0f;             // gain the service will apply
-    float predictedTpRaw = 0.0f;     // true peak after that gain, before its limiter
-    float predictedTp = 0.0f;        // true peak after the service limiter
-    float limitedDb = 0.0f;          // how much peak reduction the limiter has to do
+    float gainDb = 0.0f;             // headroom-constrained constant-gain scenario
+    float requestedGainDb = 0.0f;    // gain required to reach the scenario target
+    float predictedTpRaw = 0.0f;     // peak if the requested gain were applied
+    float predictedTp = 0.0f;        // peak at the constrained gain; no limiter model
+    float limitedDb = 0.0f;          // legacy field: target shortfall / required peak reduction
     float wastedLoudnessDb = 0.0f;   // loudness bought that normalisation throws away
     DeliveryState state = DeliveryState::ok;
 };
 
-/** Deterministic consequence model: normalise to the target, then check the peak.
-    A positive gain that would push the peak past the ceiling means the service has
-    to limit, which costs transients; a negative gain measures how much limiting was
-    spent for loudness nobody will hear. */
+/** Local comparison scenarios, not a simulation of streaming-service DSP.
+    Positive gain is limited by peak headroom. A shortfall does not imply that a
+    platform adds a limiter (Spotify Normal explicitly limits the gain instead).
+    Loudness after constant gain is an estimate because gating may change. */
 inline DeliveryResult evaluate (const StatsSnapshot& s, const PlatformPreset& p)
 {
     DeliveryResult r;
@@ -100,18 +101,11 @@ inline DeliveryResult evaluate (const StatsSnapshot& s, const PlatformPreset& p)
         return r;
     }
 
-    r.gainDb = p.targetLufs - s.integrated;
-    r.predictedTpRaw = s.truePeakDb + r.gainDb;
-
-    if (r.predictedTpRaw > p.tpCeiling)
-    {
-        r.limitedDb = r.predictedTpRaw - p.tpCeiling;
-        r.predictedTp = p.tpCeiling;
-    }
-    else
-    {
-        r.predictedTp = r.predictedTpRaw;
-    }
+    r.requestedGainDb = p.targetLufs - s.integrated;
+    r.predictedTpRaw = s.truePeakDb + r.requestedGainDb;
+    r.gainDb = juce::jmin (r.requestedGainDb, p.tpCeiling - s.truePeakDb);
+    r.predictedTp = s.truePeakDb + r.gainDb;
+    r.limitedDb = juce::jmax (0.0f, r.requestedGainDb - r.gainDb);
 
     r.wastedLoudnessDb = juce::jmax (0.0f, s.integrated - p.targetLufs);
 

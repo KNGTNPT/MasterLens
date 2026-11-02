@@ -97,7 +97,7 @@ void Advisor::update (const StatsSnapshot& stats,
                 add ("platform-norm", T ("平台归一化后果", "Platform normalisation consequence"),
                      T ("最坏平台需衰减 ", "Worst platform attenuates ")
                          + one (p.maxCutDb) + T (" dB；被丢弃 ", " dB; wasted ")
-                         + one (p.maxWastedDb) + T (" LU，服务端限幅 ", " LU, service limiting ")
+                         + one (p.maxWastedDb) + T (" LU，目标尚差 ", " LU, target shortfall ")
                          + one (p.maxLimitedDb) + " dB。"
                          + T ("归一化后感知响度不变，损失的是动态余量。",
                               "Perceived level after normalisation is unchanged; the loss is dynamic headroom."),
@@ -107,7 +107,7 @@ void Advisor::update (const StatsSnapshot& stats,
             {
                 add ("platform-ok", T ("平台归一化无需额外处理", "No extra platform normalisation"),
                      T ("最坏平台衰减 ", "Worst attenuation ") + one (p.maxCutDb)
-                         + T (" dB，服务端限幅 ", " dB, service limiting ") + one (p.maxLimitedDb) + " dB。",
+                         + T (" dB，目标尚差 ", " dB, target shortfall ") + one (p.maxLimitedDb) + " dB。",
                      Severity::good);
             }
         }
@@ -146,9 +146,9 @@ void Advisor::update (const StatsSnapshot& stats,
             {
                 ++over;
 
-                if (r.predictedTp > worstTp)
+                if (r.predictedTpRaw > worstTp)
                 {
-                    worstTp = r.predictedTp;
+                    worstTp = r.predictedTpRaw;
                     worstGain = r.gainDb;
                     worstZh = p.nameZh;
                     worstEn = p.nameEn;
@@ -162,9 +162,9 @@ void Advisor::update (const StatsSnapshot& stats,
 
         if (over > 0)
             add ("delivery-over", T ("按平台归一化后真峰值超限", "Predicted true peak over ceiling"),
-                 TF (T ("{n} 个平台在归一化后预测真峰值超过上限，最高出现在 {p}（{tp} dBTP，需增益 {g} dB）。流媒体转码会削波，请下调限制器输出。",
+                 TF (T ("{n} 个平台在归一化后预测真峰值超过上限，最高出现在 {p}（{tp} dBTP，需增益 {g} dB）。这是本机目标情景；请检查增益预算并实际试听编码结果。",
                         "{n} platforms would exceed the true-peak ceiling after normalisation - worst is "
-                        "{p} at {tp} dBTP (gain {g} dB). Lossy encoding will clip, so lower the limiter output."),
+                        "{p} at {tp} dBTP (gain {g} dB). This is a local target scenario; review the gain budget and audition encoded output."),
                      { { "n", juce::String (over) }, { "p", T (worstZh, worstEn) },
                        { "tp", one (worstTp) }, { "g", oneSigned (worstGain) } }),
                  Severity::critical);
@@ -175,8 +175,8 @@ void Advisor::update (const StatsSnapshot& stats,
                  Severity::warn);
         else
             add ("delivery-ok", T ("各平台归一化后均在限内", "Every platform stays within the ceiling"),
-                 T ("6 个平台的归一化增益与预测真峰值都在上限内。",
-                    "All six platforms stay inside the true-peak ceiling after gain."),
+                 T ("当前情景的增益与真峰值均在所选上限内。",
+                    "The local scenarios stay within their peak ceilings."),
                  Severity::good);
     }
 

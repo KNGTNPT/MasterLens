@@ -19,7 +19,7 @@ void MasterLensAudioProcessorEditor::updateTexts()
     const float trim = processor.getMonitorTrimDb();
     monitorButton.setButtonText (processor.isMonitorMatch()
                                      ? T ("等响 ", "match ") + ml::sgn (trim) + " dB"
-                                     : T ("等响监听", "Loudness match"));
+                                     : T ("等响监听", "Match"));
     monitorButton.setTooltip (T ("等响监听：按参考 LUFS 自动衰减 / 提升监听电平；关闭时输出逐位不变",
                                  "Loudness-matched monitor: trim to the reference LUFS; bypassed when off"));
 

@@ -101,6 +101,14 @@ DetailArea::DetailArea()
     fileClear.onClick = [this] { if (onClearFileResults != nullptr) onClearFileResults(); };
     fileExport.onClick = [this] { if (onExportFileTable != nullptr) onExportFileTable(); };
     addChildComponent (fileExport);
+    for (int i = 0; i < 3; ++i)
+    {
+        auto& b = fileViewButtons[(size_t) i];
+        addChildComponent (b);
+        b.setClickingTogglesState (true);
+        b.setRadioGroupId (8821);
+        b.onClick = [this, i] { setFileView (i); };
+    }
 
     for (auto& b : albumRuleButtons)
         addChildComponent (b);
@@ -199,7 +207,12 @@ void DetailArea::refreshTexts()
     fileChoose.setButtonText (T ("选择文件", "Choose files"));
     fileFolder.setButtonText (T ("选择文件夹", "Choose folder"));
     fileAddAlbum.setButtonText (T ("加入专辑", "Add to album"));
-    fileExport.setButtonText (T ("导出表", "Export CSV"));
+    fileExport.setButtonText (T ("导出 QC", "Export QC"));
+    fileViewButtons[0].setButtonText (T ("样本证据", "Evidence"));
+    fileViewButtons[1].setButtonText (T ("分频折叠", "Mono bands"));
+    fileViewButtons[2].setButtonText (T ("增益预算", "Gain budget"));
+    fileExport.setTooltip (T ("导出 CSV 摘要与完整 JSON 证据（时间、样本、源文件 SHA256）",
+                              "Export CSV summary + full JSON evidence (time, samples, source SHA256)"));
     fileClear.setButtonText (T ("清空结果", "Clear results"));
     fileChoose.setTooltip (T ("离线分析 WAV / AIFF / FLAC，秒级出完整报告",
                                "Offline analysis of WAV / AIFF / FLAC in seconds"));
@@ -267,6 +280,7 @@ void DetailArea::hideAllChildren()
     fileAddAlbum.setVisible (false);
     fileClear.setVisible (false);
     fileExport.setVisible (false);
+    for (auto& b : fileViewButtons) b.setVisible (false);
 
     for (auto& b : albumRuleButtons)
         b.setVisible (false);
@@ -360,6 +374,7 @@ void DetailArea::setReferencePlaybackState (bool playing, const juce::String&)
 void DetailArea::setFileResults (std::vector<FileAnalysisResult> results, bool busy,
                                  int done, int total, const juce::String& status)
 {
+    const bool layoutChanged = fileResults.empty() != results.empty();
     fileResults = std::move (results);
     fileBusy = busy;
     fileDone = done;
@@ -368,6 +383,8 @@ void DetailArea::setFileResults (std::vector<FileAnalysisResult> results, bool b
 
     if (fileSelected >= (int) fileResults.size())
         fileSelected = -1;
+    if (fileSelected < 0 && ! fileResults.empty()) fileSelected = 0;
+    if (layoutChanged) resized();
 
     repaint();
 }
@@ -735,6 +752,14 @@ void DetailArea::resized()
             fileAddAlbum.setVisible (true);
             fileClear.setVisible (true);
             fileExport.setVisible (true);
+            auto tabs = fileInspectorBounds().removeFromTop (30);
+            for (int i = 0; i < 3; ++i)
+            {
+                auto& b = fileViewButtons[(size_t) i];
+                b.setBounds (tabs.removeFromLeft (104).reduced (2, 2));
+                b.setVisible (fileSelected >= 0 && ! fileResults.empty());
+                b.setToggleState (fileView == i, juce::dontSendNotification);
+            }
             break;
         }
 
