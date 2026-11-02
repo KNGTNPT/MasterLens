@@ -33,12 +33,12 @@ void HistoryGraph::setPlayhead (double seconds, double total)
 
 juce::Rectangle<int> HistoryGraph::plotArea() const
 {
-    auto b = getLocalBounds().withTrimmedTop (34).withTrimmedBottom (22);
+    auto b = getLocalBounds().withTrimmedTop (36).withTrimmedBottom (24);
 
     if (b.getWidth() < 160)
         return b;
 
-    return b.withTrimmedLeft (46).withTrimmedRight (64);
+    return b.withTrimmedLeft (48).withTrimmedRight (64);
 }
 
 int HistoryGraph::pointsForRange() const
@@ -68,7 +68,7 @@ std::array<juce::Rectangle<int>, 4> HistoryGraph::chipBounds()
     for (int i = 0; i < 4; ++i)
     {
         const auto text = T (zh[i], en[i]);
-        const int w = juce::roundToInt (juce::GlyphArrangement::getStringWidth (uiFont (tokens::unit), text)) + 20;
+        const int w = juce::roundToInt (juce::GlyphArrangement::getStringWidth (getLabelFont(), text)) + 20;
 
         chipCache[(size_t) i] = juce::Rectangle<int> (x, y, w, 20);
         x += w + 6;
@@ -219,7 +219,7 @@ void HistoryGraph::paintPlot (juce::Graphics& g)
     // ---- grid and y axis -----------------------------------------------------
     const float step = plot.getHeight() < 150 ? 12.0f : 6.0f;
 
-    g.setFont (monoFont (tokens::unit));
+    g.setFont (getValueFont());
 
     for (float db = 0.0f; db >= -36.0f; db -= step)
     {
@@ -234,7 +234,7 @@ void HistoryGraph::paintPlot (juce::Graphics& g)
                     juce::Justification::centredRight);
     }
 
-    g.setFont (uiFont (tokens::unit));
+    g.setFont (getLabelFont());
     g.setColour (theme::textFaint);
     g.drawText ("LUFS", juce::Rectangle<int> (plot.getRight() + 8, plot.getY() - 14, 50, 12),
                 juce::Justification::centredLeft);
@@ -358,7 +358,7 @@ void HistoryGraph::paintOverlay (juce::Graphics& g)
     if (latest > -99.0f)
     {
         g.setColour (theme::text);
-        g.setFont (monoFont (14.0f, true));
+        g.setFont (getValueFont());
         g.drawText (num (latest),
                     juce::Rectangle<int> (plot.getRight() + 6, plot.getY() + 4, 58, 20),
                     juce::Justification::centredLeft);
@@ -396,7 +396,7 @@ void HistoryGraph::paintOverlay (juce::Graphics& g)
     }
 
     // ---- one relative time axis ---------------------------------------------
-    g.setFont (monoFont (tokens::unit));
+    g.setFont (getValueFont());
     g.setColour (theme::textFaint);
 
     const float midSeconds = (float) (span - 1) * 0.05f;
@@ -437,7 +437,7 @@ void HistoryGraph::paintOverlay (juce::Graphics& g)
         g.fillRoundedRectangle (chips[(size_t) i].toFloat(), tokens::radiusControl);
 
         g.setColour (active ? theme::accent : theme::textDim);
-        g.setFont (uiFont (tokens::unit));
+        g.setFont (getLabelFont());
         g.drawText (T (zh[i], en[i]), chips[(size_t) i], juce::Justification::centred);
     }
 
@@ -465,7 +465,7 @@ void HistoryGraph::paintOverlay (juce::Graphics& g)
                                                     : minusSign() + juce::String (seconds, 1) + " s")
                                   + "   " + num (value) + " LUFS";
 
-                const auto font = monoFont (tokens::unit);
+                const auto font = getValueFont();
                 const int tw = juce::roundToInt (juce::GlyphArrangement::getStringWidth (font, text)) + 16;
 
                 auto tip = juce::Rectangle<int> (juce::roundToInt (x) + 10, plot.getY() + 6, tw, 22);

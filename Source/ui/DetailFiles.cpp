@@ -75,7 +75,7 @@ struct FileColumns
 
 juce::Rectangle<int> DetailArea::fileTableBounds() const
 {
-    auto area = contentArea().withTrimmedTop (30);
+    auto area = contentArea().withTrimmedTop (32);
     area.removeFromBottom (kFileButtonRow);
     area.removeFromTop (kFileBandRow + kFileDropGap);
 
@@ -90,7 +90,7 @@ juce::Rectangle<int> DetailArea::fileTableBounds() const
 
 void DetailArea::paintFiles (juce::Graphics& g)
 {
-    auto area = contentArea().withTrimmedTop (30);
+    auto area = contentArea().withTrimmedTop (32);
     area.removeFromBottom (kFileButtonRow);
 
     // ---- offline mode band (flat, no card) ----------------------------------
@@ -99,12 +99,12 @@ void DetailArea::paintFiles (juce::Graphics& g)
         g.setColour (theme::accent);
         g.fillEllipse ((float) band.getX(), (float) band.getCentreY() - 3.0f, 6.0f, 6.0f);
         g.setColour (theme::textDim);
-        g.setFont (uiFont (tokens::aux));
+        g.setFont (getLabelFont());
         g.drawText (T ("文件 QC · 离线分析结果 · 不随播放更新",
                        "File QC · offline results · does not follow playback"),
-                    band.withTrimmedLeft (14), juce::Justification::centredLeft);
+                    band.withTrimmedLeft (16), juce::Justification::centredLeft);
         g.setColour (theme::textFaint);
-        g.setFont (monoFont (tokens::unit));
+        g.setFont (getValueFont());
         g.drawText (T ("原生采样率 · 后台线程", "native rate · worker thread"),
                     band, juce::Justification::centredRight);
         surface::hairlineH (g, (float) band.getX(), (float) band.getRight(),
@@ -122,23 +122,23 @@ void DetailArea::paintFiles (juce::Graphics& g)
     if (fileResults.empty())
     {
         g.setColour (theme::text);
-        g.setFont (uiFont (tokens::section, true));
+        g.setFont (getLabelFont());
         g.drawText (T ("把 WAV / AIFF / FLAC 或整个专辑文件夹拖进来",
                        "Drop WAV / AIFF / FLAC files or an album folder here"),
-                    text.removeFromTop (22), juce::Justification::centredLeft, false);
+                    text.removeFromTop (24), juce::Justification::centredLeft, false);
 
         g.setColour (theme::textDim);
-        g.setFont (uiFont (tokens::aux));
+        g.setFont (getLabelFont());
         g.drawFittedText (T ("后台线程按文件自己的采样率分析：LUFS / TP / LRA / PLR / 频段 / 风险；"
                              "完成后自动写入专辑门禁。",
                              "A worker thread analyses each file at its native sample rate: LUFS / TP / "
                              "LRA / PLR / bands / risk, then adds it to the album gate."),
-                          text.removeFromTop (34), juce::Justification::topLeft, 2);
+                          text.removeFromTop (36), juce::Justification::topLeft, 2);
     }
     else
     {
         g.setColour (theme::textDim);
-        g.setFont (uiFont (tokens::aux));
+        g.setFont (getLabelFont());
         g.drawText (fileStatus.isNotEmpty() ? fileStatus
                                             : T ("结果已就绪；点击表头排序，点击行查看单曲详情",
                                                  "Results ready; click a header to sort, a row for details"),
@@ -163,10 +163,10 @@ void DetailArea::paintFiles (juce::Graphics& g)
     if (fileResults.empty())
     {
         g.setColour (theme::textFaint);
-        g.setFont (uiFont (tokens::section));
+        g.setFont (getLabelFont());
         g.drawFittedText (T ("还没有文件结果。分析一个专辑文件夹后，这里会列出每首歌的读数。",
                              "No file results yet. Analyse an album folder and every track will appear here."),
-                          table.removeFromTop (22).reduced (2, 0),
+                          table.removeFromTop (24).reduced (2, 0),
                           juce::Justification::centredLeft, 1);
         return;
     }
@@ -178,7 +178,7 @@ void DetailArea::paintFiles (juce::Graphics& g)
     const char* labelsZh[] { "文件", "采样率 / 位深", "时长", "LUFS", "TP", "LRA", "风险" };
     const char* labelsEn[] { "FILE", "RATE / DEPTH", "LEN", "LUFS", "TP", "LRA", "RISK" };
 
-    g.setFont (uiFont (tokens::unit));
+    g.setFont (getLabelFont());
     for (int i = 0; i < 7; ++i)
     {
         const bool numeric = i >= 2;
@@ -237,12 +237,12 @@ void DetailArea::paintFiles (juce::Graphics& g)
         FileColumns rowCols (c);
 
         g.setColour (r.ok ? theme::text : theme::bad);
-        g.setFont (uiFont (tokens::aux));
+        g.setFont (getLabelFont());
         g.drawText (r.fileName, rowCols.cells[0].withTrimmedRight (8),
                     juce::Justification::centredLeft, true);
 
         g.setColour (theme::textFaint);
-        g.setFont (monoFont (tokens::unit));
+        g.setFont (getValueFont());
 
         const auto rate = r.sampleRate > 0.0
                               ? juce::String (r.sampleRate / 1000.0, 1)
@@ -268,7 +268,7 @@ void DetailArea::paintFiles (juce::Graphics& g)
 
         const int risk = juce::roundToInt (r.defects.worstRisk());
         g.setColour (risk >= 65 ? theme::bad : (risk >= 35 ? theme::warn : theme::good));
-        g.setFont (uiFont (tokens::unit, true));
+        g.setFont (getLabelFont());
         g.setColour (r.forensic.blockers() > 0 ? theme::bad : theme::textDim);
         g.drawText (r.forensic.blockers() > 0 ? T ("QC 阻断", "QC block") : T ("风险 ", "risk ") + juce::String (risk),
                     rowCols.cells[6], juce::Justification::centredRight, false);
@@ -278,7 +278,7 @@ void DetailArea::paintFiles (juce::Graphics& g)
     // ---- visible scrollbar ---------------------------------------------------
     if (maxScroll > 0)
     {
-        auto rail = table.removeFromRight (5);
+        auto rail = table.removeFromRight (8);
         const float trackH = (float) rail.getHeight();
         const float thumbH = juce::jmax (20.0f, trackH * (float) visibleRows / (float) order.size());
         const float t = (float) fileScroll / (float) maxScroll;
@@ -307,8 +307,8 @@ void DetailArea::paintFileInspector (juce::Graphics& g)
     auto panel = fileInspectorBounds();
     surface::recessed (g, panel.toFloat());
     auto area = panel.reduced (10, 0);
-    auto title = area.removeFromTop (30).withTrimmedLeft (318);
-    g.setFont (uiFont (tokens::aux, true));
+    auto title = area.removeFromTop (32).withTrimmedLeft (320);
+    g.setFont (getLabelFont());
     g.setColour (r.ok ? theme::textDim : theme::bad);
     g.drawText (r.fileName, title, juce::Justification::centredRight, true);
     area.reduce (2, 4);
@@ -320,17 +320,17 @@ void DetailArea::paintFileInspector (juce::Graphics& g)
     }
     if (fileView == 0)
     {
-        auto summary = area.removeFromTop (22);
-        g.setFont (monoFont (tokens::unit));
+        auto summary = area.removeFromTop (24);
+        g.setFont (getValueFont());
         g.setColour (theme::textDim);
         g.drawText (T ("头 / 尾 ", "HEAD / TAIL ") + juce::String (q.leadingSilenceSeconds, 3)
                     + " / " + juce::String (q.trailingSilenceSeconds, 3) + " s   DC "
                     + juce::String (100.0 * q.dcOffset[0], 2) + " / " + juce::String (100.0 * q.dcOffset[1], 2)
                     + "%   " + T ("满刻度段 ", "FS RUNS ") + juce::String (q.clippedRunCount),
                     summary, juce::Justification::centredLeft, true);
-        auto hash = area.getHeight() >= 64 ? area.removeFromBottom (18) : juce::Rectangle<int>();
+        auto hash = area.getHeight() >= 64 ? area.removeFromBottom (20) : juce::Rectangle<int>();
         g.setColour (theme::textFaint);
-        g.setFont (monoFont (10.0f));
+        g.setFont (getValueFont());
         g.drawText ("SHA256 " + q.sha256.substring (0, 24) + "...  "
                     + T ("完整证据见导出 QC", "full evidence: Export QC"), hash,
                     juce::Justification::centredLeft, true);
@@ -339,17 +339,17 @@ void DetailArea::paintFileInspector (juce::Graphics& g)
         if (q.findings.empty())
         {
             g.setColour (theme::good);
-            g.setFont (uiFont (tokens::aux));
+            g.setFont (getLabelFont());
             g.drawText (T ("未发现样本门禁问题；仍请完整试听。", "No sample-gate findings; listen through the master."),
                         area, juce::Justification::centredLeft, true);
         }
         for (int i = fileFindingScroll; i < (int) q.findings.size() && i < fileFindingScroll + rows; ++i)
         {
             const auto& f = q.findings[(size_t) i];
-            auto row = area.removeFromTop (23);
+            auto row = area.removeFromTop (24);
             auto time = row.removeFromLeft (92);
             g.setColour (f.severity == 2 ? theme::bad : theme::warn);
-            g.setFont (monoFont (tokens::unit));
+            g.setFont (getValueFont());
             g.drawText (juce::String (f.startSample / r.sampleRate, 3) + " s", time,
                         juce::Justification::centredLeft, true);
             auto address = row.removeFromRight (juce::jmin (190, row.getWidth() / 3));
@@ -358,14 +358,14 @@ void DetailArea::paintFileInspector (juce::Graphics& g)
                         + (f.channel >= 0 ? (f.channel == 0 ? " L" : " R") : " LR"),
                         address, juce::Justification::centredRight, true);
             g.setColour (theme::textDim);
-            g.setFont (uiFont (tokens::aux));
+            g.setFont (getLabelFont());
             g.drawText (findingText (f, Localisation::isEnglish()), row, juce::Justification::centredLeft, true);
         }
     }
     else if (fileView == 1)
     {
         auto note = area.removeFromBottom (area.getHeight() < 80 ? 16 : 22);
-        g.setFont (uiFont (tokens::unit));
+        g.setFont (getLabelFont());
         g.setColour (theme::textFaint);
         g.drawText (T ("(L+R)/2 · 同相 0 dB，无关约 3 dB；灰色 = 能量不足 0.1%；6 dB 以上请试听",
                        "(L+R)/2 · mono 0 dB, uncorrelated ~3 dB · grey <0.1% energy · review above 6 dB"),
@@ -375,9 +375,9 @@ void DetailArea::paintFileInspector (juce::Graphics& g)
         {
             auto cell = area.removeFromLeft (w).reduced (4, 0);
             const auto& info = SpectrumAnalyzer::getBandInfo ((int) b);
-            g.setFont (monoFont (tokens::unit));
+            g.setFont (getValueFont());
             g.setColour (q.bandAvailable[b] ? theme::text : theme::textFaint);
-            g.drawText (q.bandAvailable[b] ? num (q.monoLossDb[b]) : noValue(), cell.removeFromTop (18), juce::Justification::centred);
+            g.drawText (q.bandAvailable[b] ? num (q.monoLossDb[b]) : noValue(), cell.removeFromTop (20), juce::Justification::centred);
             auto label = cell.removeFromBottom (16);
             const auto hz = info.lo >= 1000 ? juce::String (info.lo / 1000.0f, 1) + "k" : juce::String ((int) info.lo);
             g.setColour (theme::textFaint);
@@ -402,14 +402,14 @@ void DetailArea::paintFileInspector (juce::Graphics& g)
         for (int i = 0; i < 4; ++i)
         {
             auto cell = area.removeFromLeft (w).reduced (8, 2);
-            g.setFont (uiFont (tokens::unit));
+            g.setFont (getLabelFont());
             g.setColour (theme::textFaint);
             g.drawText (T (zh[i], en[i]), cell.removeFromTop (compact ? 14 : 20), juce::Justification::centredLeft, true);
-            g.setFont (monoFont (compact ? 16.0f : 21.0f));
+            g.setFont (getValueFont());
             g.setColour (i == 3 && p.shortfallLu > 0.1f ? theme::warn : theme::text);
             g.drawText (p.valid ? (i < 2 ? sgn (v[i]) : num (v[i])) : noValue(), cell, juce::Justification::centredLeft, true);
         }
-        g.setFont (uiFont (tokens::unit));
+        g.setFont (getLabelFont());
         g.setColour (theme::textDim);
         g.drawText ("REF " + num (state.target) + " LUFS / CEIL " + num (state.ceiling) + " dBTP  "
                     + T ("仅计算恒定增益；响度为估算，不写音频。", "Constant-gain estimate; no audio is written."),

@@ -9,6 +9,8 @@
 #include "PluginProcessor.h"
 #include "Version.h"
 #include "ui/Logo.h"
+#include "SpectrumFifoCheck.h"
+#include "LayoutCheck.h"
 
 /** Offscreen renderer used to verify the editor layout without a screen recorder.
 
@@ -65,6 +67,29 @@ public:
         processor->setRateAndBufferSizeDetails (48000.0, 512);
         processor->prepareToPlay (48000.0, 512);
 
+        if (commandLine.containsIgnoreCase ("spectrumfifo"))
+        {
+#if JUCE_DEBUG
+            if (! SpectrumFifoCheck::preflight())
+            {
+                setApplicationReturnValue (1);
+                quit();
+                return;
+            }
+            editor = std::make_unique<MasterLensAudioProcessorEditor> (*processor);
+            fifoCheck = std::make_unique<SpectrumFifoCheck> (*processor, *editor, [this] (bool passed)
+            {
+                setApplicationReturnValue (passed ? 0 : 1);
+                quit();
+            });
+#else
+            std::fprintf (stderr, "spectrumfifo requires a Debug build\n");
+            setApplicationReturnValue (1);
+            quit();
+#endif
+            return;
+        }
+
         if (commandLine.containsIgnoreCase ("closedbench"))
         {
             juce::AudioBuffer<float> buffer (2, 512);
@@ -115,6 +140,34 @@ public:
         const float shotW = minShot ? 880.0f : (smallShot ? 900.0f : (standardShot ? 1120.0f : 1280.0f));
         const float shotH = minShot ? 560.0f : (smallShot ? 620.0f : (standardShot ? 700.0f : 820.0f));
         editor->setSize (juce::roundToInt (shotW * scale), juce::roundToInt (shotH * scale));
+
+        if (commandLine.containsIgnoreCase ("layoutcheck"))
+        {
+            setApplicationReturnValue (MasterLensLayoutCheck::run (*editor) ? 0 : 1);
+#if JUCE_DEBUG && defined(MASTERLENS_ENABLE_INSPECTOR)
+            editor->addToDesktop (juce::ComponentPeer::windowIsTemporary);
+            editor->setVisible (true);
+            editor->showInspector();
+            juce::Timer::callAfterDelay (500, [this]
+            {
+                MasterLensLayoutCheck::saveInspector (*editor);
+                saveAndQuit();
+            });
+#else
+            quit();
+#endif
+            return;
+        }
+
+#if JUCE_DEBUG && defined(MASTERLENS_ENABLE_INSPECTOR)
+        if (commandLine.containsIgnoreCase ("inspector"))
+        {
+            editor->addToDesktop (juce::ComponentPeer::windowIsTemporary);
+            editor->setVisible (true);
+            editor->showInspector();
+            return;
+        }
+#endif
 
         std::printf ("UiShot %s page=%d scale=%.2f size=%dx%d\n", ml::kVersion, pageShot,
                      scale, editor->getWidth(), editor->getHeight());
@@ -241,6 +294,9 @@ public:
 
     void shutdown() override
     {
+#if JUCE_DEBUG
+        fifoCheck.reset();
+#endif
         editor.reset();
         processor.reset();
     }
@@ -508,6 +564,9 @@ private:
 
     std::unique_ptr<MasterLensAudioProcessor> processor;
     std::unique_ptr<MasterLensAudioProcessorEditor> editor;
+#if JUCE_DEBUG
+    std::unique_ptr<SpectrumFifoCheck> fifoCheck;
+#endif
     bool english = false;
     bool aboutShot = false, genreShot = false;
     bool expandedShot = false;

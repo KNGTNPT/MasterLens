@@ -3,6 +3,10 @@
 #include "Presets.h"
 #include "Version.h"
 
+#if JUCE_DEBUG && defined(MASTERLENS_ENABLE_INSPECTOR)
+#include <melatonin_inspector/melatonin_inspector.h>
+#endif
+
 using ml::T;
 
 namespace
@@ -180,10 +184,22 @@ MasterLensAudioProcessorEditor::MasterLensAudioProcessorEditor (MasterLensAudioP
 
 MasterLensAudioProcessorEditor::~MasterLensAudioProcessorEditor()
 {
+#if JUCE_DEBUG && defined(MASTERLENS_ENABLE_INSPECTOR)
+    inspector.reset();
+#endif
     stopTimer();
     ml::Localisation::clearOnChange();
     setLookAndFeel (nullptr);
 }
+
+#if JUCE_DEBUG && defined(MASTERLENS_ENABLE_INSPECTOR)
+void MasterLensAudioProcessorEditor::showInspector()
+{
+    if (inspector == nullptr)
+        inspector = std::make_unique<melatonin::Inspector> (*this, false);
+    inspector->toggle (true);
+}
+#endif
 
 void MasterLensAudioProcessorEditor::attachShortcutListener (juce::Component& c)
 {

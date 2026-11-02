@@ -6,8 +6,8 @@ namespace ml
 {
 void DetailArea::paintTarget (juce::Graphics& g)
 {
-    auto area = contentArea().withTrimmedTop (30);
-    area.removeFromTop (58);   // child combo / slider / button
+    auto area = contentArea().withTrimmedTop (32);
+    area.removeFromTop (60);   // child combo / slider / button
     area.removeFromTop (8);
 
     const auto& s = state.stats;
@@ -33,23 +33,23 @@ void DetailArea::paintTarget (juce::Graphics& g)
         const bool tiny = left.getHeight() < 220;
 
         g.setColour (theme::accent);
-        g.setFont (uiFont (tokens::unit, true));
+        g.setFont (getLabelFont());
         g.drawText (T ("曲风参照 / LOUDNESS WAR", "GENRE REFERENCE / LOUDNESS WAR"),
                     inner.removeFromTop (16), juce::Justification::centredLeft, false);
 
         g.setColour (theme::text);
-        g.setFont (uiFont (tokens::section, true));
+        g.setFont (getLabelFont());
         g.drawFittedText (T (e.zh, e.en), inner.removeFromTop (tiny ? 16 : (compact ? 20 : 22)),
                           juce::Justification::centredLeft, 1);
 
         g.setColour (hasSignal ? theme::good : theme::textFaint);
-        g.setFont (monoFont (tiny ? 22.0f : (compact ? 26.0f : 30.0f), true));
+        g.setFont (getValueFont());
         g.drawText (hasSignal ? num (s.integrated) : noValue(),
                     inner.removeFromTop (tiny ? 22 : (compact ? 30 : 38)),
                     juce::Justification::centredLeft, false);
 
         g.setColour (theme::textFaint);
-        g.setFont (uiFont (tokens::unit));
+        g.setFont (getLabelFont());
         g.drawText (hasSignal ? T ("当前综合响度 LUFS", "current integrated LUFS")
                               : T ("等待信号", "waiting for signal"),
                     inner.removeFromTop (tiny ? 10 : (compact ? 13 : 15)),
@@ -62,11 +62,11 @@ void DetailArea::paintTarget (juce::Graphics& g)
             auto r = inner.removeFromTop (tiny ? 15 : (compact ? 17 : 19));
 
             g.setColour (theme::textFaint);
-            g.setFont (uiFont (tokens::unit));
+            g.setFont (getLabelFont());
             g.drawText (key, r.removeFromLeft (112), juce::Justification::centredLeft, false);
 
             g.setColour (theme::text);
-            g.setFont (monoFont (tokens::unit, true));
+            g.setFont (getValueFont());
             g.drawText (value, r, juce::Justification::centredRight, false);
         };
 
@@ -90,7 +90,7 @@ void DetailArea::paintTarget (juce::Graphics& g)
             inner.removeFromTop (compact ? 3 : 6);
 
             g.setColour (theme::textFaint);
-            g.setFont (uiFont (tokens::unit));
+            g.setFont (getLabelFont());
             g.drawFittedText (T ("50% = 曲风标准；0% = 该曲风最安静的发行观测值，100% = 最响的发行观测值。",
                                  "50% = genre reference; 0% = quietest observed release, 100% = loudest observed release."),
                               inner.removeFromTop (juce::jmin (compact ? 30 : 42, inner.getHeight())),
@@ -99,7 +99,7 @@ void DetailArea::paintTarget (juce::Graphics& g)
             if (! compact && inner.getHeight() >= 28)
             {
                 g.setColour (theme::warn);
-                g.setFont (uiFont (tokens::unit));
+                g.setFont (getLabelFont());
                 g.drawFittedText (T ("应用后切换到「手动参考」，目标只作检查参照，不是自动合格线。",
                                      "Apply switches to Manual reference; the target is a reference, not an automatic pass line."),
                                   inner.removeFromTop (juce::jmin (30, inner.getHeight())),
@@ -119,16 +119,16 @@ void DetailArea::paintTarget (juce::Graphics& g)
         const bool compact = right.getHeight() < 320;
 
         g.setColour (theme::accent);
-        g.setFont (uiFont (tokens::unit, true));
+        g.setFont (getLabelFont());
         g.drawText (T ("平台交付要求 / DELIVERY REQUIREMENTS", "PLATFORM DELIVERY REQUIREMENTS"),
                     inner.removeFromTop (16), juce::Justification::centredLeft, false);
 
-        auto header = inner.removeFromTop (17);
+        auto header = inner.removeFromTop (20);
         const int wName = juce::jmax (86, juce::roundToInt ((float) inner.getWidth() * 0.30f));
         const int wLufs = 46, wTp = 48;
 
         g.setColour (theme::textFaint);
-        g.setFont (uiFont (tokens::unit));
+        g.setFont (getLabelFont());
         g.drawText (T ("平台", "Platform"), header.removeFromLeft (wName), juce::Justification::centredLeft);
         g.drawText ("LUFS", header.removeFromLeft (wLufs), juce::Justification::centredRight);
         g.drawText ("dBTP", header.removeFromLeft (wTp), juce::Justification::centredRight);
@@ -168,12 +168,12 @@ void DetailArea::paintTarget (juce::Graphics& g)
             auto row = inner.removeFromTop (rowH);
 
             g.setColour (theme::textDim);
-            g.setFont (uiFont (tokens::unit, p.minTailSilenceMs > 0));
+            g.setFont (getLabelFont());
             g.drawFittedText (T (p.nameZh, p.nameEn), row.removeFromLeft (wName),
                               juce::Justification::centredLeft, 1);
 
             g.setColour (theme::text);
-            g.setFont (monoFont (tokens::unit, true));
+            g.setFont (getValueFont());
             g.drawText (num (p.targetLufs), row.removeFromLeft (wLufs),
                         juce::Justification::centredRight, false);
             g.drawText (num (p.tpCeiling), row.removeFromLeft (wTp),
@@ -199,7 +199,7 @@ void DetailArea::paintTarget (juce::Graphics& g)
             else
                 stateText = T ("通过", "PASS");
 
-            g.setFont (uiFont (tokens::unit, true));
+            g.setFont (getLabelFont());
             g.drawText (stateText, row, juce::Justification::centredRight, false);
         }
 
@@ -207,7 +207,7 @@ void DetailArea::paintTarget (juce::Graphics& g)
         inner.removeFromTop (compact ? 3 : 5);
 
         g.setColour (theme::textFaint);
-        g.setFont (uiFont (tokens::unit));
+        g.setFont (getLabelFont());
         g.drawFittedText (T ("Apple Digital Masters：优先高质量 24-bit 源，使用 Apple 工具检查编码后削波；尾部按发行商规范。"
                              "Spotify：-14 LUFS；若母带更响，TP 建议低于 -2 dBTP。",
                              "ADM: use high-quality 24-bit sources and Apple tools to check encoded clipping; follow distributor specs for tail silence. "
@@ -218,11 +218,11 @@ void DetailArea::paintTarget (juce::Graphics& g)
         if (inner.getHeight() >= 18)
         {
             g.setColour (theme::textDim);
-            g.setFont (monoFont (tokens::unit, true));
+            g.setFont (getValueFont());
             g.drawText (T ("尾部静音 ", "Tail silence ") + num (s.tailSilenceMs / 1000.0f, 1) + " s"
                             + ml::sep() + T ("削波 ", "clips ") + juce::String (s.clipEvents)
                             + ml::sep() + T ("测量至曲尾时有效", "valid at the end of the song"),
-                        inner.removeFromTop (18), juce::Justification::centredLeft, false);
+                        inner.removeFromTop (20), juce::Justification::centredLeft, false);
         }
     }
 }

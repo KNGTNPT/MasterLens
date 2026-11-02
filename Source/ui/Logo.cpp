@@ -47,55 +47,47 @@ namespace
     }
 } // namespace
 
-//==============================================================================
-void paintLogoMark (juce::Graphics& g, juce::Rectangle<float> area, bool monochrome)
+namespace
+{
+    struct ApertureGeometry
+    {
+        std::array<juce::Path, 2> paths;
+        ApertureGeometry()
+        {
+            for (size_t size = 0; size < paths.size(); ++size)
+            {
+                const float gap = size == 0 ? 0.40f : 0.30f;
+                const float step = juce::MathConstants<float>::twoPi / 5.0f;
+                for (int i = 0; i < 5; ++i)
+                    paths[size].addCentredArc (0.5f, 0.5f, 0.365f, 0.365f, 0.0f,
+                        step * (float) i + gap * 0.5f,
+                        step * (float) (i + 1) - gap * 0.5f, true);
+            }
+        }
+    };
+    const ApertureGeometry aperture; // prepare once, outside painting
+}
+
+void paintLogoMark (juce::Graphics& g, juce::Rectangle<float> area, bool /*monochrome*/)
 {
     if (area.getWidth() < 4.0f || area.getHeight() < 4.0f)
         return;
 
     const float s = juce::jmin (area.getWidth(), area.getHeight());
     area = area.withSizeKeepingCentre (s, s);
-
+    g.setColour (theme::textDim);
+    const auto transform = juce::AffineTransform::scale (s).translated (area.getPosition());
+    g.strokePath (aperture.paths[s < 32.0f ? 0 : 1],
+                  juce::PathStrokeType (juce::jmax (1.0f, s * 0.060f), juce::PathStrokeType::curved,
+                                        juce::PathStrokeType::rounded), transform);
     const auto centre = area.getCentre();
-    const float r = s * 0.365f;
-    const float stroke = juce::jmax (1.0f, s * 0.067f);
-
-    // Five unequal arcs. The lower-left arc is the only cyan element; at 16 px
-    // everything collapses to the single ink colour so the gaps stay legible.
-    const float arcs[5][2]
-    {
-        { -1.40f, -0.14f },   // top
-        {  0.04f,  1.01f },   // upper right
-        {  1.33f,  2.42f },   // lower right
-        {  2.76f,  3.72f },   // lower left (cyan at >= 32 px)
-        {  4.10f,  5.02f }    // upper left
-    };
-
-    const bool colourLogo = ! monochrome && s >= 32.0f;
-    const auto blue = theme::accent;
-    const auto monoInk = theme::text;
-
-    for (int i = 0; i < 5; ++i)
-    {
-        juce::Path arc;
-        arc.addCentredArc (centre.x, centre.y, r, r, 0.0f, arcs[i][0], arcs[i][1], true);
-
-        g.setColour (colourLogo && i == 3 ? theme::cyan
-                                          : (monochrome ? monoInk : blue));
-        g.strokePath (arc, juce::PathStrokeType (stroke,
-                                                 juce::PathStrokeType::curved,
-                                                 juce::PathStrokeType::rounded));
-    }
-
-    g.setColour (colourLogo ? theme::cyan : (monochrome ? monoInk : blue));
-    g.fillEllipse (centre.x - s * 0.072f, centre.y - s * 0.072f,
-                   s * 0.144f, s * 0.144f);
+    g.fillEllipse (centre.x - s * 0.060f, centre.y - s * 0.060f, s * 0.120f, s * 0.120f);
 }
 
 void paintBerryWordmark (juce::Graphics& g, juce::Rectangle<int> area, juce::Colour colour,
                          float height, juce::Justification justification)
 {
-    const auto font = uiFont (height, true);
+    const auto font = getLabelFont();
     drawTracked (g, "BERRYSTUDIO", font, area, height * 0.04f, colour, justification);
 }
 

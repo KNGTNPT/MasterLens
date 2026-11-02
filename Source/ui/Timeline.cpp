@@ -43,11 +43,11 @@ void TimelineStrip::paint (juce::Graphics& g)
     const float y = (float) track.getCentreY();
 
     g.setColour (theme::textFaint);
-    g.setFont (uiFont (tokens::unit));
+    g.setFont (getLabelFont());
     g.drawText (T ("整曲时间线", "Song timeline"), 14, 2, 120, 14, juce::Justification::centredLeft);
 
     g.setColour (theme::textFaint);
-    g.setFont (uiFont (tokens::unit));
+    g.setFont (getLabelFont());
     g.drawText (T ("双击添加标记", "double-click to add"), b.getWidth() - 128.0f, 2.0f, 114.0f, 14.0f,
                 juce::Justification::centredRight);
 
@@ -91,7 +91,7 @@ void TimelineStrip::paint (juce::Graphics& g)
     }
 
     g.setColour (theme::textFaint);
-    g.setFont (monoFont (tokens::unit));
+    g.setFont (getValueFont());
     g.drawText ("00:00", track.getX(), (int) b.getBottom() - 14, 46, 12,
                 juce::Justification::centredLeft);
     g.drawText (fmtTime (total), track.getRight() - 46, (int) b.getBottom() - 14, 46, 12,

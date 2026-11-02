@@ -15,16 +15,38 @@ static juce::String formatHz (double hz)
 SpectrumDisplay::SpectrumDisplay()
 {
     setOpaque (true);
+    getProperties().set ("paddingLeft", 56);
+    getProperties().set ("paddingTop", 32);
+    getProperties().set ("paddingRight", 32);
+    getProperties().set ("paddingBottom", 48);
     curvePath.preallocateSpace (8192);
     holdPath.preallocateSpace (8192);
     fillPath.preallocateSpace (8192);
+}
+
+void SpectrumDisplay::invalidateBackground()
+{
+    backgroundDirty = true;
+    ensureBackground(); // lifecycle/state update, never lazy allocation in paint
+    repaint();
+}
+
+void SpectrumDisplay::setAnalyzer (const SpectrumAnalyzer* a)
+{
+    analyzer = a;
+    if (a == nullptr) { peakLabel.clear(); return; }
+    int peakBin = 1;
+    float peakDb = -100.0f;
+    for (int i = 1; i < a->getNumBins(); ++i)
+        if (a->getMagnitudes()[i] > peakDb) { peakDb = a->getMagnitudes()[i]; peakBin = i; }
+    peakLabel = T ("峰值 ", "Peak ") + fmt1 (peakDb) + " dBFS  @ " + formatHz (peakBin * a->getBinHz());
 }
 
 void SpectrumDisplay::drawGrid (juce::Graphics& g)
 {
     auto area = getLocalBounds().toFloat();
 
-    const float leftPad = 40.0f, bottomPad = 20.0f, topPad = 16.0f, rightPad = 8.0f;
+    const float leftPad = 56.0f, bottomPad = 48.0f, topPad = 32.0f, rightPad = 32.0f;
     auto plot = area.withTrimmedLeft (leftPad).withTrimmedRight (rightPad)
                     .withTrimmedTop (topPad).withTrimmedBottom (bottomPad);
 
@@ -37,7 +59,7 @@ void SpectrumDisplay::drawGrid (juce::Graphics& g)
         return plot.getBottom() - t * plot.getHeight();
     };
 
-    g.setFont (monoFont (tokens::unit));
+    g.setFont (getValueFont());
 
     for (float db = -100.0f; db <= 0.1f; db += 20.0f)
     {
@@ -69,7 +91,7 @@ void SpectrumDisplay::drawGrid (juce::Graphics& g)
         g.drawText (label, labelRect, juce::Justification::centred);
     }
 
-    g.setFont (uiFont (tokens::unit));
+    g.setFont (getLabelFont());
     g.setColour (theme::textFaint);
     g.drawText ("dBFS", juce::Rectangle<float> (0.0f, plot.getY() - 14.0f, leftPad, 12.0f),
                 juce::Justification::centredRight);
@@ -94,6 +116,10 @@ void SpectrumDisplay::ensureBackground()
     bg.addTransform (juce::AffineTransform::scale (scale));
     bg.fillAll (theme::card);
     drawGrid (bg);
+    fillGradient.point1 = { 56.0f, 32.0f };
+    fillGradient.point2 = { 56.0f, (float) h - 48.0f };
+    fillGradient.setColour (0, theme::accent.withAlpha (0.10f));
+    fillGradient.setColour (1, theme::accent.withAlpha (0.0f));
 
     backgroundDirty = false;
     cachedThemeRevision = theme::revision();
@@ -102,7 +128,10 @@ void SpectrumDisplay::ensureBackground()
 void SpectrumDisplay::paint (juce::Graphics& g)
 {
     if (backgroundDirty || background.isNull() || cachedThemeRevision != theme::revision())
-        ensureBackground();
+    {
+        g.fillAll (theme::card);
+        return;
+    }
 
     g.drawImage (background, getLocalBounds().toFloat());
 
@@ -111,7 +140,7 @@ void SpectrumDisplay::paint (juce::Graphics& g)
 
     auto area = getLocalBounds().toFloat();
 
-    const float leftPad = 40.0f, bottomPad = 20.0f, topPad = 16.0f, rightPad = 8.0f;
+    const float leftPad = 56.0f, bottomPad = 48.0f, topPad = 32.0f, rightPad = 32.0f;
     auto plot = area.withTrimmedLeft (leftPad).withTrimmedRight (rightPad)
                     .withTrimmedTop (topPad).withTrimmedBottom (bottomPad);
 
@@ -130,9 +159,6 @@ void SpectrumDisplay::paint (juce::Graphics& g)
     };
 
     const int numBins = analyzer->getNumBins();
-    const double binHz = analyzer->getBinHz();
-    const float* mags = analyzer->getMagnitudes();
-    const float* hold = analyzer->getPeakHold();
 
     if (numBins < 4)
         return;
@@ -198,30 +224,21 @@ void SpectrumDisplay::paint (juce::Graphics& g)
     fillPath.lineTo (plot.getX(), plot.getBottom());
     fillPath.closeSubPath();
 
-    g.setColour (theme::accent.withAlpha (0.10f));
+    g.setGradientFill (fillGradient);
     g.fillPath (fillPath);
 
-    g.setColour (theme::accent);
-    g.strokePath (curvePath, juce::PathStrokeType (1.8f, juce::PathStrokeType::curved,
-                                                   juce::PathStrokeType::rounded));
-
-    g.setColour (theme::violet.withAlpha (0.45f));
+    g.setColour (theme::textFaint.withAlpha (0.35f));
     g.strokePath (holdPath, juce::PathStrokeType (1.0f, juce::PathStrokeType::curved,
                                                   juce::PathStrokeType::rounded));
 
-    int peakBin = 1;
-    float peakDb = -100.0f;
+    // The live measurement is drawn last, so the hold trace cannot dim it.
+    g.setColour (juce::Colours::lightgrey.withAlpha (0.7f));
+    g.strokePath (curvePath, juce::PathStrokeType (1.8f, juce::PathStrokeType::curved,
+                                                   juce::PathStrokeType::rounded));
 
-    for (int i = 1; i < numBins; ++i)
-        if (mags[i] > peakDb)
-        {
-            peakDb = mags[i];
-            peakBin = i;
-        }
-
-    g.setFont (monoFont (tokens::unit));
+    g.setFont (getValueFont());
     g.setColour (theme::textDim);
-    g.drawText (T ("峰值 ", "Peak ") + fmt1 (peakDb) + " dBFS  @ " + formatHz (peakBin * binHz),
+    g.drawText (peakLabel,
                 plot.withHeight (14.0f).translated (0.0f, -15.0f),
                 juce::Justification::centredRight);
 }
@@ -256,7 +273,7 @@ void BandBalanceDisplay::ensureBackground()
     const int colW = w / n;
     const int labelH = 16;
 
-    auto plot = getLocalBounds().withTrimmedTop (14).withTrimmedBottom (labelH);
+    auto plot = getLocalBounds().withTrimmedTop (16).withTrimmedBottom (labelH);
     const float zeroY = (float) plot.getCentreY();
 
     g.setColour (theme::borderSoft);
@@ -267,14 +284,14 @@ void BandBalanceDisplay::ensureBackground()
         const auto& info = SpectrumAnalyzer::getBandInfo (i);
 
         g.setColour (theme::textFaint);
-        g.setFont (uiFont (tokens::unit));
+        g.setFont (getLabelFont());
         g.drawText (T (info.label, info.labelEn),
                     juce::Rectangle<int> (i * colW, h - labelH, colW, labelH),
                     juce::Justification::centred);
     }
 
     g.setColour (theme::textFaint);
-    g.setFont (monoFont (tokens::unit));
+    g.setFont (getValueFont());
     g.drawText ("dB", 4, 0, 24, 13, juce::Justification::centredLeft);
 
     backgroundDirty = false;
@@ -323,7 +340,7 @@ void BandBalanceDisplay::paint (juce::Graphics& g)
         if (std::abs (raw) >= 1.5f)
         {
             g.setColour (colour);
-            g.setFont (monoFont (tokens::unit));
+            g.setFont (getValueFont());
             g.drawText (sgn (raw, 1),
                         juce::Rectangle<int> (cell.getX() - 2, 0, cell.getWidth() + 4, valueH),
                         juce::Justification::centred);
@@ -335,6 +352,10 @@ void BandBalanceDisplay::paint (juce::Graphics& g)
 SpectrogramDisplay::SpectrogramDisplay()
 {
     setOpaque (true);
+    getProperties().set ("paddingLeft", 56);
+    getProperties().set ("paddingTop", 32);
+    getProperties().set ("paddingRight", 32);
+    getProperties().set ("paddingBottom", 48);
 }
 
 void SpectrogramDisplay::clear()
@@ -420,8 +441,8 @@ void SpectrogramDisplay::ensureBackground()
 void SpectrogramDisplay::drawGrid (juce::Graphics& g)
 {
     auto area = getLocalBounds().toFloat();
-    auto plot = area.withTrimmedLeft (44.0f).withTrimmedRight (8.0f)
-                    .withTrimmedTop (12.0f).withTrimmedBottom (20.0f);
+    auto plot = area.withTrimmedLeft (56.0f).withTrimmedRight (32.0f)
+                    .withTrimmedTop (32.0f).withTrimmedBottom (48.0f);
 
     if (plot.getWidth() < 20.0f || plot.getHeight() < 20.0f)
         return;
@@ -434,13 +455,16 @@ void SpectrogramDisplay::drawGrid (juce::Graphics& g)
         g.drawVerticalLine (juce::roundToInt (x), plot.getY(), plot.getBottom());
     }
 
-    g.setFont (monoFont (tokens::unit));
+    g.setFont (getValueFont());
     g.setColour (theme::textFaint);
 
     if (mode == Mode::bands)
     {
+        g.setFont (getLabelFont());
+        const int labelStride = juce::jmax (1, (int) std::ceil (160.0f / plot.getHeight()));
         for (int i = 0; i < 10; ++i)
         {
+            if (i % labelStride != 0) continue;
             const auto& info = SpectrumAnalyzer::getBandInfo (i);
             const float y = plot.getBottom() - (float) (i + 1) * plot.getHeight() / 10.0f
                             + plot.getHeight() / 20.0f;
@@ -451,11 +475,14 @@ void SpectrogramDisplay::drawGrid (juce::Graphics& g)
     else
     {
         const double ticks[] { 20000, 10000, 5000, 2000, 500, 100, 20 };
+        float lastLabelY = -1000.0f;
 
         for (double f : ticks)
         {
             const double y = std::log (f / 20.0) / std::log (20000.0 / 20.0);
             const float py = plot.getBottom() - (float) y * plot.getHeight();
+            if (py - lastLabelY < 16.0f) continue;
+            lastLabelY = py;
             const auto label = f >= 1000.0 ? juce::String (f / 1000.0, 0) + "k"
                                            : juce::String ((int) f);
             g.drawText (label, 0, juce::roundToInt (py) - 6, 40, 12,
@@ -463,9 +490,10 @@ void SpectrogramDisplay::drawGrid (juce::Graphics& g)
         }
     }
 
-    g.drawText (T ("时间", "time"), juce::roundToInt (plot.getX()), (int) plot.getBottom() + 4,
+    g.setFont (getLabelFont());
+    g.drawText (T ("时间", "TIME"), juce::roundToInt (plot.getX()), (int) plot.getBottom() + 4,
                 40, 12, juce::Justification::centredLeft);
-    g.drawText (T ("现在", "now"), juce::roundToInt (plot.getRight() - 40),
+    g.drawText (T ("现在", "NOW"), juce::roundToInt (plot.getRight() - 40),
                 (int) plot.getBottom() + 4, 40, 12, juce::Justification::centredRight);
 }
 
@@ -477,8 +505,8 @@ void SpectrogramDisplay::paint (juce::Graphics& g)
     g.drawImage (background, getLocalBounds().toFloat());
 
     auto area = getLocalBounds().toFloat();
-    auto plot = area.withTrimmedLeft (44.0f).withTrimmedRight (8.0f)
-                    .withTrimmedTop (12.0f).withTrimmedBottom (20.0f);
+    auto plot = area.withTrimmedLeft (56.0f).withTrimmedRight (32.0f)
+                    .withTrimmedTop (32.0f).withTrimmedBottom (48.0f);
 
     if (plot.getWidth() < 20.0f || plot.getHeight() < 20.0f || count <= 0)
         return;

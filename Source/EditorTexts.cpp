@@ -6,20 +6,24 @@ using ml::T;
 //==============================================================================
 void MasterLensAudioProcessorEditor::updateTexts()
 {
+    targetSlider.setName (T ("目标响度", "Target loudness"));
+    targetSlider.setTitle (T ("目标响度，LUFS", "Target loudness, LUFS"));
+    ceilingSlider.setName (T ("真峰值上限", "True peak ceiling"));
+    ceilingSlider.setTitle (T ("真峰值上限，dBTP", "True peak ceiling, dBTP"));
     const bool en = ml::Localisation::isEnglish();
 
-    holdButton.setButtonText (frozen ? T ("恢复", "Resume") : T ("保持", "Hold"));
-    clearButton.setButtonText (T ("清零", "Clear"));
-    aboutButton.setButtonText (T ("关于", "About"));
-    settingsButton.setButtonText (T ("设置", "Settings"));
-    themeButton.setButtonText (ml::theme::dark ? T ("深色", "Dark") : T ("浅色", "Light"));
-    languageButton.setButtonText (en ? juce::String::fromUTF8 ("中文") : juce::String ("EN"));
-    exportButton.setButtonText (T ("导出报告", "Export"));
+    holdButton.setButtonText (ml::grid::controlText (frozen ? T ("恢复", "Resume") : T ("保持", "Hold")));
+    clearButton.setButtonText (ml::grid::controlText (T ("清零", "Clear")));
+    aboutButton.setButtonText (ml::grid::controlText (T ("关于", "About")));
+    settingsButton.setButtonText (ml::grid::controlText (T ("设置", "Settings")));
+    themeButton.setButtonText (ml::grid::controlText (ml::theme::dark ? T ("深色", "Dark") : T ("浅色", "Light")));
+    languageButton.setButtonText (ml::grid::controlText (en ? juce::String::fromUTF8 ("中文") : juce::String ("EN")));
+    exportButton.setButtonText (ml::grid::controlText (T ("导出报告", "Export")));
 
     const float trim = processor.getMonitorTrimDb();
-    monitorButton.setButtonText (processor.isMonitorMatch()
+    monitorButton.setButtonText (ml::grid::controlText (processor.isMonitorMatch()
                                      ? T ("等响 ", "match ") + ml::sgn (trim) + " dB"
-                                     : T ("等响监听", "Match"));
+                                     : T ("等响监听", "Match")));
     monitorButton.setTooltip (T ("等响监听：按参考 LUFS 自动衰减 / 提升监听电平；关闭时输出逐位不变",
                                  "Loudness-matched monitor: trim to the reference LUFS; bypassed when off"));
 
@@ -71,6 +75,13 @@ void MasterLensAudioProcessorEditor::updateTexts()
 //==============================================================================
 bool MasterLensAudioProcessorEditor::keyPressed (const juce::KeyPress& key)
 {
+#if JUCE_DEBUG && defined(MASTERLENS_ENABLE_INSPECTOR)
+    if (key.getModifiers().isCommandDown() && (key.getTextCharacter() == 'i' || key.getTextCharacter() == 'I'))
+    {
+        showInspector();
+        return true;
+    }
+#endif
     if (auto* focused = juce::Component::getCurrentlyFocusedComponent())
         if (dynamic_cast<juce::TextEditor*> (focused) != nullptr)
             return false;

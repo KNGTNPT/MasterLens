@@ -45,13 +45,13 @@ void LevelMeters::paintRow (juce::Graphics& g, juce::Rectangle<int> area, const 
     auto row = area;
 
     g.setColour (theme::textDim);
-    g.setFont (uiFont (tokens::label));
+    g.setFont (getLabelFont());
     g.drawText (label, row.getX(), row.getY() + 2, 66, 17, juce::Justification::centredLeft);
 
     if (row.getHeight() >= 36)
     {
         g.setColour (theme::textFaint);
-        g.setFont (uiFont (tokens::unit));
+        g.setFont (getLabelFont());
         g.drawText (windowText, row.getX(), row.getY() + 20, 66, 14, juce::Justification::centredLeft);
     }
 
@@ -59,7 +59,7 @@ void LevelMeters::paintRow (juce::Graphics& g, juce::Rectangle<int> area, const 
     const bool over = valueDb > 0.0f;
 
     g.setColour (theme::text);
-    g.setFont (monoFont (16.0f, true));
+    g.setFont (getValueFont());
     g.drawText (valueDb <= -99.0f ? noValue() : num (valueDb), readout,
                 juce::Justification::centredRight);
 
@@ -122,7 +122,7 @@ void LevelMeters::paint (juce::Graphics& g)
     if (b.getHeight() < 40)
         return;
 
-    auto scaleRow = b.removeFromBottom (14);
+    auto scaleRow = b.removeFromBottom (16);
     const int rowH = b.getHeight() / 2;
 
     paintRow (g, b.removeFromTop (rowH), T ("M 瞬时", "M momentary"), "400 ms",
@@ -136,7 +136,7 @@ void LevelMeters::paint (juce::Graphics& g)
     const auto normFor = [] (float db) { return juce::jlimit (0.0f, 1.0f, (db + 36.0f) / 36.0f); };
     const float labelDbs[] { -36.0f, -24.0f, -12.0f, -6.0f, 0.0f };
 
-    g.setFont (monoFont (tokens::unit));
+    g.setFont (getValueFont());
 
     for (float db : labelDbs)
     {

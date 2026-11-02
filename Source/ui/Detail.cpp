@@ -144,7 +144,7 @@ DetailArea::DetailArea()
 
     for (auto* e : { &albumTrackName, &albumNameEditor })
     {
-        e->setFont (uiFont (tokens::label));
+        e->setFont (getLabelFont());
         e->setColour (juce::TextEditor::backgroundColourId, theme::cardAlt);
         e->setColour (juce::TextEditor::outlineColourId, theme::border);
         e->setColour (juce::TextEditor::textColourId, theme::text);
@@ -162,34 +162,34 @@ DetailArea::DetailArea()
 
 void DetailArea::refreshTexts()
 {
-    refImport.setButtonText (T ("导入参考轨", "Import reference"));
-    refClear.setButtonText (T ("清除", "Clear"));
-    refPlay.setButtonText (refPlaying ? T ("参考 A/B 开", "Ref A/B on")
-                                      : T ("参考 A/B", "Ref A/B"));
+    refImport.setButtonText (ml::grid::controlText (T ("导入参考轨", "Import reference")));
+    refClear.setButtonText (ml::grid::controlText (T ("清除", "Clear")));
+    refPlay.setButtonText (ml::grid::controlText (refPlaying ? T ("参考 A/B 开", "Ref A/B on")
+                                      : T ("参考 A/B", "Ref A/B")));
     refPlay.setTooltip (T ("在插件内按宿主播放头播放参考轨；与等响监听一起构成 A/B",
                             "Play the reference inside the plug-in at the host playhead; pair with loudness matching"));
-    refAlign.setButtonText (T ("粗略对齐", "Auto align"));
+    refAlign.setButtonText (ml::grid::controlText (T ("粗略对齐", "Auto align")));
     refAlign.setTooltip (T ("用最近 30 s 短时响度包络做粗略自动对齐；不是采样级同步",
                              "Coarse envelope alignment over the last 30 s; not sample-accurate"));
 
-    spectrumViewButtons[0].setButtonText (T ("频谱", "Spectrum"));
-    spectrumViewButtons[1].setButtonText (T ("频谱图", "Waterfall"));
-    spectrumViewButtons[2].setButtonText (T ("频段热力", "Band heat"));
+    spectrumViewButtons[0].setButtonText (ml::grid::controlText (T ("频谱", "Spectrum")));
+    spectrumViewButtons[1].setButtonText (ml::grid::controlText (T ("频谱图", "Waterfall")));
+    spectrumViewButtons[2].setButtonText (ml::grid::controlText (T ("频段热力", "Band heat")));
 
     for (auto& b : spectrumViewButtons)
         b.getProperties().set ("mlSegment", true);
     spectrumViewButtons[(size_t) spectrumView].setToggleState (true, juce::dontSendNotification);
 
-    reportButton.setButtonText (T ("导出报告", "Export report"));
-    markButton.setButtonText (T ("+ 打标记", "+ Marker"));
-    markerExport.setButtonText (T ("导出标记 CSV", "Export markers"));
-    markerImport.setButtonText (T ("导入标记 CSV", "Import markers"));
-    albumCapture.setButtonText (T ("采集本曲", "Capture track"));
-    albumProof.setButtonText (T ("导出证明", "Proof"));
-    albumImport.setButtonText (T ("导入基准", "Import"));
-    albumClearButton.setButtonText (T ("清空", "Clear"));
-    albumExportMarkers.setButtonText (T ("导出标记", "Export markers"));
-    albumImportMarkers.setButtonText (T ("导入标记", "Import markers"));
+    reportButton.setButtonText (ml::grid::controlText (T ("导出报告", "Export report")));
+    markButton.setButtonText (ml::grid::controlText (T ("+ 打标记", "+ Marker")));
+    markerExport.setButtonText (ml::grid::controlText (T ("导出标记 CSV", "Export markers")));
+    markerImport.setButtonText (ml::grid::controlText (T ("导入标记 CSV", "Import markers")));
+    albumCapture.setButtonText (ml::grid::controlText (T ("采集本曲", "Capture track")));
+    albumProof.setButtonText (ml::grid::controlText (T ("导出证明", "Proof")));
+    albumImport.setButtonText (ml::grid::controlText (T ("导入基准", "Import")));
+    albumClearButton.setButtonText (ml::grid::controlText (T ("清空", "Clear")));
+    albumExportMarkers.setButtonText (ml::grid::controlText (T ("导出标记", "Export markers")));
+    albumImportMarkers.setButtonText (ml::grid::controlText (T ("导入标记", "Import markers")));
 
     genreBox.clear (juce::dontSendNotification);
 
@@ -202,18 +202,18 @@ void DetailArea::refreshTexts()
     genreBox.setTooltip (T ("曲风参照：标准值来自 1.5 曲风表；可用下方滑块调整响度战争参与度。",
                             "Genre reference from the static table; use the slider to set loudness-war participation."));
 
-    applyTarget.setButtonText (T ("应用为目标", "Apply as target"));
+    applyTarget.setButtonText (ml::grid::controlText (T ("应用为目标", "Apply as target")));
 
-    fileChoose.setButtonText (T ("选择文件", "Choose files"));
-    fileFolder.setButtonText (T ("选择文件夹", "Choose folder"));
-    fileAddAlbum.setButtonText (T ("加入专辑", "Add to album"));
-    fileExport.setButtonText (T ("导出 QC", "Export QC"));
-    fileViewButtons[0].setButtonText (T ("样本证据", "Evidence"));
-    fileViewButtons[1].setButtonText (T ("分频折叠", "Mono bands"));
-    fileViewButtons[2].setButtonText (T ("增益预算", "Gain budget"));
+    fileChoose.setButtonText (ml::grid::controlText (T ("选择文件", "Choose files")));
+    fileFolder.setButtonText (ml::grid::controlText (T ("选择文件夹", "Choose folder")));
+    fileAddAlbum.setButtonText (ml::grid::controlText (T ("加入专辑", "Add to album")));
+    fileExport.setButtonText (ml::grid::controlText (T ("导出 QC", "Export QC")));
+    fileViewButtons[0].setButtonText (ml::grid::controlText (T ("样本证据", "Evidence")));
+    fileViewButtons[1].setButtonText (ml::grid::controlText (T ("分频折叠", "Mono bands")));
+    fileViewButtons[2].setButtonText (ml::grid::controlText (T ("增益预算", "Gain budget")));
     fileExport.setTooltip (T ("导出 CSV 摘要与完整 JSON 证据（时间、样本、源文件 SHA256）",
                               "Export CSV summary + full JSON evidence (time, samples, source SHA256)"));
-    fileClear.setButtonText (T ("清空结果", "Clear results"));
+    fileClear.setButtonText (ml::grid::controlText (T ("清空结果", "Clear results")));
     fileChoose.setTooltip (T ("离线分析 WAV / AIFF / FLAC，秒级出完整报告",
                                "Offline analysis of WAV / AIFF / FLAC in seconds"));
     fileFolder.setTooltip (T ("递归分析整个专辑文件夹，并自动填入门禁表",
@@ -230,7 +230,7 @@ void DetailArea::refreshTexts()
     };
 
     for (int i = 0; i < (int) albumRuleButtons.size(); ++i)
-        albumRuleButtons[(size_t) i].setButtonText (ruleLabels[i]);
+        albumRuleButtons[(size_t) i].setButtonText (ml::grid::controlText (ruleLabels[i]));
 }
 
 void DetailArea::invalidateDisplays()
@@ -288,7 +288,7 @@ void DetailArea::hideAllChildren()
 
 juce::Rectangle<int> DetailArea::contentArea() const
 {
-    return getLocalBounds().reduced (20, 12);
+    return getLocalBounds().reduced (16);
 }
 
 void DetailArea::setPage (PageId p)
@@ -364,8 +364,8 @@ void DetailArea::setSpectrumView (int view)
 void DetailArea::setReferencePlaybackState (bool playing, const juce::String&)
 {
     refPlaying = playing;
-    refPlay.setButtonText (refPlaying ? T ("参考 A/B 开", "Ref A/B on")
-                                      : T ("参考 A/B", "Ref A/B"));
+    refPlay.setButtonText (ml::grid::controlText (refPlaying ? T ("参考 A/B 开", "Ref A/B on")
+                                      : T ("参考 A/B", "Ref A/B")));
     refPlay.setColour (juce::TextButton::buttonOnColourId,
                        refPlaying ? theme::accentSoft : theme::cardAlt);
     repaint();
@@ -399,8 +399,8 @@ void DetailArea::mouseDown (const juce::MouseEvent& e)
 
     if (page == PageId::album)
     {
-        auto area = contentArea().withTrimmedTop (30);
-        area.removeFromBottom (70);
+        auto area = contentArea().withTrimmedTop (32);
+        area.removeFromBottom (72);
         area.removeFromTop (44);
 
         const int tableW = juce::roundToInt ((float) area.getWidth() * 0.62f);
@@ -412,7 +412,7 @@ void DetailArea::mouseDown (const juce::MouseEvent& e)
 
         for (int i = 0; i < (int) state.albumGate.risks.size() && i < 4; ++i)
         {
-            auto row = side.removeFromTop (26);
+            auto row = side.removeFromTop (28);
 
             if (row.contains (e.getPosition()) && onAuditionRiskDetail != nullptr)
             {
@@ -566,7 +566,7 @@ void DetailArea::resized()
     hideAllChildren();
 
     auto area = contentArea();
-    area.removeFromTop (30);   // page header
+    if (page != PageId::spectrum) area.removeFromTop (32);   // page header
 
     if (emptyMode && page != PageId::files && page != PageId::album && page != PageId::target)
         return;
@@ -576,7 +576,7 @@ void DetailArea::resized()
         case PageId::loudness:
         {
             auto console = area.removeFromBottom (juce::jmin (116, area.getHeight()/3));
-            area.removeFromBottom (22);
+            area.removeFromBottom (24);
             const int phaseWidth = juce::jmin (220, console.getWidth()/3);
             loudnessSideArea = console.removeFromRight (phaseWidth);
             console.removeFromRight (24);
@@ -590,44 +590,25 @@ void DetailArea::resized()
 
         case PageId::spectrum:
         {
-            auto modes = area.removeFromTop (26);
-            area.removeFromTop (6);
-            spectrumSideArea = area.removeFromBottom (78);
-            area.removeFromBottom (14);
-
-            bands.setVisible (false);
-
-            auto buttons = area.removeFromBottom (28);
-            area.removeFromBottom (6);
-            spectrum.setBounds (area);
-            spectrogram.setBounds (area);
-
-            auto modeRow = modes.withTrimmedRight (4);
-            const int modeW = juce::jlimit (54, 72, (modeRow.getWidth() - 1) / 3);
-            modeRow = modeRow.removeFromRight (modeW * 3);
-
-            for (auto& b : spectrumViewButtons)
-            {
-                b.setBounds (modeRow.removeFromLeft (modeW).withSizeKeepingCentre (modeW, 24));
-                b.setVisible (true);
-            }
-
-            auto refRow = buttons.withTrimmedRight (4);
-            refClear.setBounds (refRow.removeFromRight (54).withSizeKeepingCentre (54, 24));
-            refRow.removeFromRight (4);
-            refAlign.setBounds (refRow.removeFromRight (62).withSizeKeepingCentre (62, 24));
-            refRow.removeFromRight (4);
-            refImport.setBounds (refRow.removeFromRight (92).withSizeKeepingCentre (92, 24));
-            refRow.removeFromRight (4);
-            refPlay.setBounds (refRow.removeFromRight (78).withSizeKeepingCentre (78, 24));
-
+            // The editor owns the 56/44 vertical split. Keep controls in one
+            // compact row; the graph retains its own protected 32-point anchors.
+            auto graph = getLocalBounds().withHeight (spectrumSplit);
+            auto controls = getLocalBounds().withTrimmedTop (spectrumSplit + 8).withHeight (24).reduced (16, 0);
+            controls.removeFromLeft (144);
+            spectrumSideArea = spectrumBandHeight > 0
+                ? getLocalBounds().removeFromBottom (spectrumBandHeight).reduced (16, 0) : juce::Rectangle<int>();
+            const int modeWidth = 80;
+            grid::row (controls, { &spectrumViewButtons[0], &spectrumViewButtons[1], &spectrumViewButtons[2] },
+                       { modeWidth, modeWidth, modeWidth });
+            auto referenceControls = controls.removeFromRight (384);
+            grid::row (referenceControls, { &refPlay, &refImport, &refAlign, &refClear }, { 80, 136, 88, 56 });
+            spectrum.setBounds (grid::bounds (graph));
+            spectrogram.setBounds (grid::bounds (graph));
             spectrum.setVisible (spectrumView == 0);
             spectrogram.setVisible (spectrumView != 0);
             bands.setVisible (false);
-            refImport.setVisible (true);
-            refClear.setVisible (true);
-            refPlay.setVisible (true);
-            refAlign.setVisible (true);
+            for (auto& button : spectrumViewButtons) button.setVisible (true);
+            for (auto* button : { &refPlay, &refImport, &refAlign, &refClear }) button->setVisible (true);
             break;
         }
 
@@ -638,7 +619,7 @@ void DetailArea::resized()
 
         case PageId::diagnostics:
         {
-            auto summary = area.removeFromTop (34);
+            auto summary = area.removeFromTop (36);
             juce::ignoreUnused (summary);
 
             issues.setBounds (area.withWidth (juce::roundToInt ((float) area.getWidth() * 0.56f)));
@@ -648,12 +629,12 @@ void DetailArea::resized()
 
         case PageId::timeline:
         {
-            auto buttons = area.removeFromBottom (34);
+            auto buttons = area.removeFromBottom (36);
             markButton.setBounds (buttons.removeFromRight (104).withSizeKeepingCentre (104, 32));
-            buttons.removeFromRight (6);
-            markerExport.setBounds (buttons.removeFromRight (118).withSizeKeepingCentre (118, 32));
-            buttons.removeFromRight (6);
-            markerImport.setBounds (buttons.removeFromRight (118).withSizeKeepingCentre (118, 32));
+            buttons.removeFromRight (8);
+            markerExport.setBounds (buttons.removeFromRight (120).withSizeKeepingCentre (118, 32));
+            buttons.removeFromRight (8);
+            markerImport.setBounds (buttons.removeFromRight (120).withSizeKeepingCentre (118, 32));
             markButton.setVisible (true);
             markerExport.setVisible (true);
             markerImport.setVisible (true);
@@ -662,24 +643,24 @@ void DetailArea::resized()
 
         case PageId::album:
         {
-            auto bottom = area.removeFromBottom (66);
+            auto bottom = area.removeFromBottom (68);
             auto top = bottom.removeFromTop (32);
 
-            albumNameEditor.setBounds (top.removeFromLeft (130).reduced (0, 2));
-            top.removeFromLeft (5);
+            albumNameEditor.setBounds (top.removeFromLeft (132).reduced (0, 2));
+            top.removeFromLeft (8);
             albumTrackName.setBounds (top.removeFromLeft (112).reduced (0, 2));
-            top.removeFromLeft (5);
-            albumTrackLength.setBounds (top.removeFromLeft (62).reduced (0, 2));
-            top.removeFromLeft (5);
+            top.removeFromLeft (8);
+            albumTrackLength.setBounds (top.removeFromLeft (64).reduced (0, 2));
+            top.removeFromLeft (8);
 
             albumProof.setBounds (top.removeFromRight (88).reduced (0, 1));
-            top.removeFromRight (6);
+            top.removeFromRight (8);
             albumCapture.setBounds (top.removeFromRight (100).reduced (0, 1));
 
             bottom.removeFromTop (4);
             auto rules = bottom;
             albumClearButton.setBounds (rules.removeFromRight (56).reduced (0, 1));
-            rules.removeFromRight (6);
+            rules.removeFromRight (8);
             albumImport.setBounds (rules.removeFromRight (76).reduced (0, 1));
             rules.removeFromRight (8);
 
@@ -736,15 +717,15 @@ void DetailArea::resized()
 
         case PageId::files:
         {
-            auto buttons = area.removeFromBottom (34);
+            auto buttons = area.removeFromBottom (36);
             fileClear.setBounds (buttons.removeFromRight (76).withSizeKeepingCentre (76, 30));
-            buttons.removeFromRight (6);
-            fileExport.setBounds (buttons.removeFromRight (102).withSizeKeepingCentre (102, 30));
-            buttons.removeFromRight (6);
+            buttons.removeFromRight (8);
+            fileExport.setBounds (buttons.removeFromRight (104).withSizeKeepingCentre (102, 30));
+            buttons.removeFromRight (8);
             fileAddAlbum.setBounds (buttons.removeFromRight (92).withSizeKeepingCentre (92, 30));
-            buttons.removeFromRight (6);
+            buttons.removeFromRight (8);
             fileFolder.setBounds (buttons.removeFromRight (96).withSizeKeepingCentre (96, 30));
-            buttons.removeFromRight (6);
+            buttons.removeFromRight (8);
             fileChoose.setBounds (buttons.removeFromRight (96).withSizeKeepingCentre (96, 30));
 
             fileChoose.setVisible (true);
@@ -752,7 +733,7 @@ void DetailArea::resized()
             fileAddAlbum.setVisible (true);
             fileClear.setVisible (true);
             fileExport.setVisible (true);
-            auto tabs = fileInspectorBounds().removeFromTop (30);
+            auto tabs = fileInspectorBounds().removeFromTop (32);
             for (int i = 0; i < 3; ++i)
             {
                 auto& b = fileViewButtons[(size_t) i];
@@ -765,14 +746,14 @@ void DetailArea::resized()
 
         case PageId::target:
         {
-            auto controls = area.removeFromTop (58);
+            auto controls = area.removeFromTop (60);
             auto row = controls;
             const int genreW = juce::jmin (210, row.getWidth() / 3);
             genreBox.setBounds (row.removeFromLeft (genreW)
                                    .withSizeKeepingCentre (genreW, 28));
-            row.removeFromLeft (10);
-            applyTarget.setBounds (row.removeFromRight (118).withSizeKeepingCentre (118, 28));
-            row.removeFromRight (10);
+            row.removeFromLeft (12);
+            applyTarget.setBounds (row.removeFromRight (120).withSizeKeepingCentre (118, 28));
+            row.removeFromRight (12);
             warSlider.setBounds (row.withSizeKeepingCentre (row.getWidth(), 28));
 
             genreBox.setVisible (true);
@@ -784,5 +765,6 @@ void DetailArea::resized()
         default:
             break;
     }
+    grid::alignChildren (*this);
 }
 } // namespace ml

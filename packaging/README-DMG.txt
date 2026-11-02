@@ -1,4 +1,4 @@
-MasterLens 2.1.1 —— 对中、过渡与更可信的时间窗喵
+MasterLens 2.3beta —— 曲线站前面，名字也坐整齐啦
 by BerryStudio · 开发者 KNGTNPT 兰
 =====================================================================
 
@@ -6,6 +6,12 @@ by BerryStudio · 开发者 KNGTNPT 兰
 1. 运行「安装 Install.command」。首次运行未公证版本，可能需要右键 → 打开。
 2. VST3 / AU 复制到用户 Library/Audio/Plug-Ins；独立版放入 ~/Applications。
 3. 重启 DAW，在 BerryStudio 下搜索 MasterLens，并放到母带链最后。
+
+【2.3beta】
+顶部标识放大 30%，上下留白按字形边界统一；BERRYSTUDIO 改用 Geist Mono。
+开发者和版本显示在同一行，中英文自动切换 KNGTNPT 兰 / KNGTNPT LAN。
+频谱曲线独占最高亮度；频谱页保留 32px 安全留白与统一网格。
+本地 beta 快照，测量与声音处理沿用现有实现；完整验收及限制见 docs/instrument-ui.md。
 
 【2.1.1】
 顶栏 11 个标签重新垂直居中；左栏读数数字组在行高里坐正，单位与状态点不再打架。

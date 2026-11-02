@@ -48,21 +48,21 @@ void DetailArea::paintTimeline (juce::Graphics& g)
 
         auto inner = card.reduced (10, 6);
         g.setColour (theme::accent);
-        g.setFont (uiFont (tokens::label, true));
-        g.drawText (region.name, inner.removeFromTop (18), juce::Justification::centredLeft, false);
+        g.setFont (getLabelFont());
+        g.drawText (region.name, inner.removeFromTop (20), juce::Justification::centredLeft, false);
 
         g.setColour (theme::text);
-        g.setFont (monoFont (juce::jmin (14.0f, (float) inner.getHeight() * 0.55f), true));
+        g.setFont (getValueFont());
         g.drawFittedText (num (region.lufs) + " LUFS   "
                               + T ("M ", "M ") + num (region.midLufs) + " / S "
                               + num (region.sideLufs) + "   "
                               + T ("TP ", "TP ") + num (region.truePeak) + " dBTP   "
                               + "PLR " + num (region.plr) + "   "
                               + T ("相关 ", "corr ") + sgn (region.correlation, 2),
-                          inner.removeFromTop (18), juce::Justification::centredLeft, 1, 0.7f);
+                          inner.removeFromTop (20), juce::Justification::centredLeft, 1, 0.7f);
 
         g.setColour (theme::textFaint);
-        g.setFont (uiFont (tokens::unit));
+        g.setFont (getLabelFont());
         g.drawText (T ("100 ms 包络估算 · 拖动底部时间线选择区域",
                        "100 ms envelope estimate - drag the bottom timeline to select"),
                     inner, juce::Justification::centredLeft, false);
@@ -86,10 +86,10 @@ void DetailArea::paintTimeline (juce::Graphics& g)
             auto inner = card.reduced (10, 7);
 
             g.setColour (theme::accent);
-            g.setFont (uiFont (tokens::unit, true));
+            g.setFont (getLabelFont());
             g.drawText (T ("联动事件（同一时间点合并归因）",
                            "LINKED EVENTS (same moment, one cause)"),
-                        inner.removeFromTop (15), juce::Justification::centredLeft, false);
+                        inner.removeFromTop (16), juce::Justification::centredLeft, false);
 
             int shown = 0;
 
@@ -98,7 +98,7 @@ void DetailArea::paintTimeline (juce::Graphics& g)
                 if (inner.getHeight() < 17 || shown >= 3)
                     break;
 
-                auto row = inner.removeFromTop (17);
+                auto row = inner.removeFromTop (20);
                 const auto colour = e.severity >= 2 ? theme::bad
                                   : (e.severity == 1 ? theme::warn : theme::info);
 
@@ -106,7 +106,7 @@ void DetailArea::paintTimeline (juce::Graphics& g)
                 g.fillEllipse ((float) row.getX(), (float) row.getCentreY() - 3.0f, 6.0f, 6.0f);
 
                 g.setColour (theme::textDim);
-                g.setFont (uiFont (tokens::unit));
+                g.setFont (getLabelFont());
                 g.drawText (e.text, row.withTrimmedLeft (12), juce::Justification::centredLeft, true);
                 ++shown;
             }
@@ -115,14 +115,14 @@ void DetailArea::paintTimeline (juce::Graphics& g)
 
     // ---- event list (above the strip) ---------------------------------------
     g.setColour (theme::textDim);
-    g.setFont (uiFont (tokens::aux));
+    g.setFont (getLabelFont());
     g.drawText (T ("事件列表", "Event list"), list.removeFromTop (20),
                 juce::Justification::centredLeft);
 
     if (state.markers.empty())
     {
         g.setColour (theme::textFaint);
-        g.setFont (uiFont (tokens::aux));
+        g.setFont (getLabelFont());
         g.drawFittedText (T ("暂无标记；播放中检出的超限与谐振会自动记录，也可双击时间条手动添加",
                              "No markers yet. Overs and resonances are recorded automatically; "
                              "double-click the strip to add one"),
@@ -137,7 +137,7 @@ void DetailArea::paintTimeline (juce::Graphics& g)
             if (list.getHeight() < 22)
                 break;
 
-            auto row = list.removeFromTop (22);
+            auto row = list.removeFromTop (24);
             const auto colour = it->severity >= 2 ? theme::bad
                               : (it->severity == 1 ? theme::warn : theme::info);
 
@@ -145,12 +145,12 @@ void DetailArea::paintTimeline (juce::Graphics& g)
             g.fillEllipse ((float) row.getX(), (float) row.getCentreY() - 3.0f, 6.0f, 6.0f);
 
             g.setColour (theme::text);
-            g.setFont (monoFont (11.0f, true));
-            g.drawText (fmtTime (it->time), row.withTrimmedLeft (14).withWidth (56),
+            g.setFont (getValueFont());
+            g.drawText (fmtTime (it->time), row.withTrimmedLeft (16).withWidth (56),
                         juce::Justification::centredLeft);
 
             g.setColour (theme::textDim);
-            g.setFont (uiFont (tokens::aux));
+            g.setFont (getLabelFont());
             g.drawText (it->text, row.withTrimmedLeft (76), juce::Justification::centredLeft);
         }
     }
@@ -185,7 +185,7 @@ void DetailArea::paintTimeline (juce::Graphics& g)
     g.fillRoundedRectangle (xFor (timeNow (state.stats)) - 1.0f, y - 18.0f, 2.0f, 36.0f, 1.0f);
 
     g.setColour (theme::textFaint);
-    g.setFont (monoFont (tokens::unit));
+    g.setFont (getValueFont());
     g.drawText ("00:00", inner.getX(), (int) strip.getBottom() - 18, 46, 12,
                 juce::Justification::centredLeft);
     g.drawText (fmtTime (total), inner.getRight() - 56, (int) strip.getBottom() - 18, 56, 12,

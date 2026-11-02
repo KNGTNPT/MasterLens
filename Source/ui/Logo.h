@@ -4,8 +4,9 @@
 
 namespace ml
 {
-/** The MasterLens x BerryStudio mark: a lens aperture around a berry cluster.
+/** The MasterLens x BerryStudio mark: a five-segment aperture around a centre dot.
 
+    Neutral ink and size-adjusted gaps keep the mark subordinate to the data.
     Everything is vector drawn, so the same routine is used for the header (32 px),
     the About / Settings cards (48-64 px), the app icon (1024 px) and the SVG
     published in docs/logo.svg.

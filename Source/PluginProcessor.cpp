@@ -105,6 +105,8 @@ void MasterLensAudioProcessor::prepareToPlay (double sampleRate, int samplesPerB
 
     currentSampleRate = sampleRate > 0.0 ? sampleRate : 48000.0;
 
+    outputSpectrumFifo.prepare (currentSampleRate);
+
     engine.prepare (currentSampleRate, juce::jmax (1, getTotalNumInputChannels()));
     auditionEngine.prepare (currentSampleRate, 2);
     ml::resetStats (stats);
@@ -263,6 +265,10 @@ void MasterLensAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, j
 
     for (int ch = 2; ch < buffer.getNumChannels(); ++ch)
         buffer.clear (ch, 0, numSamples);
+
+    // Independent display tap of what the user actually hears. Existing input
+    // loudness / true-peak / M-S analysis above is deliberately left untouched.
+    outputSpectrumFifo.pushMainOutput (buffer);
 }
 
 //==============================================================================

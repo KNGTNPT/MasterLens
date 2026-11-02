@@ -6,12 +6,12 @@ namespace ml
 {
 void DetailArea::paintAlbum (juce::Graphics& g)
 {
-    auto area = contentArea().withTrimmedTop (30);
-    area.removeFromBottom (70);
+    auto area = contentArea().withTrimmedTop (32);
+    area.removeFromBottom (72);
 
     const auto& a = state.album;
-    auto summary = area.removeFromTop (38);
-    area.removeFromTop (6);
+    auto summary = area.removeFromTop (40);
+    area.removeFromTop (8);
 
     g.setColour (theme::cardAlt);
     g.fillRoundedRectangle (summary.toFloat(), tokens::radiusControl);
@@ -21,7 +21,7 @@ void DetailArea::paintAlbum (juce::Graphics& g)
     auto s = summary.reduced (10, 0);
 
     g.setColour (a.hasMedian ? theme::good : theme::warn);
-    g.setFont (uiFont (tokens::label, true));
+    g.setFont (getLabelFont());
     g.drawText (a.hasMedian ? T ("专辑基准已建立", "Album baseline ready")
                             : T ("至少采集 2 首生成中位基准", "Capture at least 2 tracks for a median"),
                 s.removeFromLeft (juce::jmin (260, s.getWidth() / 2)), juce::Justification::centredLeft);
@@ -29,14 +29,14 @@ void DetailArea::paintAlbum (juce::Graphics& g)
     const auto& gate = state.albumGate;
 
     g.setColour (gate.blocked ? theme::bad : (gate.incomplete ? theme::warn : theme::good));
-    g.setFont (monoFont (12.0f, true));
+    g.setFont (getValueFont());
     g.drawText (gate.blocked ? T ("阻断 RELEASE BLOCK", "RELEASE BLOCK")
                              : (gate.incomplete ? T ("未采集 INCOMPLETE", "INCOMPLETE")
                                                 : T ("放行 RELEASE PASS", "RELEASE PASS")),
-                s.removeFromRight (190), juce::Justification::centredRight);
+                s.removeFromRight (192), juce::Justification::centredRight);
 
     g.setColour (theme::textFaint);
-    g.setFont (uiFont (tokens::unit));
+    g.setFont (getLabelFont());
     g.drawText ("rev " + juce::String (a.revision) + ml::sep()
                     + juce::String ((int) a.tracks.size()) + T (" 首", " tracks") + ml::sep()
                     + T ("新增 ", "new ") + juce::String (state.albumDiff.added)
@@ -51,14 +51,14 @@ void DetailArea::paintAlbum (juce::Graphics& g)
     if (a.tracks.empty())
     {
         g.setColour (theme::textDim);
-        g.setFont (uiFont (tokens::section));
+        g.setFont (getLabelFont());
         g.drawFittedText (T ("在专辑页输入曲目名，点「采集本曲」；每首歌曲检查完成后采集一次。",
                              "Type a track name, then Capture track after checking each song."),
                           area, juce::Justification::centred, 3);
         return;
     }
 
-    auto header = table.removeFromTop (22);
+    auto header = table.removeFromTop (24);
     const int wTrack = juce::roundToInt ((float) table.getWidth() * 0.27f);
     const int wLufs  = juce::roundToInt ((float) table.getWidth() * 0.11f);
     const int wDelta = juce::roundToInt ((float) table.getWidth() * 0.12f);
@@ -67,7 +67,7 @@ void DetailArea::paintAlbum (juce::Graphics& g)
     const int wTp    = juce::roundToInt ((float) table.getWidth() * 0.13f);
 
     g.setColour (theme::textFaint);
-    g.setFont (uiFont (tokens::unit));
+    g.setFont (getLabelFont());
 
     auto h = header;
     g.drawText (T ("曲目", "Track"), h.removeFromLeft (wTrack), juce::Justification::centredLeft);
@@ -114,11 +114,11 @@ void DetailArea::paintAlbum (juce::Graphics& g)
 
         auto r = row;
         g.setColour (colour);
-        g.setFont (uiFont (tokens::label, sev >= 2));
+        g.setFont (getLabelFont());
         g.drawFittedText (t.label, r.removeFromLeft (wTrack).withTrimmedRight (4),
                           juce::Justification::centredLeft, 1);
 
-        g.setFont (monoFont (tokens::label));
+        g.setFont (getValueFont());
         g.drawText (juce::String (t.stats.integrated, 1), r.removeFromLeft (wLufs),
                     juce::Justification::centredRight);
 
@@ -143,7 +143,7 @@ void DetailArea::paintAlbum (juce::Graphics& g)
         g.drawText (juce::String (t.stats.truePeakDb, 1), r.removeFromLeft (wTp), juce::Justification::centredRight);
 
         g.setColour (sev >= 2 ? theme::bad : (sev == 1 ? theme::warn : theme::good));
-        g.setFont (uiFont (tokens::unit));
+        g.setFont (getLabelFont());
         g.drawText (sev >= 2 ? T ("阻断", "Block") : (sev == 1 ? T ("注意", "Warn") : T ("正常", "OK")),
                     r, juce::Justification::centredRight);
     }
@@ -157,14 +157,14 @@ void DetailArea::paintAlbum (juce::Graphics& g)
     g.drawRoundedRectangle (gateBox.toFloat().reduced (0.5f), tokens::radiusControl, 1.0f);
 
     auto gateText = gateBox.reduced (10, 6);
-    g.setFont (uiFont (tokens::label, true));
+    g.setFont (getLabelFont());
     g.drawText (gate.blocked ? T ("交付门禁：阻断", "Gate: blocked")
                              : (gate.incomplete ? T ("交付门禁：未采集", "Gate: incomplete")
                                                 : T ("交付门禁：放行", "Gate: pass")),
                 gateText.removeFromTop (20), juce::Justification::centredLeft);
 
     g.setColour (theme::textDim);
-    g.setFont (uiFont (tokens::unit));
+    g.setFont (getLabelFont());
     g.drawFittedText (gate.blockers > 0
                           ? juce::String (gate.blockers) + T (" 个阻断项；先处理排序前 3 项。",
                                                               " blockers; fix the top 3 risks first.")
@@ -178,8 +178,8 @@ void DetailArea::paintAlbum (juce::Graphics& g)
     auto risks = side.removeFromTop (juce::jmax (72, side.getHeight() / 2));
 
     g.setColour (theme::textDim);
-    g.setFont (uiFont (tokens::unit, true));
-    g.drawText (T ("整张专辑风险排序", "Album risk ranking"), risks.removeFromTop (18),
+    g.setFont (getLabelFont());
+    g.drawText (T ("整张专辑风险排序", "Album risk ranking"), risks.removeFromTop (20),
                 juce::Justification::centredLeft);
 
     int shown = 0;
@@ -189,16 +189,16 @@ void DetailArea::paintAlbum (juce::Graphics& g)
         if (shown >= 4 || risks.getHeight() < 26)
             break;
 
-        auto row = risks.removeFromTop (26);
+        auto row = risks.removeFromTop (28);
         g.setColour (r.severity >= 2 ? theme::bad : theme::warn);
-        g.fillRoundedRectangle (row.removeFromLeft (3).toFloat(), 1.5f);
-        row.removeFromLeft (6);
+        g.fillRoundedRectangle (row.removeFromLeft (4).toFloat(), 1.5f);
+        row.removeFromLeft (8);
 
-        g.setFont (uiFont (tokens::unit, r.severity >= 2));
-        g.drawFittedText (r.track + " · " + r.dimension, row.removeFromTop (14),
+        g.setFont (getLabelFont());
+        g.drawFittedText (r.track + " · " + r.dimension, row.removeFromTop (16),
                           juce::Justification::centredLeft, 1);
         g.setColour (theme::textFaint);
-        g.setFont (monoFont (tokens::unit));
+        g.setFont (getValueFont());
         g.drawFittedText (r.detail + "  @" + r.time, row, juce::Justification::centredLeft, 1);
         ++shown;
     }
@@ -206,7 +206,7 @@ void DetailArea::paintAlbum (juce::Graphics& g)
     side.removeFromTop (4);
 
     g.setColour (theme::textFaint);
-    g.setFont (uiFont (tokens::unit));
+    g.setFont (getLabelFont());
     g.drawFittedText (T ("规则：", "Rules: ")
                           + juce::String (a.rules.lufsSpread, 1) + " LU" + ml::sep()
                           + juce::String (a.rules.bandSpread, 1) + " dB" + ml::sep()

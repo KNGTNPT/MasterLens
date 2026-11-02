@@ -36,8 +36,8 @@ void SnapshotChip::paint (juce::Graphics& g)
     g.drawRoundedRectangle (r, tokens::radiusControl, 1.0f);
 
     g.setColour (active ? theme::accent : (filled ? theme::text : theme::textDim));
-    g.setFont (monoFont (12.0f, true));
-    g.drawText (letter, getLocalBounds().withTrimmedRight (10), juce::Justification::centred);
+    g.setFont (getValueFont());
+    g.drawText (letter, getLocalBounds().withTrimmedRight (12), juce::Justification::centred);
 
     if (filled)
     {
@@ -89,7 +89,7 @@ AboutPanel::AboutPanel()
 {
     setOpaque (false);
 
-    closeButton.setButtonText (T ("关闭", "Close"));
+    closeButton.setButtonText (ml::grid::controlText (T ("关闭", "Close")));
     closeButton.onClick = [this] { if (onClose != nullptr) onClose(); };
     addAndMakeVisible (closeButton);
 }
@@ -101,7 +101,7 @@ void AboutPanel::setVisibleAndFocus (bool shouldBeVisible)
     if (shouldBeVisible)
     {
         toFront (true);
-        closeButton.setButtonText (T ("关闭", "Close"));
+        closeButton.setButtonText (ml::grid::controlText (T ("关闭", "Close")));
         closeButton.grabKeyboardFocus();
     }
 }
@@ -121,51 +121,51 @@ void AboutPanel::paint (juce::Graphics& g)
     paintLogoMark (g, logo);
 
     g.setColour (theme::text);
-    g.setFont (uiFont (22.0f, true));
+    g.setFont (getLabelFont());
     g.drawText (kProductName, (int) logo.getRight() + 16, (int) logo.getY() - 2, 300, 30,
                 juce::Justification::centredLeft, false);
 
     g.setColour (theme::cyan);
-    g.setFont (uiFont (tokens::label, true));
+    g.setFont (getLabelFont());
     g.drawText (T ("一个 BerryStudio 产品", "A BerryStudio product"),
                 (int) logo.getRight() + 16, (int) logo.getY() + 26, 330, 18,
                 juce::Justification::centredLeft, false);
 
     g.setColour (theme::textDim);
-    g.setFont (uiFont (tokens::aux));
+    g.setFont (getLabelFont());
     g.drawText (T ("母带响度 · 平台归一化 · 信号健康", "Loudness · normalisation · signal health"),
                 (int) logo.getRight() + 16, (int) logo.getY() + 44, 360, 18,
                 juce::Justification::centredLeft, false);
 
-    paintBerryWordmark (g, inner.removeFromTop (18), theme::textFaint, 9.0f,
+    paintBerryWordmark (g, inner.removeFromTop (20), theme::textFaint, 9.0f,
                         juce::Justification::right);
 
     inner.removeFromTop (8);
 
     g.setColour (theme::divider);
     g.drawHorizontalLine (inner.getY(), (float) inner.getX(), (float) inner.getRight());
-    inner.removeFromTop (10);
+    inner.removeFromTop (12);
 
     const auto drawRow = [&g, &inner] (const juce::String& label, const juce::String& value,
                                        juce::Colour colour)
     {
-        auto r = inner.removeFromTop (26);
+        auto r = inner.removeFromTop (28);
         g.setColour (theme::textFaint);
-        g.setFont (uiFont (tokens::aux));
+        g.setFont (getLabelFont());
         g.drawText (label, r.removeFromLeft (128), juce::Justification::centredLeft);
         g.setColour (colour);
-        g.setFont (uiFont (tokens::label, true));
+        g.setFont (getLabelFont());
         g.drawText (value, r, juce::Justification::centredLeft);
     };
 
     drawRow (T ("版本", "Version"), kVersion, theme::text);
-    drawRow (T ("开发者", "Developer"), juce::String::fromUTF8 (kDeveloper), theme::accent);
+    drawRow (T ("开发者", "Developer"), juce::String::fromUTF8 (Localisation::isEnglish() ? kDeveloperEnglish : kDeveloper), theme::accent);
     drawRow (T ("机构", "Organisation"), kOrganisation, theme::violet);
 
     inner.removeFromTop (8);
 
     g.setColour (theme::textFaint);
-    g.setFont (uiFont (tokens::aux));
+    g.setFont (getLabelFont());
     g.drawFittedText (T ("测量标准：ITU-R BS.1770-4 · EBU R128 · EBU Tech 3342\n"
                          "真峰值 4× 过采样插值 · 零延迟 · 不修改音频\n"
                          "Built with JUCE 8",
@@ -179,6 +179,7 @@ void AboutPanel::resized()
 {
     const auto card = aboutCardBounds (getLocalBounds());
     closeButton.setBounds (card.getRight() - 124, card.getBottom() - 46, 96, 30);
+    grid::alignChildren (*this);
 }
 
 void AboutPanel::mouseDown (const juce::MouseEvent& e)

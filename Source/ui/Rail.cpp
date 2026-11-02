@@ -11,8 +11,8 @@ ModuleRail::ModuleRail()
 
 juce::Rectangle<int> ModuleRail::rowBounds (int index) const
 {
-    const int x0 = getWidth() * index / numPages;
-    const int x1 = getWidth() * (index + 1) / numPages;
+    const int x0 = grid::down (getWidth() * index / numPages);
+    const int x1 = grid::down (getWidth() * (index + 1) / numPages);
     return { x0, 0, x1 - x0, getHeight() };
 
 }
@@ -143,8 +143,8 @@ void ModuleRail::paint (juce::Graphics& g)
                 icon.startNewSubPath(cx-7,cy+6);icon.lineTo(cx-7,cy-6);icon.lineTo(cx+2,cy-6);icon.lineTo(cx+7,cy-1);icon.lineTo(cx+7,cy+6);icon.closeSubPath();break;
         }
         g.strokePath(icon,juce::PathStrokeType(1.15f));
-        g.setFont (uiFont (getWidth()<980 ? 10.0f : 11.0f, sel));
-        g.drawText (T (zh[i], en[i]), r.withTrimmedTop (27).withTrimmedBottom (3),
+        g.setFont (getLabelFont());
+        g.drawText (T (zh[i], en[i]).toUpperCase(), r.withTrimmedTop (28).withTrimmedBottom (4),
                     juce::Justification::centred, false);
     }
 
@@ -154,11 +154,7 @@ void ModuleRail::paint (juce::Graphics& g)
     const float x = juce::jlimit (0.0f, (float) getWidth() - tabW,
                                   (float) getWidth() * visualSelected / (float) numPages);
     juce::Rectangle<float> indicator (x, 0.0f, tabW, (float) getHeight());
-    g.setGradientFill (juce::ColourGradient (theme::accent.withAlpha (0.0f),
-        indicator.getCentreX(), 0.0f, theme::accent.withAlpha (0.09f),
-        indicator.getCentreX(), indicator.getBottom(), false));
-    g.fillRect (indicator);
-    g.setColour (theme::accent);
+    g.setColour (theme::accent.withAlpha (0.65f));
     g.fillRect (indicator.getX() + 14.0f, indicator.getBottom() - 2.0f,
                 juce::jmax (8.0f, indicator.getWidth() - 28.0f), 2.0f);
 }

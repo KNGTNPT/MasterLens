@@ -1,4 +1,5 @@
 #include "PluginEditor.h"
+#include "ui/Layout.h"
 
 using ml::T;
 
@@ -24,8 +25,8 @@ juce::Rectangle<int> MasterLensAudioProcessorEditor::baseBounds() const
     const float s = uiScale > 0.01f ? uiScale : 1.0f;
 
     return { 0, 0,
-             juce::jmax (1, juce::roundToInt ((float) getWidth() / s)),
-             juce::jmax (1, juce::roundToInt ((float) getHeight() / s)) };
+             ml::grid::down (juce::roundToInt ((float) getWidth() / s)),
+             ml::grid::down (juce::roundToInt ((float) getHeight() / s)) };
 }
 
 //==============================================================================
@@ -67,58 +68,79 @@ float MasterLensAudioProcessorEditor::computeInitialUiScale() const
 void MasterLensAudioProcessorEditor::resized()
 {
     const auto base = baseBounds();
-    auto b = base;
-    headerArea = b.removeFromTop (64);
-    footerArea = b.removeFromBottom (26);
-    paramArea = b.removeFromBottom (76);
-    rail.setBounds (b.removeFromTop (48).reduced (18, 0));
-    auto body = b.reduced (18, 16);
-    const int readoutW = base.getWidth() < 1000 ? 180 : 210;
-    readout.setBounds (body.removeFromLeft (readoutW));
-    body.removeFromLeft (18);
-    detail.setBounds (body);
+    const int alignedWidth = ml::ui::scaled (base.getWidth());
+    const int alignedHeight = ml::ui::scaled (base.getHeight());
+    if (getWidth() != alignedWidth || getHeight() != alignedHeight)
+    {
+        setSize (alignedWidth, alignedHeight);
+        return;
+    }
+    auto remaining = base;
+    headerArea = remaining.removeFromTop (64);
+    footerArea = remaining.removeFromBottom (32);
+    paramArea = remaining.removeFromBottom (96);
+    rail.setBounds (remaining.removeFromTop (48).reduced (16, 0));
+    auto body = remaining.reduced (16);
 
-    auto h = headerArea.reduced (22, 16);
+    if (selectedPage == (int) ml::PageId::spectrum)
+    {
+        const int spectrumHeight = ml::grid::down ((body.getHeight() - 8) * 56 / 100);
+        spectrumArea = body.removeFromTop (spectrumHeight);
+        body.removeFromTop (8);
+        readingsArea = body;
+        const int bandReadings = readingsArea.getHeight() >= 180 ? 64 : 0;
+        detail.setSpectrumSplit (spectrumHeight, bandReadings);
+        detail.setBounds (remaining.reduced (16));
+        readout.setBounds (readingsArea.withTrimmedTop (32).withTrimmedBottom (bandReadings));
+        readout.toFront (false);
+    }
+    else
+    {
+        spectrumArea = {};
+        readingsArea = body.removeFromLeft (base.getWidth() < 1000 ? 176 : 208);
+        readout.setBounds (readingsArea);
+        body.removeFromLeft (16);
+        detail.setBounds (body);
+    }
+
     const bool english = ml::Localisation::isEnglish();
-    languageButton.setBounds (h.removeFromRight (36));
-    h.removeFromRight (6);
-    settingsButton.setBounds (h.removeFromRight (english ? 68 : 48));
-    h.removeFromRight (6);
-    aboutButton.setBounds (h.removeFromRight (english ? 52 : 38));
-    h.removeFromRight (6);
-    themeButton.setBounds (h.removeFromRight (42));
+    auto headerControls = headerArea.reduced (24, 16);
+    const int settingsWidth = english ? 72 : 48;
+    const int aboutWidth = english ? 56 : 40;
+    const int controlsWidth = 48 + aboutWidth + settingsWidth + 40 + 3 * 8;
+    ml::grid::row (headerControls.removeFromRight (controlsWidth),
+                  { &themeButton, &aboutButton, &settingsButton, &languageButton },
+                  { 48, aboutWidth, settingsWidth, 40 });
 
-    auto desk = paramArea.reduced (24, 14);
-    auto reference = desk.removeFromLeft (base.getWidth() < 1000 ? 128 : 190);
-    presetBox.setBounds (reference.withTrimmedTop (18).withHeight (28));
-    desk.removeFromLeft (base.getWidth() < 1000 ? 12 : 20);
-    auto ref = desk.removeFromLeft (base.getWidth() < 1000 ? 114 : 142);
-    targetCaption.setBounds (ref.removeFromTop (18));
-    targetSlider.setBounds (ref.withHeight (28));
-    desk.removeFromLeft (base.getWidth() < 1000 ? 12 : 18);
-    auto ceil = desk.removeFromLeft (base.getWidth() < 1000 ? 114 : 142);
-    ceilingCaption.setBounds (ceil.removeFromTop (18));
-    ceilingSlider.setBounds (ceil.withHeight (28));
+    auto desk = paramArea.reduced (24, 8);
+    auto basis = desk.removeFromLeft (base.getWidth() < 1000 ? 136 : 192);
+    presetBox.setBounds (basis.withTrimmedTop (32).withHeight (32));
+    desk.removeFromLeft (16);
+    auto targets = desk.removeFromLeft (176);
+    auto captions = targets.removeFromTop (16);
+    ml::grid::row (captions, { &targetCaption, &ceilingCaption }, { 80, 80 });
+    ml::grid::row (targets.withHeight (64), { &targetSlider, &ceilingSlider }, { 80, 80 });
+    infoButton.setVisible (false);
     targetCaption.setVisible (true);
     ceilingCaption.setVisible (true);
-    infoButton.setVisible (false);
-
-    auto actions = desk.withTrimmedTop (14).withHeight (30);
-    exportButton.setBounds (actions.removeFromRight (84));
-    actions.removeFromRight (8);
-    snapshotB.setBounds (actions.removeFromRight (26));
-    actions.removeFromRight (4);
-    snapshotA.setBounds (actions.removeFromRight (26));
-    actions.removeFromRight (8);
-    monitorButton.setBounds (actions.removeFromRight (base.getWidth() < 1000 ? 64 : 88));
-    actions.removeFromRight (8);
-    clearButton.setBounds (actions.removeFromRight (english ? 48 : 40));
-    actions.removeFromRight (4);
-    holdButton.setBounds (actions.removeFromRight (english ? 42 : 34));
+    desk.removeFromLeft (16);
+    const int holdWidth = english ? 48 : 40;
+    const int clearWidth = english ? 48 : 40;
+    const int monitorWidth = base.getWidth() < 1000 ? 64 : 88;
+    const int actionWidth = holdWidth + clearWidth + monitorWidth + 32 + 32 + 88 + 5 * 8;
+    auto actions = desk.withTrimmedTop (24).withHeight (32).removeFromRight (actionWidth);
+    ml::grid::row (actions, { &holdButton, &clearButton, &monitorButton, &snapshotA, &snapshotB, &exportButton },
+                  { holdWidth, clearWidth, monitorWidth, 32, 32, 88 });
 
     aboutPanel.setBounds (base);
     genrePanel.setBounds (base);
     settingsPanel.setBounds (base);
+
+    ml::grid::alignChildren (*this);
+    for (auto* overlay : { static_cast<juce::Component*> (&aboutPanel),
+                          static_cast<juce::Component*> (&genrePanel),
+                          static_cast<juce::Component*> (&settingsPanel) })
+        if (overlay->isVisible()) overlay->toFront (false);
 
     // One transform for the whole surface: layout stays in base points, so a
     // 200 % zoom cannot clip a label.

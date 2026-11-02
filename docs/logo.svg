@@ -1,12 +1,11 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 24 24">
-  <!-- MasterLens aperture: five unequal arcs + one centre dot.
-       Celadon and slate from the 2.0.3 instrument palette. -->
-  <g fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.6">
-    <path stroke="#99c9b4" d="M12 3.2 A8.8 8.8 0 0 1 19.6 7.6"/>
-    <path stroke="#99c9b4" d="M20.1 10.2 A8.8 8.8 0 0 1 18.0 18.2"/>
-    <path stroke="#99c9b4" d="M15.4 20.0 A8.8 8.8 0 0 1 7.1 18.9"/>
-    <path stroke="#91b9c5" d="M4.4 16.1 A8.8 8.8 0 0 1 4.6 7.2"/>
-    <path stroke="#99c9b4" d="M7.6 4.9 A8.8 8.8 0 0 1 10.6 3.4"/>
+  <!-- Neutral aperture; five equal gaps, matching the >=32px runtime mark. -->
+  <g fill="none" stroke="#909994" stroke-linecap="round" stroke-width="1.44">
+    <path d="M13.3091 3.3384 A8.76 8.76 0 0 1 19.8332 8.0784"/>
+    <path d="M20.6422 10.5684 A8.76 8.76 0 0 1 18.1502 18.2380"/>
+    <path d="M16.0321 19.7769 A8.76 8.76 0 0 1 7.9679 19.7769"/>
+    <path d="M5.8498 18.2380 A8.76 8.76 0 0 1 3.3578 10.5684"/>
+    <path d="M4.1668 8.0784 A8.76 8.76 0 0 1 10.6909 3.3384"/>
   </g>
-  <circle cx="12" cy="12" r="1.7" fill="#91b9c5"/>
+  <circle cx="12" cy="12" r="1.44" fill="#909994"/>
 </svg>

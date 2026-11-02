@@ -53,7 +53,7 @@ void DetailArea::paintSpectrumExtras (juce::Graphics& g)
     if (! compact)
     {
         g.setColour (theme::textFaint);
-        g.setFont (uiFont (tokens::unit));
+        g.setFont (getLabelFont());
         g.drawText ("03", title.removeFromLeft (24), juce::Justification::centredLeft, false);
         g.drawText (compare ? T ("频段偏差", "BAND BALANCE")
                             : T ("频段电平", "BAND LEVEL"),
@@ -68,18 +68,18 @@ void DetailArea::paintSpectrumExtras (juce::Graphics& g)
         auto inner = cell;
 
         g.setColour (theme::textDim);
-        g.setFont (uiFont (tokens::label));
-        g.drawText (label, inner.removeFromTop (15), juce::Justification::centredLeft, false);
+        g.setFont (getLabelFont());
+        g.drawText (label, inner.removeFromTop (16), juce::Justification::centredLeft, false);
 
         g.setColour (theme::textFaint);
-        g.setFont (monoFont (tokens::unit));
+        g.setFont (getValueFont());
         g.drawText (range, inner.removeFromTop (12), juce::Justification::centredLeft, false);
 
         g.setColour (theme::text);
-        g.setFont (monoFont (13.0f, true));
+        g.setFont (getValueFont());
         g.drawText (compare ? sgn (dev, 1) + " dB"
                             : (dev <= -99.0f ? noValue() : num (dev) + " dB"),
-                    inner.removeFromTop (18), juce::Justification::centredLeft, false);
+                    inner.removeFromTop (20), juce::Justification::centredLeft, false);
 
         auto track = inner.removeFromTop (4).toFloat();
         g.setColour (theme::borderSoft);
@@ -139,7 +139,7 @@ void DetailArea::paintStereoExtras (juce::Graphics& g)
 //==============================================================================
 void DetailArea::paintDelivery (juce::Graphics& g)
 {
-    auto area = contentArea().withTrimmedTop (30);
+    auto area = contentArea().withTrimmedTop (32);
     const auto& s = state.stats;
 
     int okCount = 0, warnCount = 0, overCount = 0, limitedCount = 0;
@@ -164,27 +164,27 @@ void DetailArea::paintDelivery (juce::Graphics& g)
 
     juce::ignoreUnused (overCount);
 
-    auto summary = area.removeFromTop (30);
+    auto summary = area.removeFromTop (32);
 
     g.setColour (theme::textDim);
-    g.setFont (uiFont (tokens::aux));
+    g.setFont (getLabelFont());
     g.drawText (T ("可行 ", "OK ") + juce::String (okCount) + ml::sep()
                 + T ("临界 ", "Warning ") + juce::String (warnCount) + ml::sep()
                 + T ("目标受限 ", "Constrained ") + juce::String (limitedCount),
                 summary, juce::Justification::centredLeft);
 
     g.setColour (theme::textFaint);
-    g.setFont (monoFont (tokens::unit));
+    g.setFont (getValueFont());
     g.drawText (T ("当前 ", "Current ") + num (s.integrated) + " LUFS" + ml::sep()
                 + num (s.truePeakDb) + " dBTP",
                 summary, juce::Justification::centredRight);
 
-    auto scenario = area.removeFromTop (22);
-    g.setFont (uiFont (tokens::unit));
+    auto scenario = area.removeFromTop (24);
+    g.setFont (getLabelFont());
     g.setColour (theme::textFaint);
     g.drawText (T ("本机交付情景；安全增益受峰值约束，差额不代表服务端限幅。", "Local scenarios; gain is peak-constrained. Gap does not imply a service limiter."),
                 scenario, juce::Justification::centredLeft, true);
-    area.removeFromTop (6);
+    area.removeFromTop (8);
 
     const int tableW = juce::roundToInt ((float) area.getWidth() * 0.60f);
     auto table = area.removeFromLeft (tableW);
@@ -200,7 +200,7 @@ void DetailArea::paintDelivery (juce::Graphics& g)
     const int wLimited  = juce::roundToInt ((float) table.getWidth() * 0.16f);
 
     g.setColour (theme::textFaint);
-    g.setFont (uiFont (tokens::unit));
+    g.setFont (getLabelFont());
 
     auto h = header;
     g.drawText (T ("平台", "Platform"), h.removeFromLeft (wPlatform), juce::Justification::centredLeft);
@@ -238,16 +238,16 @@ void DetailArea::paintDelivery (juce::Graphics& g)
         auto r0 = row;
 
         g.setColour (theme::text);
-        g.setFont (uiFont (tokens::label));
+        g.setFont (getLabelFont());
         g.drawText (T (p.nameZh, p.nameEn), r0.removeFromLeft (wPlatform),
                     juce::Justification::centredLeft);
 
         g.setColour (theme::textDim);
-        g.setFont (monoFont (12.0f));
+        g.setFont (getValueFont());
         g.drawText (num (p.targetLufs), r0.removeFromLeft (wTarget), juce::Justification::centredRight);
 
         g.setColour (theme::text);
-        g.setFont (monoFont (12.0f, true));
+        g.setFont (getValueFont());
         g.drawText (sgn (r.gainDb) + " dB", r0.removeFromLeft (wGain),
                     juce::Justification::centredRight);
 
@@ -259,7 +259,7 @@ void DetailArea::paintDelivery (juce::Graphics& g)
         g.drawText (r.limitedDb > 0.05f ? num (r.limitedDb) : noValue(),
                     r0.removeFromLeft (wLimited), juce::Justification::centredRight);
 
-        g.setFont (uiFont (tokens::unit));
+        g.setFont (getLabelFont());
         g.drawText (r.state == DeliveryState::over ? T ("受限", "Gap")
                   : r.state == DeliveryState::warning ? T ("临界", "Warning") : T ("可行", "OK"),
                     r0, juce::Justification::centredRight);
@@ -268,7 +268,7 @@ void DetailArea::paintDelivery (juce::Graphics& g)
     if (table.getHeight() >= 20 && limitedCount > 0)
     {
         g.setColour (theme::bad);
-        g.setFont (uiFont (tokens::unit));
+        g.setFont (getLabelFont());
         g.drawText (TF (T ("本机情景：{n} 项因峰值余量未达目标，最多差 {l} LU；衰减最多 {w} LU",
                            "Local scenarios: {n} targets constrained, gap up to {l} LU; "
                            "wasted loudness up to {w} LU"),
@@ -288,14 +288,14 @@ void DetailArea::paintDelivery (juce::Graphics& g)
         auto inner = ref.reduced (14, 11);
 
         g.setColour (theme::text);
-        g.setFont (uiFont (tokens::label, true));
-        g.drawText (T ("参考作品对比", "VS REFERENCE"), inner.removeFromTop (18),
+        g.setFont (getLabelFont());
+        g.drawText (T ("参考作品对比", "VS REFERENCE"), inner.removeFromTop (20),
                     juce::Justification::centredLeft, false);
 
         if (! state.hasReferenceStats || state.referenceStats.integrated <= -70.0f)
         {
             g.setColour (theme::textFaint);
-            g.setFont (uiFont (tokens::aux));
+            g.setFont (getLabelFont());
             g.drawFittedText (T ("在「频谱平衡」页导入 1–4 条参考轨，这里会显示响度、动态、"
                                  "峰响比与低频侧向的实际差值。",
                                  "Import 1-4 reference tracks on the Spectrum page to compare "
@@ -313,18 +313,18 @@ void DetailArea::paintDelivery (juce::Graphics& g)
             if (inner.getHeight() < 22)
                 return;
 
-            auto line = inner.removeFromTop (22);
+            auto line = inner.removeFromTop (24);
 
             g.setColour (theme::textFaint);
-            g.setFont (uiFont (tokens::unit));
-            g.drawText (label, line.removeFromLeft (74), juce::Justification::centredLeft, false);
+            g.setFont (getLabelFont());
+            g.drawText (label, line.removeFromLeft (76), juce::Justification::centredLeft, false);
 
             g.setColour (theme::text);
-            g.setFont (monoFont (11.5f, true));
+            g.setFont (getValueFont());
             g.drawText (num (mine, decimals), line.removeFromLeft (52), juce::Justification::centredRight);
 
             g.setColour (theme::textDim);
-            g.setFont (monoFont (11.5f));
+            g.setFont (getValueFont());
             g.drawText (num (theirs, decimals), line.removeFromLeft (48), juce::Justification::centredRight);
             g.drawText (sgn (mine - theirs, decimals) + " " + unit, line,
                         juce::Justification::centredRight);
@@ -332,12 +332,12 @@ void DetailArea::paintDelivery (juce::Graphics& g)
 
         auto head = inner.removeFromTop (16);
         g.setColour (theme::textFaint);
-        g.setFont (uiFont (tokens::unit));
-        g.drawText (T ("你的", "Yours"), head.withTrimmedLeft (74).withWidth (52),
+        g.setFont (getLabelFont());
+        g.drawText (T ("你的", "Yours"), head.withTrimmedLeft (76).withWidth (52),
                     juce::Justification::centredRight);
-        g.drawText (T ("参考", "Ref"), head.withTrimmedLeft (126).withWidth (48),
+        g.drawText (T ("参考", "Ref"), head.withTrimmedLeft (128).withWidth (48),
                     juce::Justification::centredRight);
-        g.drawText (T ("差值", "Delta"), head.withTrimmedLeft (174),
+        g.drawText (T ("差值", "Delta"), head.withTrimmedLeft (176),
                     juce::Justification::centredRight);
 
         row (T ("综合响度", "Integrated"), s.integrated, r.integrated, "LU");
@@ -350,7 +350,7 @@ void DetailArea::paintDelivery (juce::Graphics& g)
         inner.removeFromTop (4);
 
         g.setColour (theme::textDim);
-        g.setFont (uiFont (tokens::unit));
+        g.setFont (getLabelFont());
 
         const float dLu = s.integrated - r.integrated;
         const float dLra = s.lra - r.lra;

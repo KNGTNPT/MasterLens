@@ -24,20 +24,20 @@ namespace
 
         SettingsLayout l;
         l.title = card.removeFromTop (24);
-        l.subtitle = card.removeFromTop (18);
-        card.removeFromTop (14);
+        l.subtitle = card.removeFromTop (20);
+        card.removeFromTop (16);
 
-        l.section = card.removeFromTop (18);
-        card.removeFromTop (6);
+        l.section = card.removeFromTop (20);
+        card.removeFromTop (8);
 
         l.buttons = card.removeFromTop (36);
-        card.removeFromTop (10);
+        card.removeFromTop (12);
 
         l.note = card.removeFromTop (40);
-        card.removeFromTop (10);
+        card.removeFromTop (12);
 
-        l.footer = card.removeFromBottom (34);
-        card.removeFromBottom (10);
+        l.footer = card.removeFromBottom (36);
+        card.removeFromBottom (12);
 
         l.list = card;
         return l;
@@ -50,7 +50,7 @@ SettingsPanel::SettingsPanel()
     for (int i = 0; i < (int) ui::scaleSteps.size(); ++i)
     {
         auto& b = scaleButtons[(size_t) i];
-        b.setButtonText (ui::scaleText (ui::scaleSteps[(size_t) i]));
+        b.setButtonText (ml::grid::controlText (ui::scaleText (ui::scaleSteps[(size_t) i])));
         b.setClickingTogglesState (true);
         b.setRadioGroupId (7717);
         b.onClick = [this, i]
@@ -69,7 +69,7 @@ SettingsPanel::SettingsPanel()
 
 void SettingsPanel::refreshTexts()
 {
-    closeButton.setButtonText (T ("关闭", "Close"));
+    closeButton.setButtonText (ml::grid::controlText (T ("关闭", "Close")));
 
     for (int i = 0; i < (int) ui::scaleSteps.size(); ++i)
         scaleButtons[(size_t) i].setTooltip (T ("界面缩放 ", "Interface scale ")
@@ -122,12 +122,12 @@ void SettingsPanel::paint (juce::Graphics& g)
     const int textX = l.title.getX() + 56;
 
     g.setColour (theme::text);
-    g.setFont (uiFont (18.0f, true));
+    g.setFont (getLabelFont());
     g.drawText (T ("设置", "Settings"), textX, l.title.getY() - 2,
                 l.title.getWidth() - 56, 24, juce::Justification::centredLeft, false);
 
     g.setColour (theme::textDim);
-    g.setFont (uiFont (tokens::aux));
+    g.setFont (getLabelFont());
     g.drawText ("MasterLens " + juce::String (ml::kVersion) + "  |  A BerryStudio product",
                 textX, l.subtitle.getY(), l.subtitle.getWidth() - 56, 18,
                 juce::Justification::centredLeft, false);
@@ -137,38 +137,38 @@ void SettingsPanel::paint (juce::Graphics& g)
                           (float) l.title.getRight());
 
     g.setColour (theme::accent);
-    g.setFont (uiFont (tokens::unit, true));
+    g.setFont (getLabelFont());
     g.drawText (T ("界面缩放 / 字号", "INTERFACE SCALE / TYPE SIZE"),
                 l.section, juce::Justification::centredLeft, false);
 
     g.setColour (theme::textDim);
-    g.setFont (uiFont (tokens::aux));
+    g.setFont (getLabelFont());
     g.drawText (T ("字号与布局一起等比放大，不会截断任何文字；窗口尺寸随缩放同步调整。",
                    "Type and layout zoom together, so no label is clipped; the window resizes "
                    "with the scale."),
                 l.note, juce::Justification::topLeft, false);
 
-    auto effective = l.note.withTrimmedTop (22);
+    auto effective = l.note.withTrimmedTop (24);
     g.setColour (theme::textFaint);
-    g.setFont (monoFont (tokens::unit));
+    g.setFont (getValueFont());
     g.drawText (T ("当前 ", "Now ") + ui::scaleText (scale)
                     + T ("  ·  等效字号 ", "  |  effective ")
-                    + juce::String (juce::roundToInt (tokens::unit * scale)) + " / "
-                    + juce::String (juce::roundToInt (tokens::label * scale)) + " / "
-                    + juce::String (juce::roundToInt (tokens::section * scale)) + " px",
+                    + juce::String (juce::roundToInt (getLabelFont().getHeight() * scale)) + " / "
+                    + juce::String (juce::roundToInt (getValueFont().getHeight() * scale)) + " / "
+                    + juce::String (juce::roundToInt (getCriticalFont().getHeight() * scale)) + " px",
                 effective, juce::Justification::centredLeft);
 
     // ---- reference list -----------------------------------------------------
     const auto row = [&] (const juce::String& key, const juce::String& value)
     {
-        auto r = l.list.removeFromTop (22);
+        auto r = l.list.removeFromTop (24);
 
         g.setColour (theme::textFaint);
-        g.setFont (uiFont (tokens::unit));
+        g.setFont (getLabelFont());
         g.drawText (key, r.removeFromLeft (120), juce::Justification::centredLeft, false);
 
         g.setColour (theme::textDim);
-        g.setFont (uiFont (tokens::aux));
+        g.setFont (getLabelFont());
         g.drawText (value, r, juce::Justification::centredLeft, false);
     };
 
@@ -185,7 +185,7 @@ void SettingsPanel::paint (juce::Graphics& g)
     paintBerryLockup (g, l.footer.withWidth (230), theme::textDim, 26.0f, 8.5f);
 
     g.setColour (theme::textFaint);
-    g.setFont (uiFont (tokens::unit));
+    g.setFont (getLabelFont());
     g.drawText ("BerryStudio  |  " + juce::String::fromUTF8 (ml::kDeveloper),
                 l.footer.withTrimmedRight (120), juce::Justification::centredRight, false);
 }
@@ -206,6 +206,7 @@ void SettingsPanel::resized()
     }
 
     closeButton.setBounds (l.footer.getRight() - 96, l.footer.getY() - 2, 96, 30);
+    grid::alignChildren (*this);
 }
 
 void SettingsPanel::mouseDown (const juce::MouseEvent& e)

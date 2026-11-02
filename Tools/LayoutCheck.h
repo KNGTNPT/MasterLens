@@ -1,0 +1,143 @@
+#pragma once
+
+#include "PluginEditor.h"
+#if JUCE_DEBUG && defined(MASTERLENS_ENABLE_INSPECTOR)
+#include <melatonin_inspector/melatonin_inspector.h>
+#endif
+
+/** Checks the same logical component bounds exposed in Melatonin Inspector.
+    Native JUCE caret/scrollbar plumbing is not authored by the instrument grid.
+*/
+class MasterLensLayoutCheck
+{
+public:
+    static bool run (MasterLensAudioProcessorEditor& editor)
+    {
+        int failures = 0, checked = 0;
+        const auto check = [&] (bool pass, const char* label)
+        {
+            if (! pass) { ++failures; std::fprintf (stderr, "INSTRUMENT_FAIL %s\n", label); }
+        };
+        const auto label = ml::getLabelFont(), value = ml::getValueFont(), critical = ml::getCriticalFont();
+        check (label.getHeight() == 11.0f && value.getHeight() == 13.0f && critical.getHeight() == 20.0f,
+               "font tiers must be 11 / 13 / 20");
+        check (value.getHeight() - label.getHeight() >= 2.0f, "label/value separation");
+        const auto zeros = juce::GlyphArrangement::getStringWidth (value, "000000");
+        const auto ones = juce::GlyphArrangement::getStringWidth (value, "111111");
+        check (std::abs (zeros - ones) < 0.01f, "tabular numerals");
+        check (! banned (label) && ! banned (value) && ! banned (critical), "font family");
+        juce::TextButton button;
+        button.setSize (80, 32);
+        button.setLookAndFeel (&editor.lnf);
+        const auto sample = [&] (bool hover, bool down)
+        {
+            juce::Image image (juce::Image::ARGB, 80, 32, true);
+            juce::Graphics g (image);
+            editor.lnf.drawButtonBackground (g, button, {}, hover, down);
+            return image.getPixelAt (40, 16);
+        };
+        const auto normal = sample (false, false), hover = sample (true, false), down = sample (false, true);
+        const auto expectedHover = normal.overlaidWith (juce::Colours::white.withAlpha (0.08f));
+        check (std::abs ((int) hover.getRed() - expectedHover.getRed()) <= 1
+            && std::abs ((int) hover.getGreen() - expectedHover.getGreen()) <= 1
+            && std::abs ((int) hover.getBlue() - expectedHover.getBlue()) <= 1, "hover white overlay");
+        check (down.getBrightness() < normal.getBrightness()
+            && std::abs (down.getHue() - normal.getHue()) < 0.025f, "pressed brightness/hue");
+        button.setLookAndFeel (nullptr);
+
+        for (int language = 0; language < 2; ++language)
+        {
+            ml::Localisation::set (language == 0 ? ml::Language::chinese : ml::Language::english);
+            editor.updateTexts();
+            editor.detail.refreshTexts();
+            for (const float scale : ml::ui::scaleSteps)
+            {
+                editor.setUiScale (scale, false);
+                for (const auto size : { juce::Point<int> { 880, 560 }, { 1120, 700 }, { 1440, 900 }, { 1123, 703 } })
+                {
+                    editor.setSize (juce::roundToInt (size.x * scale), juce::roundToInt (size.y * scale));
+                    for (int page = 0; page < ml::numPages; ++page)
+                    {
+                        editor.setPage (page);
+                        editor.runTimerTickForSnapshot();
+                        visit (editor, failures, checked);
+                        if (page == (int) ml::PageId::spectrum)
+                        {
+                            const float ratio = (float) editor.spectrumArea.getHeight()
+                                / (float) (editor.spectrumArea.getHeight() + editor.readingsArea.getHeight());
+                            check (ratio >= 0.5f && ratio <= 0.6f, "spectrum proportion");
+                            check (editor.readingsArea.getY() - editor.spectrumArea.getBottom() == 8, "spectrum/readings gap");
+                            for (int view = 1; view < 3; ++view)
+                            {
+                                editor.detail.setSpectrumView (view);
+                                visit (editor, failures, checked);
+                            }
+                            editor.detail.setSpectrumView (0);
+                        }
+                    }
+                }
+            }
+        }
+        editor.setUiScale (1.0f, false);
+        editor.setSize (1120, 700);
+        editor.settingsPanel.setVisible (true);
+        visit (editor, failures, checked);
+        editor.hideOverlay (editor.settingsPanel);
+        editor.genrePanel.setVisible (true);
+        editor.genrePanel.resized();
+        visit (editor, failures, checked);
+        editor.hideOverlay (editor.genrePanel);
+        editor.setPage ((int) ml::PageId::spectrum);
+        std::printf ("INSTRUMENT_LAYOUT %s boundaries=%d failures=%d fonts=%s/%s/%s sizes=11/13/20\n",
+            failures == 0 ? "PASS" : "FAIL", checked, failures,
+            label.getTypefaceName().toRawUTF8(), value.getTypefaceName().toRawUTF8(), critical.getTypefaceName().toRawUTF8());
+        return failures == 0;
+    }
+
+#if JUCE_DEBUG && defined(MASTERLENS_ENABLE_INSPECTOR)
+    static void saveInspector (MasterLensAudioProcessorEditor& editor)
+    {
+        editor.inspector->selectComponent (&editor.ceilingSlider);
+        const auto image = editor.inspector->createComponentSnapshot (editor.inspector->getLocalBounds());
+        const auto file = juce::File::getCurrentWorkingDirectory().getChildFile ("docs/instrument-inspector.png");
+        if (auto stream = file.createOutputStream()) juce::PNGImageFormat().writeImageToStream (image, *stream);
+    }
+#endif
+
+private:
+    static bool banned (const juce::Font& font)
+    {
+        const auto family = font.getTypefaceName().toLowerCase();
+        return family == "inter" || family.startsWith ("roboto") || family.startsWith ("arial")
+            || family.startsWith ("helvetica") || family.startsWith ("open sans");
+    }
+
+    static void visit (juce::Component& parent, int& failures, int& checked)
+    {
+        for (auto* c : parent.getChildren())
+        {
+            if (! c->isVisible()) continue;
+            if ((int) c->getProperties()["mlGrid"] == 4)
+            {
+                ++checked;
+                const auto b = c->getBounds();
+                const bool aligned = b.getX() % 4 == 0 && b.getY() % 4 == 0
+                                  && b.getWidth() % 4 == 0 && b.getHeight() % 4 == 0;
+                if (! aligned || ! parent.getLocalBounds().contains (b))
+                {
+                    ++failures;
+                    std::fprintf (stderr, "INSTRUMENT_BOUNDS %s %s parent=%s\n", typeid (*c).name(),
+                        b.toString().toRawUTF8(), parent.getLocalBounds().toString().toRawUTF8());
+                }
+            }
+            if (auto* label = dynamic_cast<juce::Label*> (c))
+                if (banned (label->getLookAndFeel().getLabelFont (*label))) ++failures;
+            if (auto* text = dynamic_cast<juce::TextEditor*> (c))
+                if (banned (text->getFont())) ++failures;
+            if (dynamic_cast<ml::SpectrumDisplay*> (c) != nullptr || dynamic_cast<ml::SpectrogramDisplay*> (c) != nullptr)
+                for (const char* property : { "paddingLeft", "paddingTop", "paddingRight", "paddingBottom" })
+                    if ((int) c->getProperties()[property] < 32) ++failures;
+            visit (*c, failures, checked);
+        }
+    }
+};

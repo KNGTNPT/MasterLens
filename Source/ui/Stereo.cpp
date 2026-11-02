@@ -32,7 +32,7 @@ void StereoMeters::paint (juce::Graphics& g)
         : corr<0 ? theme::bad : corr<0.15f ? theme::warn : theme::accent;
     const float size = juce::jmin (dial.getWidth()-24.0f, dial.getHeight()-32.0f);
     const float cx = dial.getCentreX(), cy = dial.getCentreY()-6.0f, radius = size*0.44f;
-    g.setFont (uiFont (tokens::unit));
+    g.setFont (getLabelFont());
     g.setColour (theme::textDim);
     g.drawText (T("声道相关性", "CHANNEL CORRELATION"),
                 dial.withHeight (18.0f), juce::Justification::centred, false);
@@ -59,19 +59,19 @@ void StereoMeters::paint (juce::Graphics& g)
     g.setColour(theme::textDim);
     g.drawEllipse(cx-5,cy-5,10,10,0.7f);
     g.setColour(theme::text);
-    g.setFont(monoFont(size<180 ? 25.0f : 34.0f));
+    g.setFont(getValueFont());
     g.drawText(stats.stereo ? sgn(corr,2) : noValue(),
         juce::Rectangle<float>(dial.getX(),cy+18,dial.getWidth(),38),juce::Justification::centred,false);
-    g.setFont(monoFont(10.0f));
+    g.setFont(getValueFont());
     g.setColour(theme::textFaint);
     g.drawText("-1",juce::Rectangle<float>(cx-radius-12,cy+radius*0.75f,30,14),juce::Justification::centred,false);
     g.drawText("+1",juce::Rectangle<float>(cx+radius-18,cy+radius*0.75f,30,14),juce::Justification::centred,false);
 
     const auto value = [&] (juce::Rectangle<int> cell,const juce::String& label,const juce::String& number)
     {
-        g.setFont(uiFont(tokens::unit)); g.setColour(theme::textFaint);
-        g.drawText(label,cell.removeFromTop(18),juce::Justification::centredLeft,false);
-        g.setFont(monoFont(19.0f));g.setColour(theme::text);
+        g.setFont(getLabelFont()); g.setColour(theme::textFaint);
+        g.drawText(label,cell.removeFromTop(20),juce::Justification::centredLeft,false);
+        g.setFont(getValueFont());g.setColour(theme::text);
         g.drawText(number,cell,juce::Justification::centredLeft,false);
     };
     auto peaks=area.removeFromTop(juce::jmin(66,area.getHeight()/3));
@@ -81,12 +81,12 @@ void StereoMeters::paint (juce::Graphics& g)
     const auto bar = [&] (juce::Rectangle<int> cell,const juce::String& label,float amount,float range,float threshold)
     {
         auto line=cell.removeFromTop(20);
-        g.setFont(uiFont(tokens::label));g.setColour(theme::textDim);
+        g.setFont(getLabelFont());g.setColour(theme::textDim);
         g.drawText(label,line,juce::Justification::centredLeft,false);
-        g.setFont(monoFont(13.0f));g.setColour(theme::text);
+        g.setFont(getValueFont());g.setColour(theme::text);
         g.drawText(num(amount)+"%",line,juce::Justification::centredRight,false);
-        cell.removeFromTop(6);
-        auto track=cell.removeFromTop(5).toFloat();
+        cell.removeFromTop(8);
+        auto track=cell.removeFromTop(8).toFloat();
         surface::recessed(g,track,1.0f);
         g.setColour(amount>threshold ? theme::warn : theme::accent);
         g.fillRect(track.withWidth(track.getWidth()*juce::jlimit(0.0f,1.0f,amount/range)));
@@ -94,7 +94,7 @@ void StereoMeters::paint (juce::Graphics& g)
     const int rowH=juce::jmin(64,area.getHeight()/3);
     bar(area.removeFromTop(rowH),T("立体声宽度", "STEREO WIDTH"),stats.widthPct,200.0f,150.0f);
     bar(area.removeFromTop(rowH),T("低频侧向", "LOW-END SIDE"),stats.lowSidePct,100.0f,35.0f);
-    g.setFont(monoFont(tokens::unit));g.setColour(theme::textDim);
+    g.setFont(getValueFont());g.setColour(theme::textDim);
     g.drawText(T("单声道保留 ","MONO RETAIN ")+num(stats.monoRetainPct)+"%  /  "+fmtDb(stats.monoFoldLossDb)+" dB",
                area.removeFromTop(20),juce::Justification::centredLeft,false);
     g.setColour(theme::textFaint);
@@ -113,18 +113,18 @@ void StereoMeters::paint (juce::Graphics& g)
     for(int i=0;i<3;++i)
     {
         auto cell=bands.removeFromLeft(w);
-        g.setFont(uiFont(tokens::unit));g.setColour(theme::textDim);
-        g.drawText(T(namesZh[i],namesEn[i])+" / "+ranges[i],cell.removeFromTop(18),juce::Justification::centredLeft,false);
-        g.setFont(monoFont(15.0f));g.setColour(theme::text);
+        g.setFont(getLabelFont());g.setColour(theme::textDim);
+        g.drawText(T(namesZh[i],namesEn[i])+" / "+ranges[i],cell.removeFromTop(20),juce::Justification::centredLeft,false);
+        g.setFont(getValueFont());g.setColour(theme::text);
         g.drawText(sgn(correlations[i],2),cell.removeFromTop(24),juce::Justification::centredLeft,false);
-        g.setFont(monoFont(10.0f));g.setColour(theme::textFaint);
+        g.setFont(getValueFont());g.setColour(theme::textFaint);
         g.drawText(T("侧向 ","SIDE ")+num(sides[i])+"%",cell.removeFromTop(16),juce::Justification::centredLeft,false);
     }
-    g.setFont(uiFont(tokens::unit));g.setColour(theme::textFaint);
-    g.drawText(T("事件计数", "EVENT COUNTS"),bands.removeFromTop(18),juce::Justification::centredLeft,false);
-    g.setFont(monoFont(11.0f));
+    g.setFont(getLabelFont());g.setColour(theme::textFaint);
+    g.drawText(T("事件计数", "EVENT COUNTS"),bands.removeFromTop(20),juce::Justification::centredLeft,false);
+    g.setFont(getValueFont());
     g.drawText("CLIP "+juce::String(stats.clipEvents)+" / TP "+juce::String(stats.oversCount),
-               bands.removeFromTop(22),juce::Justification::centredLeft,false);
-    g.drawText("DC "+juce::String(stats.dcOffsetDb,1)+" dBFS",bands.removeFromTop(18),juce::Justification::centredLeft,false);
+               bands.removeFromTop(24),juce::Justification::centredLeft,false);
+    g.drawText("DC "+juce::String(stats.dcOffsetDb,1)+" dBFS",bands.removeFromTop(20),juce::Justification::centredLeft,false);
 }
 } // namespace ml

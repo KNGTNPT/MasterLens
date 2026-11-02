@@ -31,31 +31,33 @@ void MasterLensAudioProcessorEditor::buildControls()
     presetBox.onChange = [this] { applyPreset (presetBox.getSelectedId() - 1); };
     addAndMakeVisible (presetBox);
 
-    infoButton.setButtonText ("?");
+    infoButton.setButtonText (ml::grid::controlText ("?"));
     infoButton.setTooltip (T ("曲风参考：这个曲风的实际发行响度与响度战争背景",
                               "Genre reference: what released masters measure and why"));
     infoButton.onClick = [this] { showGenreInfo(); };
     addAndMakeVisible (infoButton);
 
-    const auto captionFont = ml::uiFont (ml::tokens::unit);
+    const auto captionFont = ml::getLabelFont();
 
     targetCaption.setFont (captionFont);
+    targetCaption.setJustificationType (juce::Justification::centred);
     targetCaption.setColour (juce::Label::textColourId, ml::theme::textDim);
     addAndMakeVisible (targetCaption);
 
     ceilingCaption.setFont (captionFont);
+    ceilingCaption.setJustificationType (juce::Justification::centred);
     ceilingCaption.setColour (juce::Label::textColourId, ml::theme::textDim);
     addAndMakeVisible (ceilingCaption);
 
-    targetSlider.setSliderStyle (juce::Slider::LinearHorizontal);
-    targetSlider.setTextBoxStyle (juce::Slider::TextBoxRight, false, 70, 26);
+    targetSlider.setSliderStyle (juce::Slider::RotaryVerticalDrag);
+    targetSlider.setTextBoxStyle (juce::Slider::TextBoxBelow, false, 80, 20);
     targetSlider.setDoubleClickReturnValue (true, -14.0);
     targetSlider.setNumDecimalPlacesToDisplay (1);
     targetSlider.setTextValueSuffix (" LU");
     addAndMakeVisible (targetSlider);
 
-    ceilingSlider.setSliderStyle (juce::Slider::LinearHorizontal);
-    ceilingSlider.setTextBoxStyle (juce::Slider::TextBoxRight, false, 70, 26);
+    ceilingSlider.setSliderStyle (juce::Slider::RotaryVerticalDrag);
+    ceilingSlider.setTextBoxStyle (juce::Slider::TextBoxBelow, false, 80, 20);
     ceilingSlider.setNumDecimalPlacesToDisplay (1);
     ceilingSlider.setTextValueSuffix (" dBTP");
     ceilingSlider.setDoubleClickReturnValue (true, -1.0);

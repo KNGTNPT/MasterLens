@@ -8,6 +8,7 @@
 
 #include "dsp/AnalysisEngine.h"
 #include "dsp/SpectrumAnalyzer.h"
+#include "dsp/SpectrumFifo.h"
 #include "audio/AuditionEngine.h"
 #include "audio/ReferencePlayer.h"
 
@@ -45,6 +46,7 @@ public:
     ml::Stats stats;
     ml::AnalysisEngine engine;
     ml::SpectrumRing spectrumRing;
+    ml::SpectrumFifo outputSpectrumFifo;
     ml::AuditionEngine auditionEngine;
     ml::ReferencePlayer referencePlayer;
 

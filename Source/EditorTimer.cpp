@@ -79,6 +79,10 @@ void MasterLensAudioProcessorEditor::timerCallback()
     if (! isShowing() && getPeer() != nullptr)
         return;
 
+    // Drain even on slow pages and during Hold. The output tap has its own
+    // Blackman-windowed cache; it does not replace the existing input analyser.
+    outputSpectrumReader.update (processor.outputSpectrumFifo);
+
     ++frameCounter;
     ++timerTicks;
 
@@ -161,9 +165,9 @@ void MasterLensAudioProcessorEditor::timerCallback()
     if ((frameCounter % 12) == 0)
     {
         const float trim = processor.getMonitorTrimDb();
-        monitorButton.setButtonText (processor.isMonitorMatch()
+        monitorButton.setButtonText (ml::grid::controlText (processor.isMonitorMatch()
                                          ? T ("等响 ", "match ") + ml::sgn (trim) + " dB"
-                                         : T ("等响监听", "Match"));
+                                         : T ("等响监听", "Match")));
     }
 
     if ((frameCounter % 30) == 0)

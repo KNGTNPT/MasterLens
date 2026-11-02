@@ -4,7 +4,7 @@ namespace ml
 {
 void DetailArea::paintDiagnostics (juce::Graphics& g)
 {
-    auto area = contentArea().withTrimmedTop (30);
+    auto area = contentArea().withTrimmedTop (32);
 
     const auto checks = buildChecklist (state.stats, state.ceiling,
                                         state.bandDevs, state.defects,
@@ -22,11 +22,11 @@ void DetailArea::paintDiagnostics (juce::Graphics& g)
             ++goodCount;
     }
 
-    auto summary = area.removeFromTop (30);
+    auto summary = area.removeFromTop (32);
 
     const auto chip = [&g] (juce::Rectangle<int>& r, const juce::String& text, juce::Colour colour)
     {
-        const auto font = uiFont (tokens::unit);
+        const auto font = getLabelFont();
         const int w = juce::roundToInt (juce::GlyphArrangement::getStringWidth (font, text)) + 20;
         auto c = r.removeFromLeft (w);
 
@@ -46,7 +46,7 @@ void DetailArea::paintDiagnostics (juce::Graphics& g)
           actionCount > 0 ? theme::warn : theme::good);
 
     g.setColour (theme::textFaint);
-    g.setFont (uiFont (tokens::unit));
+    g.setFont (getLabelFont());
     g.drawText (T ("点击左侧条目展开说明", "Click a row on the left for details"),
                 summary, juce::Justification::centredRight);
 
@@ -56,8 +56,8 @@ void DetailArea::paintDiagnostics (juce::Graphics& g)
     area.removeFromLeft (tokens::gap);
 
     g.setColour (theme::textDim);
-    g.setFont (uiFont (tokens::aux));
-    g.drawText (T ("检查项清单", "Checklist"), area.removeFromTop (22),
+    g.setFont (getLabelFont());
+    g.drawText (T ("检查项清单", "Checklist"), area.removeFromTop (24),
                 juce::Justification::centredLeft);
 
     for (const auto& c : checks)
@@ -65,19 +65,19 @@ void DetailArea::paintDiagnostics (juce::Graphics& g)
         if (area.getHeight() < 26)
             break;
 
-        auto row = area.removeFromTop (26);
+        auto row = area.removeFromTop (28);
         const auto colour = severityColour (c.severity);
 
         g.setColour (colour);
         g.fillEllipse ((float) row.getX(), (float) row.getCentreY() - 3.0f, 6.0f, 6.0f);
 
         g.setColour (theme::textDim);
-        g.setFont (uiFont (tokens::aux));
-        g.drawText (c.label, row.withTrimmedLeft (14).withWidth (juce::jmax (80, row.getWidth() - 130)),
+        g.setFont (getLabelFont());
+        g.drawText (c.label, row.withTrimmedLeft (16).withWidth (juce::jmax (80, row.getWidth() - 130)),
                     juce::Justification::centredLeft);
 
         g.setColour (colour);
-        g.setFont (monoFont (11.0f));
+        g.setFont (getValueFont());
         g.drawText (c.value, row, juce::Justification::centredRight);
     }
 }

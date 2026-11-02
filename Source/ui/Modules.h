@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Layout.h"
+
 #include <juce_gui_basics/juce_gui_basics.h>
 #include <array>
 #include <functional>
@@ -243,6 +245,7 @@ public:
 
     void setFileResults (std::vector<FileAnalysisResult> results, bool busy,
                          int done, int total, const juce::String& status);
+    void setSpectrumSplit (int height, int bandHeight) { spectrumSplit = height; spectrumBandHeight = bandHeight; resized(); }
     void setFileView (int view) { fileView = juce::jlimit (0, 2, view); resized(); repaint(); }
     const FileAnalysisResult* selectedFile() const
     {
@@ -338,6 +341,7 @@ private:
 
     juce::Rectangle<int> signalProblemRowBounds, signalAttributionBounds, signalGridBounds;
     juce::Rectangle<int> loudnessSideArea;
+    int spectrumSplit = 0, spectrumBandHeight = 0;
     juce::Rectangle<int> spectrumSideArea;
     std::array<juce::Rectangle<int>, 4> signalChipBounds;
 

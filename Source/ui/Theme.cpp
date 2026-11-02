@@ -1,6 +1,8 @@
 #include "Theme.h"
 
-#include <map>
+#include "MasterLensFonts.h"
+#include "Layout.h"
+#include "../Version.h"
 
 namespace ml
 {
@@ -18,24 +20,24 @@ void theme::apply (bool useDark)
         theme::border     = juce::Colour (0xff3b4242);
         theme::borderSoft = juce::Colour (0xff303637);
         theme::divider    = juce::Colour (0xff303637);
-        theme::text       = juce::Colour (0xffe5e9e3);
-        theme::textDim    = juce::Colour (0xffa4afaa);
-        theme::textFaint  = juce::Colour (0xff89958f);
-        theme::accent     = juce::Colour (0xff99c9b4);
+        theme::text       = juce::Colour (0xff969c98);
+        theme::textDim    = juce::Colour (0xff909994);
+        theme::textFaint  = juce::Colour (0xff858f89);
+        theme::accent     = juce::Colour (0xff819e90);
         theme::accentSoft = juce::Colour (0xff30463e);
-        theme::cyan       = juce::Colour (0xff91b9c5);
-        theme::good       = juce::Colour (0xff99c9b4);
-        theme::info       = juce::Colour (0xff99c9b4);
-        theme::warn       = juce::Colour (0xffdbb57a);
-        theme::bad        = juce::Colour (0xffe1897c);
-        theme::violet     = juce::Colour (0xffb7abd0);
+        theme::cyan       = juce::Colour (0xff80989f);
+        theme::good       = juce::Colour (0xff819e90);
+        theme::info       = juce::Colour (0xff819e90);
+        theme::warn       = juce::Colour (0xffb19870);
+        theme::bad        = juce::Colour (0xffc08278);
+        theme::violet     = juce::Colour (0xff94949c);
     }
     else
     {
         theme::background = juce::Colour (0xffe5e6df);
-        theme::card       = juce::Colour (0xffffffff);
+        theme::card       = juce::Colour (0xffdce0d9);
         theme::cardAlt    = juce::Colour (0xffe9ece5);
-        theme::raised     = juce::Colour (0xffffffff);
+        theme::raised     = juce::Colour (0xffdce0d9);
         theme::border     = juce::Colour (0xffc4cdc5);
         theme::borderSoft = juce::Colour (0xffd0d7cf);
         theme::divider    = juce::Colour (0xffd0d7cf);
@@ -152,10 +154,7 @@ void cornerTicks (juce::Graphics& g, juce::Rectangle<float> area, juce::Colour c
 
 void glow (juce::Graphics& g, juce::Rectangle<float> area, juce::Colour colour, float radius)
 {
-    g.setColour (colour.withAlpha (0.12f));
-    g.drawRoundedRectangle (area.expanded (8.0f), radius + 8.0f, 1.0f);
-    g.setColour (colour.withAlpha (0.18f));
-    g.drawRoundedRectangle (area.expanded (4.0f), radius + 4.0f, 1.0f);
+    // A state boundary needs one line; concentric halos add no information.
     g.setColour (colour);
     g.drawRoundedRectangle (area, radius, 1.0f);
 }
@@ -184,7 +183,7 @@ void panel (juce::Graphics& g, juce::Rectangle<float> r, bool isRaised)
 void graph (juce::Graphics& g, juce::Rectangle<float> area)
 {
     panel (g, area, false);
-    cornerTicks (g, area.reduced (8.0f));
+    // Plot boundaries and scales already identify the measurement window.
 }
 
 void noise (juce::Graphics&, juce::Rectangle<float>) {}
@@ -197,87 +196,63 @@ void shadow (juce::Graphics& g, juce::Rectangle<float> area, float radius)
 } // namespace surface
 
 //==============================================================================
-juce::String typefaceName()
+namespace
 {
-    static const juce::String name = []
+    class InstrumentFonts final : public juce::DeletedAtShutdown
     {
-        const juce::StringArray preferred { "PingFang SC", "Microsoft YaHei UI", "Microsoft YaHei", "Hiragino Sans GB", "Heiti SC",
-                                            "Noto Sans CJK SC", "Helvetica Neue", "DejaVu Sans" };
-        const auto all = juce::Font::findAllTypefaceNames();
+    public:
+        static InstrumentFonts& get()
+        {
+            if (instance == nullptr) instance = new InstrumentFonts();
+            return *instance;
+        }
+        ~InstrumentFonts() override { instance = nullptr; }
 
-        for (const auto& p : preferred)
-            if (all.contains (p))
-                return p;
+        juce::Typeface::Ptr regular = juce::Typeface::createSystemTypefaceFor (
+            MasterLensFonts::GeistRegular_otf, MasterLensFonts::GeistRegular_otfSize);
+        juce::Typeface::Ptr medium = juce::Typeface::createSystemTypefaceFor (
+            MasterLensFonts::GeistMedium_otf, MasterLensFonts::GeistMedium_otfSize);
+        juce::Typeface::Ptr bold = juce::Typeface::createSystemTypefaceFor (
+            MasterLensFonts::GeistBold_otf, MasterLensFonts::GeistBold_otfSize);
 
-        return juce::Font::getDefaultSansSerifFontName();
-    }();
+        juce::Typeface::Ptr brandMono = juce::Typeface::createSystemTypefaceFor (
+            MasterLensFonts::GeistMonoRegular_otf, MasterLensFonts::GeistMonoRegular_otfSize);
 
-    return name;
+        juce::Font label { options (regular, 11.0f).withKerningFactor (0.08f) };
+        juce::Font value { options (medium, 13.0f).withFeatureEnabled ("tnum") };
+        juce::Font critical { options (bold, 20.0f).withFeatureEnabled ("tnum") };
+        juce::GlyphArrangement masterWordmark, brandBylineZh, brandBylineEn;
+
+        InstrumentFonts()
+        {
+            // User-requested 130% brand geometry; measurement font roles stay unchanged.
+            masterWordmark.addLineOfText (value.withExtraKerningFactor (0.16f),
+                                         "MASTERLENS", 0.0f, 0.0f);
+            const juce::Font byline { options (brandMono, 11.0f).withKerningFactor (0.12f) };
+            brandBylineZh.addLineOfText (byline, juce::String ("BERRYSTUDIO / ")
+                + kDeveloper + " / " + kVersion, 0.0f, 0.0f);
+            brandBylineEn.addLineOfText (byline, juce::String ("BERRYSTUDIO / ")
+                + kDeveloperEnglish + " / " + kVersion, 0.0f, 0.0f);
+        }
+
+    private:
+        static juce::FontOptions options (const juce::Typeface::Ptr& face, float height)
+        {
+            return juce::FontOptions (face).withHeight (height)
+                .withFallbacks ({ "PingFang SC", "Microsoft YaHei UI", "Noto Sans CJK SC" });
+        }
+        static inline InstrumentFonts* instance = nullptr;
+    };
 }
 
-static const juce::StringArray& allTypefaceNames()
+juce::String typefaceName() { return InstrumentFonts::get().regular->getName(); }
+juce::Font getLabelFont() { return InstrumentFonts::get().label; }
+juce::Font getValueFont() { return InstrumentFonts::get().value; }
+juce::Font getCriticalFont() { return InstrumentFonts::get().critical; }
+const juce::GlyphArrangement& getMasterWordmark() { return InstrumentFonts::get().masterWordmark; }
+const juce::GlyphArrangement& getBrandByline (bool english)
 {
-    static const juce::StringArray names = juce::Font::findAllTypefaceNames();
-    return names;
-}
-
-static std::map<int, juce::Font>& fontCache (bool bold)
-{
-    // Deliberately leaked: destroying juce::Font objects after JUCE's own
-    // static font machinery has been torn down crashes on exit / plug-in unload.
-    static auto* caches = new std::map<int, juce::Font>[2];
-    return caches[bold ? 1 : 0];
-}
-
-juce::Font uiFont (float height, bool bold)
-{
-    auto& cache = fontCache (bold);
-
-    const int key = juce::roundToInt (height * 10.0f);
-    const auto it = cache.find (key);
-
-    if (it != cache.end())
-        return it->second;
-
-    juce::Font font (juce::FontOptions (typefaceName(), height * 1.22f,
-                                        bold ? juce::Font::bold : juce::Font::plain)
-                         .withFallbacks ({ "PingFang SC", "Microsoft YaHei UI", "Microsoft YaHei", "Hiragino Sans GB", "Noto Sans CJK SC", "Arial Unicode MS" }));
-
-    // Tracking lives in font units, so fractional zoom keeps identical rhythm.
-    // Small labels get air; large numbers retain their tabular advances.
-    font.setExtraKerningFactor (height <= tokens::aux ? 0.018f : 0.008f);
-
-    cache.emplace (key, font);
-    return font;
-}
-
-juce::Font monoFont (float height, bool bold)
-{
-    auto& cache = fontCache (bold);
-
-    const int key = juce::roundToInt (height * 10.0f) + 100000;
-    const auto it = cache.find (key);
-
-    if (it != cache.end())
-        return it->second;
-
-    static const juce::String name = []
-    {
-        const auto& all = allTypefaceNames();
-
-        for (const auto* candidate : { "SF Mono", "Menlo", "Monaco", "DejaVu Sans Mono" })
-            if (all.contains (candidate))
-                return juce::String (candidate);
-
-        return juce::Font::getDefaultMonospacedFontName();
-    }();
-
-    juce::Font font (juce::FontOptions (name, height * 1.1f,
-                                        bold ? juce::Font::bold : juce::Font::plain)
-                         .withFallbacks ({ "PingFang SC", "Menlo", "Arial Unicode MS" }));
-
-    cache.emplace (key, font);
-    return font;
+    return english ? InstrumentFonts::get().brandBylineEn : InstrumentFonts::get().brandBylineZh;
 }
 
 juce::Colour severityColour (Severity s)
@@ -298,6 +273,10 @@ namespace ml
 //==============================================================================
 MasterLensLookAndFeel::MasterLensLookAndFeel()
 {
+    setDefaultSansSerifTypeface (InstrumentFonts::get().regular);
+    rotaryBackground.preallocateSpace (2048);
+    rotaryValue.preallocateSpace (2048);
+    rotaryHighlight.preallocateSpace (2048);
     refreshColours();
 }
 
@@ -314,9 +293,9 @@ void MasterLensLookAndFeel::refreshColours()
     setColour (juce::TextEditor::highlightColourId, theme::accent.withAlpha (0.25f));
 
     setColour (juce::TextButton::buttonColourId, theme::cardAlt);
-    setColour (juce::TextButton::buttonOnColourId, theme::accentSoft);
+    setColour (juce::TextButton::buttonOnColourId, theme::raised);
     setColour (juce::TextButton::textColourOffId, theme::text);
-    setColour (juce::TextButton::textColourOnId, theme::accent);
+    setColour (juce::TextButton::textColourOnId, theme::text);
 
     setColour (juce::ComboBox::backgroundColourId, theme::cardAlt);
     setColour (juce::ComboBox::textColourId, theme::text);
@@ -326,7 +305,7 @@ void MasterLensLookAndFeel::refreshColours()
     setColour (juce::PopupMenu::backgroundColourId, theme::card);
     setColour (juce::PopupMenu::textColourId, theme::text);
     setColour (juce::PopupMenu::headerTextColourId, theme::textDim);
-    setColour (juce::PopupMenu::highlightedBackgroundColourId, theme::accentSoft);
+    setColour (juce::PopupMenu::highlightedBackgroundColourId, theme::raised);
     setColour (juce::PopupMenu::highlightedTextColourId, theme::accent);
 
     setColour (juce::Slider::textBoxTextColourId, theme::text);
@@ -342,389 +321,116 @@ void MasterLensLookAndFeel::refreshColours()
     setColour (juce::TooltipWindow::outlineColourId, theme::border);
 }
 
-void MasterLensLookAndFeel::drawLinearSlider (juce::Graphics& g, int x, int y, int width, int height,
-                                              float sliderPos, float minSliderPos, float maxSliderPos,
-                                              juce::Slider::SliderStyle style, juce::Slider& slider)
+juce::Font InstrumentTypography::getComboBoxFont (juce::ComboBox&) { return ml::getValueFont(); }
+juce::Font InstrumentTypography::getLabelFont (juce::Label& label)
 {
-    if (style != juce::Slider::LinearHorizontal)
+    return dynamic_cast<juce::Slider*> (label.getParentComponent()) != nullptr
+        ? ml::getValueFont() : label.getFont();
+}
+juce::Font InstrumentTypography::getPopupMenuFont() { return ml::getValueFont().withHeight (13.0f * ui::scale); }
+juce::Font InstrumentTypography::getTextButtonFont (juce::TextButton&, int) { return ml::getLabelFont(); }
+
+juce::Slider::SliderLayout InstrumentTypography::getSliderLayout (juce::Slider& slider)
+{
+    auto result = juce::LookAndFeel_V4::getSliderLayout (slider);
+    result.sliderBounds = grid::bounds (result.sliderBounds);
+    result.textBoxBounds = grid::bounds (result.textBoxBounds);
+    for (auto* c : slider.getChildren())
+        if (auto* label = dynamic_cast<juce::Label*> (c))
+        {
+            label->setFont (ml::getValueFont());
+            // Native slider labels can retain colours captured before our LNF was attached.
+            label->setColour (juce::Label::textColourId, theme::text);
+            label->setColour (juce::Label::textWhenEditingColourId, theme::text);
+            label->setColour (juce::Label::backgroundColourId, theme::cardAlt);
+            label->setColour (juce::Label::outlineColourId, theme::border);
+            label->setColour (juce::Label::outlineWhenEditingColourId, theme::accent);
+            label->setMinimumHorizontalScale (1.0f);
+            label->getProperties().set ("mlGrid", 4);
+        }
+    return result;
+}
+
+void InstrumentTypography::positionComboBoxText (juce::ComboBox& box, juce::Label& label)
+{
+    auto area = box.getLocalBounds();
+    area.removeFromLeft (4);
+    area.removeFromRight (24);
+    label.setBounds (grid::bounds (area));
+    label.setFont (ml::getValueFont());
+    label.setMinimumHorizontalScale (1.0f);
+    label.getProperties().set ("mlGrid", 4);
+}
+
+void MasterLensLookAndFeel::drawRotarySlider (juce::Graphics& g, int x, int y, int width, int height,
+    float position, float startAngle, float endAngle, juce::Slider& slider)
+{
+    const auto bounds = juce::Rectangle<float> ((float) x, (float) y, (float) width, (float) height).reduced (4.0f);
+    const auto centre = bounds.getCentre();
+    const float radius = juce::jmax (1.0f, juce::jmin (bounds.getWidth(), bounds.getHeight()) * 0.5f);
+    const float bodyRadius = juce::jmax (1.0f, radius - 5.0f);
+    const float angle = startAngle + juce::jlimit (0.0f, 1.0f, position) * (endAngle - startAngle);
+    const bool down = slider.isMouseButtonDown();
+    g.saveState();
+    g.setOpacity (slider.isEnabled() ? 1.0f : 0.4f);
+    rotaryBackground.clear();
+    rotaryBackground.addCentredArc (centre.x, centre.y, radius, radius, 0.0f, startAngle, endAngle, true);
+    g.setColour (juce::Colours::darkgrey.withAlpha (0.5f));
+    g.strokePath (rotaryBackground, juce::PathStrokeType (2.0f));
+    rotaryValue.clear();
+    rotaryValue.addCentredArc (centre.x, centre.y, radius, radius, 0.0f, startAngle, angle, true);
+    g.setColour (theme::accent.withAlpha (0.6f));
+    g.strokePath (rotaryValue, juce::PathStrokeType (2.0f));
+    const auto body = juce::Rectangle<float> (bodyRadius * 2, bodyRadius * 2).withCentre (centre);
+    g.setColour (down ? theme::raised.darker (0.15f) : theme::raised);
+    g.fillEllipse (body);
+    if (! down && slider.isMouseOver())
     {
-        LookAndFeel_V4::drawLinearSlider (g, x, y, width, height, sliderPos, minSliderPos,
-                                          maxSliderPos, style, slider);
-        return;
+        g.setColour (juce::Colours::white.withAlpha (0.08f));
+        g.fillEllipse (body);
     }
-
-    const auto bounds = juce::Rectangle<float> ((float) x, (float) y, (float) width, (float) height);
-    auto track = juce::Rectangle<float> (bounds.getX(), bounds.getCentreY() - 1.0f,
-                                         bounds.getWidth(), 2.0f);
-
-    g.setColour (theme::borderSoft);
-    g.fillRect (track);
-    g.setColour (juce::Colours::black.withAlpha (0.45f));
-    g.fillRect (track.withHeight (1.0f));
-    g.setColour (juce::Colours::white.withAlpha (0.04f));
-    g.fillRect (track.withTop (track.getBottom() - 1.0f));
-
-    const float pos = juce::jlimit (track.getX(), track.getRight(), sliderPos);
-    g.setColour (slider.isEnabled() ? theme::accent : theme::textFaint.withAlpha (0.4f));
-    g.fillRect (track.withRight (pos));
-
-    const bool dragging = slider.isMouseButtonDown() && slider.isMouseOverOrDragging();
-    const float thumbH = dragging ? 18.0f : 14.0f;
-    auto thumb = juce::Rectangle<float> (pos - 5.0f, bounds.getCentreY() - thumbH * 0.5f,
-                                         10.0f, thumbH);
-
-    g.setColour (theme::raised);
-    g.fillRoundedRectangle (thumb, 3.0f);
-    g.setColour (theme::border);
-    g.drawRoundedRectangle (thumb, 3.0f, 1.0f);
-    g.setColour (theme::accent);
-    g.fillRoundedRectangle (thumb.reduced (3.0f, 2.0f), 1.5f);
-
+    rotaryHighlight.clear();
+    rotaryHighlight.addCentredArc (centre.x, centre.y, bodyRadius, bodyRadius, 0.0f,
+                                  -juce::MathConstants<float>::halfPi, 0.35f, true);
+    g.setColour (juce::Colours::white.withAlpha (0.16f));
+    g.strokePath (rotaryHighlight, juce::PathStrokeType (1.0f));
+    const auto pointer = centre + juce::Point<float> (std::sin (angle), -std::cos (angle)) * (bodyRadius - 3.0f);
+    g.setColour (theme::textDim);
+    g.drawLine ({ centre, pointer }, 1.0f);
     if (slider.hasKeyboardFocus (true))
     {
         g.setColour (theme::accent);
-        g.drawRoundedRectangle (thumb.expanded (2.0f), 5.0f, 1.0f);
+        g.drawEllipse (body.reduced (2.0f), 1.0f);
     }
-
-    if (dragging)
-    {
-        const auto valueText = slider.getTextFromValue (slider.getValue());
-        const auto font = monoFont (11.0f);
-        const int tw = juce::roundToInt (juce::GlyphArrangement::getStringWidth (font, valueText)) + 16;
-        auto bubble = juce::Rectangle<int> (juce::roundToInt (pos) - tw / 2,
-                                            juce::roundToInt (thumb.getY()) - 26, tw, 20);
-        bubble.setX (juce::jlimit (x, x + width - tw, bubble.getX()));
-
-        g.setColour (theme::cardAlt);
-        g.fillRoundedRectangle (bubble.toFloat(), 4.0f);
-        g.setColour (theme::border);
-        g.drawRoundedRectangle (bubble.toFloat(), 4.0f, 1.0f);
-        g.setColour (theme::text);
-        g.setFont (font);
-        g.drawText (valueText, bubble, juce::Justification::centred);
-    }
-}
-
-void MasterLensLookAndFeel::drawButtonBackground (juce::Graphics& g, juce::Button& button,
-                                                  const juce::Colour& backgroundColour,
-                                                  bool isMouseOver, bool isButtonDown)
-{
-    auto bounds = button.getLocalBounds().toFloat().reduced (0.5f);
-    constexpr float corner = tokens::radiusControl;
-    const bool primary = (bool) button.getProperties()["mlPrimary"];
-    const bool segment = (bool) button.getProperties()["mlSegment"];
-
-    g.saveState();
-    g.setOpacity (button.isEnabled() ? 1.0f : 0.4f);
-
-    if (segment)
-    {
-        if (button.getToggleState())
-        {
-            g.setColour (theme::accent);
-            g.fillRect (bounds.getX() + 4.0f, bounds.getBottom() - 2.0f,
-                        juce::jmax (12.0f, bounds.getWidth() - 8.0f), 2.0f);
-        }
-        else
-        {
-            g.setColour (theme::borderSoft);
-            g.fillRect (bounds.getX(), bounds.getBottom() - 1.0f, bounds.getWidth(), 1.0f);
-        }
-
-        g.restoreState();
-        return;
-    }
-
-    if (isButtonDown)
-    {
-        surface::recessed (g, bounds, corner);
-    }
-    else if (primary)
-    {
-        g.setColour (theme::accent.withAlpha (isMouseOver ? 0.20f : 0.14f));
-        g.fillRoundedRectangle (bounds, corner);
-    }
-    else
-    {
-        auto base = button.getToggleState() ? theme::accentSoft : backgroundColour;
-
-        if (isMouseOver)
-            base = base.overlaidWith (juce::Colours::white.withAlpha (0.04f));
-
-        g.setGradientFill (juce::ColourGradient (base.overlaidWith (juce::Colours::white.withAlpha (0.025f)),
-                                                 bounds.getX(), bounds.getY(),
-                                                 base.overlaidWith (juce::Colours::black.withAlpha (0.025f)),
-                                                 bounds.getX(), bounds.getBottom(), false));
-        g.fillRoundedRectangle (bounds, corner);
-
-        g.setColour (juce::Colours::white.withAlpha (0.06f));
-        g.drawHorizontalLine (juce::roundToInt (bounds.getY() + 0.5f),
-                              bounds.getX() + corner, bounds.getRight() - corner);
-    }
-
-    if (button.hasKeyboardFocus (true))
-    {
-        g.setColour (theme::accent);
-        g.drawRoundedRectangle (bounds.reduced (2.0f), corner - 1.0f, 1.0f);
-    }
-
     g.restoreState();
 }
 
-void MasterLensLookAndFeel::drawButtonText (juce::Graphics& g, juce::TextButton& button,
-                                            bool isMouseOver, bool isButtonDown)
+void MasterLensLookAndFeel::drawButtonBackground (juce::Graphics& g, juce::Button& button,
+    const juce::Colour&, bool hover, bool down)
 {
-    juce::ignoreUnused (isMouseOver, isButtonDown);
-
-    const bool primary = (bool) button.getProperties()["mlPrimary"];
-    const bool segment = (bool) button.getProperties()["mlSegment"];
-    auto colour = (primary || (segment && button.getToggleState())) ? theme::accent
-                          : (button.getToggleState() ? theme::accent : theme::text);
-    colour = colour.withMultipliedAlpha (button.isEnabled() ? 1.0f : 0.4f);
-
-    g.setColour (colour);
-    g.setFont (uiFont (tokens::label, primary));
-    g.drawText (button.getButtonText(), button.getLocalBounds().reduced (6, 0),
-                juce::Justification::centred, true);
-}
-
-
-void MasterLensLookAndFeel::drawToggleButton (juce::Graphics& g, juce::ToggleButton& button,
-                                              bool isMouseOver, bool isButtonDown)
-{
-    juce::ignoreUnused (isButtonDown);
-
-    auto area = button.getLocalBounds();
-    auto track = area.removeFromLeft (28).withSizeKeepingCentre (28, 16).toFloat();
-
-    g.setColour (button.getToggleState() ? theme::accent : theme::borderSoft);
-    g.fillRoundedRectangle (track, 8.0f);
-    g.setColour (juce::Colours::black.withAlpha (0.35f));
-    g.drawRoundedRectangle (track, 8.0f, 1.0f);
-
-    const float knobX = button.getToggleState() ? track.getRight() - 14.0f : track.getX() + 2.0f;
-    g.setColour (button.getToggleState() ? theme::text : theme::textDim);
-    g.fillEllipse (knobX, track.getY() + 2.0f, 12.0f, 12.0f);
-
-    if (isMouseOver)
+    auto bounds = button.getLocalBounds().toFloat().reduced (0.5f);
+    auto base = button.findColour (juce::TextButton::buttonColourId);
+    if (button.getToggleState()) base = base.brighter (0.07f);
+    if (down) base = base.darker (0.18f);
+    g.saveState();
+    g.setOpacity (button.isEnabled() ? 1.0f : 0.4f);
+    g.setColour (base);
+    g.fillRoundedRectangle (bounds, tokens::radiusControl);
+    if (hover && ! down)
     {
-        g.setColour (theme::text.withAlpha (0.16f));
-        g.drawRoundedRectangle (track.expanded (1.0f), 9.0f, 1.0f);
+        g.setColour (juce::Colours::white.withAlpha (0.08f));
+        g.fillRoundedRectangle (bounds, tokens::radiusControl);
     }
-
+    if (button.getToggleState())
+    {
+        g.setColour (theme::textDim);
+        g.fillRect (bounds.reduced (8.0f).withHeight (1.0f).withY (bounds.getBottom() - 4.0f));
+    }
     if (button.hasKeyboardFocus (true))
     {
         g.setColour (theme::accent);
-        g.drawRoundedRectangle (track.expanded (2.0f), 10.0f, 1.0f);
+        g.drawRoundedRectangle (bounds.reduced (2.0f), tokens::radiusControl - 1.0f, 1.0f);
     }
-
-    g.setColour (theme::textDim);
-    g.setFont (uiFont (tokens::label));
-    g.drawText (button.getButtonText(), area.withTrimmedLeft (8), juce::Justification::centredLeft, true);
-}
-
-void MasterLensLookAndFeel::drawComboBox (juce::Graphics& g, int width, int height, bool isButtonDown,
-                                          int buttonX, int buttonY, int buttonW, int buttonH,
-                                          juce::ComboBox& box)
-{
-    juce::ignoreUnused (buttonX, buttonY, buttonW, buttonH);
-
-    const auto bounds = juce::Rectangle<float> (0.0f, 0.0f, (float) width, (float) height);
-
-    g.setColour (theme::card);
-    g.fillRoundedRectangle (bounds, tokens::radiusControl);
-    g.setColour (theme::borderSoft);
-    g.fillRect (bounds.getX(), bounds.getBottom() - 1.0f, bounds.getWidth(), 1.0f);
-
-    const float cx = bounds.getRight() - 14.0f;
-    const float cy = bounds.getCentreY();
-
-    juce::Path arrow;
-    arrow.startNewSubPath (cx - 4.0f, cy - 2.0f);
-    arrow.lineTo (cx, cy + 2.5f);
-    arrow.lineTo (cx + 4.0f, cy - 2.0f);
-
-    g.setColour (box.hasKeyboardFocus (true) ? theme::accent : theme::textDim);
-    g.strokePath (arrow, juce::PathStrokeType (1.5f, juce::PathStrokeType::mitered,
-                                               juce::PathStrokeType::rounded));
-
-    if (box.hasKeyboardFocus (true))
-    {
-        g.setColour (theme::accent);
-        g.drawRoundedRectangle (bounds.reduced (0.5f), tokens::radiusControl, 1.0f);
-    }
-}
-
-void MasterLensLookAndFeel::drawLabel (juce::Graphics& g, juce::Label& label)
-{
-    // Sliders use their text box label as the numeric input: draw it as a real
-    // 32 px control with a monospaced, right aligned reading.
-    if (dynamic_cast<juce::Slider*> (label.getParentComponent()) != nullptr)
-    {
-        auto r = label.getLocalBounds().toFloat();
-
-        // Numeric fields are bottom-rule only: no box, no fill.
-        g.setColour (label.hasKeyboardFocus (true) ? theme::accent : theme::borderSoft);
-        g.fillRect (r.getX(), r.getBottom() - 1.0f, r.getWidth(), 1.0f);
-
-        if (label.isBeingEdited())
-            return; // the TextEditor paints itself
-
-        g.setColour (theme::text);
-        g.setFont (monoFont (12.0f, true));
-        g.drawText (label.getText(), label.getLocalBounds().reduced (2, 0),
-                    juce::Justification::centredRight, false);
-        return;
-    }
-
-    LookAndFeel_V4::drawLabel (g, label);
-}
-
-void MasterLensLookAndFeel::drawTooltip (juce::Graphics& g, const juce::String& text,
-                                         int width, int height)
-{
-    const auto r = juce::Rectangle<float> (0.0f, 0.0f, (float) width, (float) height).reduced (0.5f);
-
-    g.setColour (theme::card);
-    g.fillRoundedRectangle (r, 4.0f);
-    g.setColour (theme::border);
-    g.drawRoundedRectangle (r, 4.0f, 1.0f);
-
-    g.setColour (theme::textDim);
-    g.setFont (uiFont (tokens::unit * ui::scale));
-    g.drawFittedText (text, 8, 0, width - 16, height, juce::Justification::centred,
-                      juce::jmax (2, juce::roundToInt (3.0f * ui::scale)), 1.0f);
-}
-
-juce::Rectangle<int> MasterLensLookAndFeel::getTooltipBounds (const juce::String& tipText,
-                                                              juce::Point<int> screenPos,
-                                                              juce::Rectangle<int> parentArea)
-{
-    const auto font = uiFont (tokens::aux * ui::scale);
-    const int maxW = juce::roundToInt (360.0f * ui::scale);
-    const int pad = juce::roundToInt (16.0f * ui::scale);
-
-    juce::AttributedString s;
-    s.setJustification (juce::Justification::centred);
-    s.append (tipText, font, theme::text);
-
-    juce::TextLayout layout;
-    layout.createLayout (s, (float) maxW);
-
-    int w = juce::jlimit (80, maxW, juce::roundToInt (layout.getWidth()) + pad);
-    int h = juce::jmax (juce::roundToInt (22.0f * ui::scale),
-                        juce::roundToInt (layout.getHeight()) + juce::roundToInt (8.0f * ui::scale));
-
-    return juce::Rectangle<int> (screenPos.x > parentArea.getCentreX() ? screenPos.x - w - 12
-                                                                      : screenPos.x + 24,
-                                 screenPos.y > parentArea.getCentreY() ? screenPos.y - h - 6
-                                                                      : screenPos.y + 18,
-                                 w, h)
-             .constrainedWithin (parentArea);
-}
-
-juce::Font MasterLensLookAndFeel::getComboBoxFont (juce::ComboBox&) { return uiFont (tokens::label); }
-
-juce::Font MasterLensLookAndFeel::getLabelFont (juce::Label& label)
-{
-    if (dynamic_cast<juce::Slider*> (label.getParentComponent()) != nullptr)
-        return monoFont (13.0f);
-
-    return uiFont (tokens::aux);
-}
-
-/** Popup menus live in their own desktop window and are not affected by the
-    editor transform, so their type is scaled here instead. */
-juce::Font MasterLensLookAndFeel::getPopupMenuFont() { return uiFont (tokens::label * ui::scale); }
-juce::Font MasterLensLookAndFeel::getTextButtonFont (juce::TextButton&, int) { return uiFont (tokens::label); }
-
-void MasterLensLookAndFeel::drawPopupMenuBackground (juce::Graphics& g, int width, int height)
-{
-    g.fillAll (juce::Colours::transparentBlack);
-    g.setColour (theme::cardAlt);
-    g.fillRoundedRectangle (0.0f, 0.0f, (float) width, (float) height, tokens::radiusCard);
-    g.setColour (theme::border);
-    g.drawRoundedRectangle (0.5f, 0.5f, (float) width - 1.0f, (float) height - 1.0f,
-                            tokens::radiusCard, 1.0f);
-}
-
-void MasterLensLookAndFeel::drawPopupMenuItem (juce::Graphics& g, const juce::Rectangle<int>& area,
-                                               bool isSeparator, bool isActive, bool isHighlighted,
-                                               bool isTicked, bool hasSubMenu, const juce::String& text,
-                                               const juce::String& shortcutKeyText,
-                                               const juce::Drawable* icon, const juce::Colour* textColour)
-{
-    juce::ignoreUnused (hasSubMenu, icon);
-
-    if (isSeparator)
-    {
-        surface::hairlineH (g, (float) area.getX() + 10.0f, (float) area.getRight() - 10.0f,
-                            (float) area.getCentreY());
-        return;
-    }
-
-    if (isHighlighted)
-    {
-        g.setColour (theme::raised);
-        g.fillRect (area.reduced (4, 1));
-    }
-
-    if (isTicked)
-    {
-        g.setColour (theme::accent);
-        g.fillRect (area.getX() + 4, area.getY() + 5, 2, area.getHeight() - 10);
-    }
-
-    g.setColour (isActive ? theme::text : theme::textFaint);
-    g.setFont (uiFont (tokens::label * ui::scale));
-    g.drawText (text, area.reduced (14, 0), juce::Justification::centredLeft, true);
-
-    if (shortcutKeyText.isNotEmpty())
-    {
-        g.setColour (theme::textFaint);
-        g.setFont (monoFont (tokens::unit * ui::scale));
-        g.drawText (shortcutKeyText, area.reduced (14, 0), juce::Justification::centredRight, true);
-    }
-}
-
-void MasterLensLookAndFeel::drawScrollbar (juce::Graphics& g, juce::ScrollBar&, int x, int y,
-                                           int width, int height, bool isScrollbarVertical,
-                                           int thumbStartPosition, int thumbSize,
-                                           bool isMouseOver, bool isMouseDown)
-{
-    juce::ignoreUnused (isScrollbarVertical);
-
-    const float alpha = isMouseDown ? 0.85f : (isMouseOver ? 0.6f : 0.35f);
-    juce::Rectangle<float> thumb;
-
-    if (isScrollbarVertical)
-        thumb = { (float) x + (float) width * 0.5f - 1.5f, (float) thumbStartPosition,
-                  3.0f, (float) thumbSize };
-    else
-        thumb = { (float) thumbStartPosition, (float) y + (float) height * 0.5f - 1.5f,
-                  (float) thumbSize, 3.0f };
-
-    g.setColour (theme::textDim.withAlpha (alpha));
-    g.fillRoundedRectangle (thumb, 1.5f);
-}
-
-void MasterLensLookAndFeel::drawScrollbarButton (juce::Graphics&, juce::ScrollBar&, int, int,
-                                                 int, bool, bool, bool)
-{
-    // No arrow buttons: the 3 px thumb is the whole scrollbar.
-}
-
-void MasterLensLookAndFeel::fillTextEditorBackground (juce::Graphics& g, int width, int height,
-                                                      juce::TextEditor&)
-{
-    g.setColour (theme::card);
-    g.fillRect (0, 0, width, height);
-}
-
-void MasterLensLookAndFeel::drawTextEditorOutline (juce::Graphics& g, int width, int height,
-                                                    juce::TextEditor& editor)
-{
-    g.setColour (editor.hasKeyboardFocus (true) ? theme::accent : theme::borderSoft);
-    g.fillRect (0, height - 1, width, 1);
+    g.restoreState();
 }
 } // namespace ml

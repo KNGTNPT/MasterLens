@@ -11,14 +11,22 @@
 #include "ui/Theme.h"
 #include "ui/Widgets.h"
 
+#if JUCE_DEBUG && defined(MASTERLENS_ENABLE_INSPECTOR)
+namespace melatonin { class Inspector; }
+#endif
+
 class MasterLensAudioProcessorEditor : public juce::AudioProcessorEditor,
                                       public juce::FileDragAndDropTarget,
                                       private juce::Timer,
                                       private juce::KeyListener
 {
 public:
+    friend class MasterLensLayoutCheck;
     explicit MasterLensAudioProcessorEditor (MasterLensAudioProcessor&);
     ~MasterLensAudioProcessorEditor() override;
+#if JUCE_DEBUG && defined(MASTERLENS_ENABLE_INSPECTOR)
+    void showInspector();
+#endif
 
     void paint (juce::Graphics&) override;
     void resized() override;
@@ -53,6 +61,10 @@ public:
     int getReadoutTicksForBenchmark() const noexcept { return readout.getUpdateCount(); }
     int getTimerTicksForBenchmark() const noexcept { return timerTicks; }
     int getPresentationTicksForBenchmark() const noexcept { return presentationTicks; }
+#if JUCE_DEBUG
+    /** Inspect the UI-owned cache; never consume the SPSC FIFO from a second reader. */
+    const ml::SpectrumFifo::Reader& getOutputSpectrumForDebug() const noexcept { return outputSpectrumReader; }
+#endif
     void setSpectrumViewForSnapshot (int view) { detail.setSpectrumView (view); }
 
     void writeReportPdfForSnapshot (const juce::File& file)
@@ -132,6 +144,9 @@ private:
     ml::MasterLensLookAndFeel lnf;
     juce::TooltipWindow tooltipWindow { this, 650 };
     juce::ComponentAnimator animator;
+#if JUCE_DEBUG && defined(MASTERLENS_ENABLE_INSPECTOR)
+    std::unique_ptr<melatonin::Inspector> inspector;
+#endif
 
     juce::ComboBox presetBox;
     juce::TextButton infoButton;
@@ -151,6 +166,7 @@ private:
     ml::SnapshotChip snapshotB { "B" };
 
     ml::SpectrumAnalyzer analyzer;
+    ml::SpectrumFifo::Reader outputSpectrumReader;
     ml::Advisor advisor;
     ml::ReferenceSpectrum reference;
     ml::FileAnalyzer fileAnalyzer;
@@ -214,7 +230,7 @@ private:
     int tick = 0;
     int selectedPage = 0;
 
-    juce::Rectangle<int> headerArea, paramArea, footerArea;
+    juce::Rectangle<int> headerArea, paramArea, footerArea, spectrumArea, readingsArea;
 
     juce::String footerStatusText;
     juce::Colour footerStatusColour { ml::theme::textFaint };

@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Layout.h"
+
 #include <juce_gui_basics/juce_gui_basics.h>
 #include <array>
 #include <functional>
@@ -50,15 +52,16 @@ std::vector<CheckResult> buildChecklist (const StatsSnapshot& stats,
 void paintEmptyState (juce::Graphics&, juce::Rectangle<int> area);
 
 //==============================================================================
-/** Vertical mastering readout: integrated dial, TP / LRA / PLR / delta.
+/** Mastering readout: integrated LUFS, TP / LRA / PLR / delta.
 
-    This is not a row of cards. One thin vertical rule separates columns, the
-    numbers share a tabular right edge and only the 4 px status rule carries
-    colour.
+    One semantic font system, preformatted values and a four-point raster. The
+    spectrum page uses horizontal columns; other pages retain a vertical band.
 */
 class ReadoutBand : public juce::Component
 {
 public:
+    ReadoutBand();
+    void resized() override;
     void setValues (const StatsSnapshot& s, const BasisContext& basis,
                     const PlatformSummary& platform, float targetLufs,
                     float ceilingDb, bool signal);
@@ -67,10 +70,11 @@ public:
     int getUpdateCount() const noexcept { return updateCount; }
 
 private:
+    struct Cell { juce::String label, value, unit; juce::Colour status; };
+    std::array<Cell, 5> cells;
+    std::array<juce::Rectangle<int>, 5> cellBounds;
     int updateCount = 0;
-    void paintCell (juce::Graphics&, juce::Rectangle<int>, const juce::String& label,
-                    const juce::String& value, const juce::String& unit,
-                    const juce::String& hint, juce::Colour status);
+
 
     StatsSnapshot stats;
     BasisContext basis;
@@ -155,11 +159,11 @@ class SpectrumDisplay : public juce::Component
 public:
     SpectrumDisplay();
 
-    void setAnalyzer (const SpectrumAnalyzer* a) { analyzer = a; }
+    void setAnalyzer (const SpectrumAnalyzer* a);
     void paint (juce::Graphics&) override;
-    void resized() override { backgroundDirty = true; }
-    void refreshLanguage() { backgroundDirty = true; repaint(); }
-    void invalidateBackground() { backgroundDirty = true; repaint(); }
+    void resized() override { invalidateBackground(); }
+    void refreshLanguage() { invalidateBackground(); }
+    void invalidateBackground();
 
 private:
     void ensureBackground();
@@ -167,6 +171,9 @@ private:
 
     const SpectrumAnalyzer* analyzer = nullptr;
     juce::Image background;
+    juce::ColourGradient fillGradient { theme::accent.withAlpha (0.10f), 0.0f, 0.0f,
+                                       theme::accent.withAlpha (0.0f), 0.0f, 1.0f, false };
+    juce::String peakLabel;
     bool backgroundDirty = true;
     int cachedThemeRevision = -1;
 

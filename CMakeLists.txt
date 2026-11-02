@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.22)
 
-project(MasterLens VERSION 2.1.1 LANGUAGES C CXX)
+project(MasterLens VERSION 2.3.0 LANGUAGES C CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -13,8 +13,23 @@ endif()
 # JUCE is vendored in .tools/JUCE (see README for the exact tag)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/.tools/JUCE ${CMAKE_BINARY_DIR}/JUCE EXCLUDE_FROM_ALL)
 
+juce_add_binary_data(MasterLensFonts
+    HEADER_NAME MasterLensFonts.h NAMESPACE MasterLensFonts
+    SOURCES Resources/fonts/Geist-Regular.otf Resources/fonts/Geist-Medium.otf Resources/fonts/Geist-Bold.otf Resources/fonts/GeistMono-Regular.otf)
+set_target_properties(MasterLensFonts PROPERTIES POSITION_INDEPENDENT_CODE TRUE)
+
+option(MASTERLENS_ENABLE_INSPECTOR "Build the Debug Melatonin component inspector" OFF)
+if(MASTERLENS_ENABLE_INSPECTOR)
+    include(FetchContent)
+    FetchContent_Declare(melatonin_inspector
+        SOURCE_DIR "${CMAKE_BINARY_DIR}/_deps/melatonin_inspector"
+        GIT_REPOSITORY https://github.com/sudara/melatonin_inspector.git
+        GIT_TAG 9c483f865854d83fe9873e1c20e3fd772f695f80)
+    FetchContent_MakeAvailable(melatonin_inspector)
+endif()
+
 juce_add_plugin(MasterLens
-    VERSION 2.1.1
+    VERSION 2.3.0
     COMPANY_NAME "BerryStudio"
     BUNDLE_ID "com.berrystudio.masterlens"
     PLUGIN_MANUFACTURER_CODE OrcA
@@ -101,6 +116,7 @@ target_compile_definitions(MasterLens PUBLIC
 
 target_link_libraries(MasterLens
     PRIVATE
+        MasterLensFonts
         juce::juce_audio_utils
         juce::juce_dsp
         juce::juce_gui_extra
@@ -203,6 +219,7 @@ target_compile_definitions(MasterLensUiShot PRIVATE
 
 target_link_libraries(MasterLensUiShot
     PRIVATE
+        MasterLensFonts
         juce::juce_audio_utils
         juce::juce_dsp
         juce::juce_gui_extra
@@ -210,5 +227,12 @@ target_link_libraries(MasterLensUiShot
     PUBLIC
         juce::juce_recommended_config_flags
 )
+
+if(MASTERLENS_ENABLE_INSPECTOR)
+    foreach(inspected_target MasterLens MasterLensUiShot)
+        target_link_libraries(${inspected_target} PRIVATE $<$<CONFIG:Debug>:Melatonin::Inspector>)
+        target_compile_definitions(${inspected_target} PRIVATE $<$<CONFIG:Debug>:MASTERLENS_ENABLE_INSPECTOR=1>)
+    endforeach()
+endif()
 
 

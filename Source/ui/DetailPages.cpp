@@ -48,15 +48,23 @@ static juce::String pageTitle (PageId p)
 
 void DetailArea::paintPageHeader (juce::Graphics& g, const juce::String& meta)
 {
-    auto header = contentArea().removeFromTop (30);
+    auto header = contentArea().removeFromTop (32);
+    if (page == PageId::spectrum)
+    {
+        header = getLocalBounds().withTrimmedTop (spectrumSplit + 8).withHeight (24).withTrimmedLeft (16).withWidth (128);
+        g.setColour (theme::textDim);
+        g.setFont (getLabelFont());
+        g.drawText (pageTitle (page).toUpperCase(), header, juce::Justification::centredLeft, false);
+        return;
+    }
 
     g.setColour (theme::text);
-    g.setFont (uiFont (tokens::section, true));
+    g.setFont (getLabelFont());
     g.drawText (pageTitle (page), header.removeFromLeft (juce::jmin (260, header.getWidth() / 2)),
                 juce::Justification::centredLeft);
 
     g.setColour (theme::textFaint);
-    g.setFont (monoFont (tokens::unit));
+    g.setFont (getValueFont());
     g.drawText (meta, header, juce::Justification::centredRight);
 }
 
@@ -138,7 +146,7 @@ void DetailArea::paint (juce::Graphics& g)
 
     if (emptyMode && page != PageId::files)
     {
-        paintEmptyState (g, contentArea().withTrimmedTop (30));
+        paintEmptyState (g, contentArea().withTrimmedTop (32));
         return;
     }
 
@@ -174,12 +182,12 @@ void DetailArea::paintLoudness (juce::Graphics& g)
         auto inner = cell;
 
         g.setColour (theme::textFaint);
-        g.setFont (uiFont (tokens::unit));
-        g.drawText (label, inner.removeFromTop (14), juce::Justification::centredLeft, false);
+        g.setFont (getLabelFont());
+        g.drawText (label, inner.removeFromTop (16), juce::Justification::centredLeft, false);
 
         g.setColour (theme::text);
-        g.setFont (monoFont (13.0f, true));
-        g.drawText (value, inner.removeFromTop (18), juce::Justification::centredLeft, false);
+        g.setFont (getValueFont());
+        g.drawText (value, inner.removeFromTop (20), juce::Justification::centredLeft, false);
 
         inner.removeFromTop (4);
         auto track = inner.removeFromTop (4).toFloat();
@@ -197,10 +205,10 @@ void DetailArea::paintLoudness (juce::Graphics& g)
 
     if (! compact)
     {
-        auto top = area.removeFromTop (22);
+        auto top = area.removeFromTop (24);
         g.setColour (theme::textFaint);
-        g.setFont (uiFont (tokens::unit));
-        g.drawText ("02", top.removeFromLeft (22), juce::Justification::centredLeft, false);
+        g.setFont (getLabelFont());
+        g.drawText ("02", top.removeFromLeft (24), juce::Justification::centredLeft, false);
         g.drawText (T ("相位与宽度", "PHASE & WIDTH"), top, juce::Justification::centredLeft, false);
         surface::hairlineH (g, (float) area.getX(), (float) area.getRight(), (float) area.getY() - 8.0f);
 

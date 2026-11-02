@@ -33,7 +33,7 @@ namespace
         auto titleRow = inner.removeFromTop (compact ? 16 : 18);
 
         g.setColour (theme::textDim);
-        g.setFont (uiFont (tokens::label, true));
+        g.setFont (getLabelFont());
         g.drawText (c.title, titleRow.withTrimmedRight (64), juce::Justification::centredLeft, false);
 
         const auto colour = riskColour (c.risk);
@@ -42,19 +42,19 @@ namespace
         g.setColour (colour.withAlpha (0.14f));
         g.fillRoundedRectangle (chip.toFloat(), 9.0f);
         g.setColour (colour);
-        g.setFont (monoFont (tokens::unit, true));
+        g.setFont (getValueFont());
         g.drawText (T ("风险 ", "risk ") + juce::String (juce::roundToInt (c.risk)),
                     chip, juce::Justification::centred);
 
         auto valueRow = inner.removeFromTop (compact ? 24 : juce::jmin (38, inner.getHeight() / 2));
 
         g.setColour (colour);
-        g.setFont (monoFont (compact ? 21.0f : juce::jmin (28.0f, (float) valueRow.getHeight() * 0.82f), true));
+        g.setFont (getValueFont());
         g.drawText (c.primary, valueRow, juce::Justification::centredLeft, false);
 
         if (c.unit.isNotEmpty())
         {
-            const auto font = uiFont (tokens::unit);
+            const auto font = getLabelFont();
             const int w = juce::roundToInt (juce::GlyphArrangement::getStringWidth (font, c.unit)) + 4;
 
             g.setColour (theme::textFaint);
@@ -64,27 +64,27 @@ namespace
         }
 
         g.setColour (theme::textFaint);
-        g.setFont (uiFont (tokens::unit));
+        g.setFont (getLabelFont());
         g.drawText (c.note + T (" · 实时试听", " · live audition"),
                     inner.removeFromTop (compact ? 14 : 16), juce::Justification::centredLeft, false);
 
         if (! compact)
         {
-            inner.removeFromTop (2);
+            inner.removeFromTop (4);
 
             for (const auto& row : c.rows)
             {
                 if (inner.getHeight() < 18)
                     break;
 
-                auto line = inner.removeFromTop (18);
+                auto line = inner.removeFromTop (20);
 
                 g.setColour (theme::textFaint);
-                g.setFont (uiFont (tokens::unit));
+                g.setFont (getLabelFont());
                 g.drawText (row.first, line.removeFromLeft (96), juce::Justification::centredLeft, false);
 
                 g.setColour (theme::text);
-                g.setFont (monoFont (tokens::unit, true));
+                g.setFont (getValueFont());
                 g.drawText (row.second, line, juce::Justification::centredRight, false);
             }
         }
@@ -103,7 +103,7 @@ namespace
 //==============================================================================
 void DetailArea::paintSignal (juce::Graphics& g)
 {
-    auto area = contentArea().withTrimmedTop (30);
+    auto area = contentArea().withTrimmedTop (32);
     const auto& d = state.defects;
     const auto& s = state.stats;
 
@@ -130,12 +130,12 @@ void DetailArea::paintSignal (juce::Graphics& g)
                                 3.0f, (float) strip.getHeight() - 24.0f, 1.5f);
 
         g.setColour (theme::text);
-        g.setFont (uiFont (tokens::section, true));
+        g.setFont (getLabelFont());
         g.drawText (headline, strip.getX() + 24, strip.getY() + 6, strip.getWidth() / 2,
                     strip.getHeight() - 12, juce::Justification::centredLeft, false);
 
         g.setColour (theme::textFaint);
-        g.setFont (monoFont (tokens::unit));
+        g.setFont (getValueFont());
         g.drawText (T ("越线层 ", "over ") + juce::String (d.attributionCount)
                         + ml::sep() + T ("最高 ", "max ") + juce::String (juce::roundToInt (d.worstRisk()))
                         + ml::sep() + T ("平顶 ", "flat-top ") + fmt1 (d.flatTopPct) + "%",
@@ -234,13 +234,13 @@ void DetailArea::paintSignal (juce::Graphics& g)
             auto label = row.removeFromLeft (juce::jmin (78, row.getWidth() / 5));
 
             g.setColour (theme::textDim);
-            g.setFont (uiFont (tokens::unit, true));
+            g.setFont (getLabelFont());
             g.drawText (T ("问题区域", "REGIONS"), label, juce::Justification::centredLeft, false);
 
             if (state.signalProblems.empty())
             {
                 g.setColour (theme::textFaint);
-                g.setFont (uiFont (tokens::unit));
+                g.setFont (getLabelFont());
                 g.drawText (T ("检出越线时自动生成时间戳；点击卡片实时跟随 DAW，点击时间戳循环该段",
                                "Timestamped regions appear when a layer crosses its limit; click a card for live DAW solo, or a timestamp to loop that region"),
                             row, juce::Justification::centredLeft, true);
@@ -261,12 +261,12 @@ void DetailArea::paintSignal (juce::Graphics& g)
                     auto inner = chip.reduced (6, 0);
 
                     g.setColour (colour);
-                    g.setFont (monoFont (tokens::unit, true));
+                    g.setFont (getValueFont());
                     g.drawText (fmtTime (p.start), inner.removeFromLeft (44),
                                 juce::Justification::centredLeft, false);
 
                     g.setColour (theme::textDim);
-                    g.setFont (uiFont (tokens::unit));
+                    g.setFont (getLabelFont());
                     g.drawText (p.label, inner, juce::Justification::centredLeft, false);
                 }
             }
@@ -284,7 +284,7 @@ void DetailArea::paintSignal (juce::Graphics& g)
         auto inner = attribution.reduced (14, 9);
 
         g.setColour (theme::accent);
-        g.setFont (uiFont (tokens::unit, true));
+        g.setFont (getLabelFont());
         g.drawText (T ("联动归因层  CORRELATED EVENTS", "CORRELATED EVENTS"),
                     inner.removeFromTop (16), juce::Justification::centredLeft, false);
 
@@ -325,11 +325,11 @@ void DetailArea::paintSignal (juce::Graphics& g)
                       "anomalies that share a time position or a root cause."));
 
         g.setColour (theme::textDim);
-        g.setFont (uiFont (tokens::aux));
+        g.setFont (getLabelFont());
 
         for (int i = 0; i < juce::jmin (3, lines.size()); ++i)
             if (inner.getHeight() >= 18)
-                g.drawText (U8 ("· ") + lines[i], inner.removeFromTop (18),
+                g.drawText (U8 ("· ") + lines[i], inner.removeFromTop (20),
                             juce::Justification::centredLeft, false);
     }
 }

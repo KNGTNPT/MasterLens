@@ -10,16 +10,15 @@ namespace ml
 {
 /** Design tokens shared by every module.
 
-    Base sizes shared by the graphite instrument surface. uiFont() applies
-    the JUCE line-height compensation so rendered glyphs match the token.
+    Base sizes shared by the graphite instrument surface. Fonts are supplied by the three semantic accessors below.
 */
 namespace tokens
 {
-inline constexpr float display = 32.0f;   // main readout
-inline constexpr float value   = 30.0f;   // secondary readings
-inline constexpr float section = 14.0f;   // page / group title
-inline constexpr float label   = 12.0f;   // control label
-inline constexpr float aux     = 12.0f;   // secondary copy
+inline constexpr float display = 20.0f;   // main readout
+inline constexpr float value   = 13.0f;   // secondary readings
+inline constexpr float section = 11.0f;   // page / group title
+inline constexpr float label   = 11.0f;   // control label
+inline constexpr float aux     = 11.0f;   // secondary copy
 inline constexpr float unit    = 11.0f;   // units, axis labels, time codes
 
 inline constexpr float radiusCard    = 6.0f;
@@ -30,7 +29,8 @@ inline constexpr int controlHeight = 28;
 inline constexpr int cardHeight    = 76;   // legacy name; now the readout band
 inline constexpr int gap           = 8;
 inline constexpr int groupGap      = 24;
-inline constexpr int margin        = 20;
+inline constexpr int margin        = 16;
+inline constexpr int spectrumAnchor = 32;
 } // namespace tokens
 
 /** Runtime interface zoom (1.0 - 2.0).
@@ -88,17 +88,17 @@ inline juce::Colour raised     { 0xff2a2f30 };
 inline juce::Colour border     { 0xff3b4242 };
 inline juce::Colour borderSoft { 0xff303637 };
 inline juce::Colour divider    { 0xff303637 };
-inline juce::Colour text       { 0xffe5e9e3 };
-inline juce::Colour textDim    { 0xffa4afaa };
-inline juce::Colour textFaint  { 0xff89958f };
-inline juce::Colour accent     { 0xff99c9b4 };
+inline juce::Colour text       { 0xff969c98 };
+inline juce::Colour textDim    { 0xff909994 };
+inline juce::Colour textFaint  { 0xff858f89 };
+inline juce::Colour accent     { 0xff819e90 };
 inline juce::Colour accentSoft { 0xff30463e };
-inline juce::Colour cyan       { 0xff91b9c5 };
-inline juce::Colour good       { 0xff99c9b4 };
-inline juce::Colour info       { 0xff99c9b4 };
-inline juce::Colour warn       { 0xffdbb57a };
-inline juce::Colour bad        { 0xffe1897c };
-inline juce::Colour violet     { 0xffb7abd0 };
+inline juce::Colour cyan       { 0xff80989f };
+inline juce::Colour good       { 0xff819e90 };
+inline juce::Colour info       { 0xff819e90 };
+inline juce::Colour warn       { 0xffb19870 };
+inline juce::Colour bad        { 0xffc08278 };
+inline juce::Colour violet     { 0xff94949c };
 
 inline bool dark { true };
 inline int revisionCounter { 0 };
@@ -132,8 +132,11 @@ void glow (juce::Graphics&, juce::Rectangle<float> area, juce::Colour, float rad
 } // namespace surface
 
 juce::String typefaceName();
-juce::Font uiFont (float height, bool bold = false);
-juce::Font monoFont (float height, bool bold = false);
+juce::Font getLabelFont();
+juce::Font getValueFont();
+juce::Font getCriticalFont();
+const juce::GlyphArrangement& getMasterWordmark();
+const juce::GlyphArrangement& getBrandByline (bool english);
 juce::Colour severityColour (Severity s);
 
 //==============================================================================
@@ -202,60 +205,31 @@ inline juce::String fmtTime (double seconds)
 }
 
 //==============================================================================
-/** Dark professional LookAndFeel; the light variant is driven by theme::apply. */
-class MasterLensLookAndFeel : public juce::LookAndFeel_V4
+/** Font callbacks are shared independently of control painting. */
+class InstrumentTypography : public juce::LookAndFeel_V4
 {
 public:
-    MasterLensLookAndFeel();
-
-    /** Re-reads the active palette (call after theme::apply). */
-    void refreshColours();
-
-    void drawLinearSlider (juce::Graphics&, int x, int y, int width, int height,
-                           float sliderPos, float minSliderPos, float maxSliderPos,
-                           juce::Slider::SliderStyle, juce::Slider&) override;
-
-    void drawButtonBackground (juce::Graphics&, juce::Button&, const juce::Colour&,
-                               bool isMouseOver, bool isButtonDown) override;
-    void drawButtonText (juce::Graphics&, juce::TextButton&,
-                         bool isMouseOver, bool isButtonDown) override;
-    void drawToggleButton (juce::Graphics&, juce::ToggleButton&,
-                           bool isMouseOver, bool isButtonDown) override;
-
-    void drawComboBox (juce::Graphics&, int width, int height, bool isButtonDown,
-                       int buttonX, int buttonY, int buttonW, int buttonH,
-                       juce::ComboBox&) override;
-
-    void drawLabel (juce::Graphics&, juce::Label&) override;
-    void drawTooltip (juce::Graphics&, const juce::String&, int width, int height) override;
-    juce::Rectangle<int> getTooltipBounds (const juce::String&, juce::Point<int> screenPos,
-                                           juce::Rectangle<int> parentArea) override;
-
-    void drawScrollbar (juce::Graphics&, juce::ScrollBar&, int x, int y, int width, int height,
-                        bool isScrollbarVertical, int thumbStartPosition, int thumbSize,
-                        bool isMouseOver, bool isMouseDown) override;
-    void drawScrollbarButton (juce::Graphics&, juce::ScrollBar&, int width, int height,
-                              int buttonDirection, bool isScrollbarVertical,
-                              bool isMouseOver, bool isButtonDown) override;
-
-    void fillTextEditorBackground (juce::Graphics&, int width, int height,
-                                   juce::TextEditor&) override;
-    void drawTextEditorOutline (juce::Graphics&, int width, int height,
-                                juce::TextEditor&) override;
-
-    void drawPopupMenuBackground (juce::Graphics&, int width, int height) override;
-    void drawPopupMenuItem (juce::Graphics&, const juce::Rectangle<int>& area,
-                            bool isSeparator, bool isActive, bool isHighlighted,
-                            bool isTicked, bool hasSubMenu, const juce::String& text,
-                            const juce::String& shortcutKeyText,
-                            const juce::Drawable* icon, const juce::Colour* textColour) override;
-
     juce::Font getComboBoxFont (juce::ComboBox&) override;
     juce::Font getLabelFont (juce::Label&) override;
     juce::Font getPopupMenuFont() override;
-    juce::Font getTextButtonFont (juce::TextButton&, int buttonHeight) override;
+    juce::Font getTextButtonFont (juce::TextButton&, int) override;
+    juce::Slider::SliderLayout getSliderLayout (juce::Slider&) override;
+    void positionComboBoxText (juce::ComboBox&, juce::Label&) override;
 };
 
-/** Legacy name kept so older call sites still compile. */
+/** Only the two instrument control painters are customised. */
+class MasterLensLookAndFeel : public InstrumentTypography
+{
+public:
+    MasterLensLookAndFeel();
+    void refreshColours();
+    void drawRotarySlider (juce::Graphics&, int x, int y, int width, int height,
+                           float position, float startAngle, float endAngle, juce::Slider&) override;
+    void drawButtonBackground (juce::Graphics&, juce::Button&, const juce::Colour&,
+                               bool isMouseOver, bool isButtonDown) override;
+private:
+    juce::Path rotaryBackground, rotaryValue, rotaryHighlight;
+};
+
 using LightLookAndFeel = MasterLensLookAndFeel;
 } // namespace ml

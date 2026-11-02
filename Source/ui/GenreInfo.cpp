@@ -23,10 +23,10 @@ namespace
         auto card = cardBounds (full).reduced (28, 22);
 
         Layout l;
-        l.title = card.removeFromTop (26);
+        l.title = card.removeFromTop (28);
         card.removeFromTop (4);
         l.facts = card.removeFromTop (20);
-        card.removeFromTop (10);
+        card.removeFromTop (12);
         l.body = card.removeFromTop (juce::jmin (96, card.getHeight() / 3));
 
         auto foot = card.removeFromBottom (44);
@@ -70,7 +70,7 @@ GenrePanel::GenrePanel()
 {
     setOpaque (false);
 
-    const auto captionFont = uiFont (tokens::label);
+    const auto captionFont = getLabelFont();
 
     for (auto* l : { &loudnessCaption, &lraCaption, &clipCaption })
     {
@@ -148,7 +148,7 @@ void GenrePanel::refreshTexts()
     const auto& w = presets::war::notes[presetIndex];
     const bool en = Localisation::isEnglish();
 
-    closeButton.setButtonText (T ("关闭", "Close"));
+    closeButton.setButtonText (ml::grid::controlText (T ("关闭", "Close")));
     loudnessCaption.setText (T ("目标响度 LUFS", "Target LUFS"), juce::dontSendNotification);
     lraCaption.setText (T ("LRA 目标 LU", "LRA goal LU"), juce::dontSendNotification);
     clipCaption.setText (T ("允许削波 dB", "Clip allowed dB"), juce::dontSendNotification);
@@ -228,19 +228,19 @@ void GenrePanel::paint (juce::Graphics& g)
     const bool en = Localisation::isEnglish();
 
     g.setColour (theme::text);
-    g.setFont (uiFont (17.0f, true));
-    g.drawText (U8 (en ? e.en : e.zh), l.title.withTrimmedRight (110),
+    g.setFont (getLabelFont());
+    g.drawText (U8 (en ? e.en : e.zh), l.title.withTrimmedRight (112),
                 juce::Justification::centredLeft, true);
 
     paintBerryWordmark (g, l.title.withTrimmedLeft (l.title.getWidth() - 104),
                         theme::textFaint, 8.5f, juce::Justification::right);
 
     g.setColour (theme::textFaint);
-    g.setFont (monoFont (11.0f));
+    g.setFont (getValueFont());
     g.drawText (factsText, l.facts, juce::Justification::centredLeft, false);
 
     g.setColour (theme::textDim);
-    g.setFont (uiFont (12.0f));
+    g.setFont (getLabelFont());
     g.drawFittedText (bodyText, l.body, juce::Justification::topLeft,
                       juce::jmax (2, l.body.getHeight() / 15), 0.9f);
 
@@ -248,14 +248,14 @@ void GenrePanel::paint (juce::Graphics& g)
     adviceArea = adviceArea.withTop (l.body.getBottom() + 14).withBottom (l.sliders.getY() - 6);
 
     g.setColour (theme::accent.withAlpha (0.9f));
-    g.setFont (uiFont (10.5f, true));
+    g.setFont (getLabelFont());
     g.drawText (T ("调整建议  HOW TO GET THERE", "HOW TO GET THERE"),
                 adviceArea.removeFromTop (16), juce::Justification::topLeft, false);
 
     // One fixed line box per row: drawFittedText() squeezes multi-line CJK blocks
     // into a single cramped box, which reads as overlapping text.
     g.setColour (theme::textDim);
-    g.setFont (uiFont (11.0f));
+    g.setFont (getLabelFont());
 
     const int lineH = 15;
 
@@ -289,6 +289,7 @@ void GenrePanel::resized()
     placeRow (clipCaption, clip);
 
     closeButton.setBounds (l.close.withSizeKeepingCentre (96, 30));
+    grid::alignChildren (*this);
 }
 
 void GenrePanel::mouseDown (const juce::MouseEvent& e)

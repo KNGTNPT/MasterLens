@@ -60,6 +60,7 @@ void IssueList::resized()
 
     content.setSize (juce::jmax (140, viewport.getMaximumVisibleWidth()),
                      juce::jmax (content.totalHeight(), viewport.getHeight()));
+    grid::alignChildren (*this);
 }
 
 void IssueList::paint (juce::Graphics& g)
@@ -87,7 +88,7 @@ void IssueList::Content::setItems (std::vector<Issue> newItems, const std::set<j
     rowHeights.assign (items.size(), collapsedHeight);
 
     const float available = (float) juce::jmax (200, getWidth() - 110);
-    const auto detailFont = uiFont (tokens::aux);
+    const auto detailFont = getLabelFont();
 
     for (size_t i = 0; i < items.size(); ++i)
     {
@@ -167,13 +168,13 @@ void IssueList::Content::paint (juce::Graphics& g)
     if (items.empty())
     {
         g.setColour (theme::textDim);
-        g.setFont (uiFont (tokens::label));
+        g.setFont (getLabelFont());
         g.drawFittedText (T ("未发现需要处理的项目", "No action items found"),
                           getLocalBounds().reduced (24).withHeight (40),
                           juce::Justification::centred, 2);
 
         g.setColour (theme::textFaint);
-        g.setFont (uiFont (tokens::aux));
+        g.setFont (getLabelFont());
         g.drawFittedText (T ("下方为全部检查项，可逐条核对",
                              "Every check is listed below for verification"),
                           getLocalBounds().reduced (24).withTrimmedTop (44).withHeight (24),
@@ -201,7 +202,7 @@ void IssueList::Content::paint (juce::Graphics& g)
         g.fillEllipse (12.0f, (float) row.getY() + 19.0f, 6.0f, 6.0f);
 
         g.setColour (theme::text);
-        g.setFont (uiFont (tokens::label, true));
+        g.setFont (getLabelFont());
         g.drawText (item.title, 30, row.getY() + 11, getWidth() - 30 - 170, 20,
                     juce::Justification::centredLeft);
 
@@ -214,13 +215,13 @@ void IssueList::Content::paint (juce::Graphics& g)
         g.setColour (colour.withAlpha (0.12f));
         g.fillRoundedRectangle (chip.toFloat(), 9.0f);
         g.setColour (colour);
-        g.setFont (uiFont (tokens::unit));
+        g.setFont (getLabelFont());
         g.drawText (tag, chip, juce::Justification::centred);
 
         if (item.timed)
         {
             g.setColour (theme::textFaint);
-            g.setFont (monoFont (tokens::unit));
+            g.setFont (getValueFont());
             g.drawText (fmtTime (item.detectedAt),
                         juce::Rectangle<int> (getWidth() - 86, row.getY() + 17, 50, 14),
                         juce::Justification::centredRight);
@@ -249,7 +250,7 @@ void IssueList::Content::paint (juce::Graphics& g)
         if (open)
         {
             g.setColour (theme::textDim);
-            g.setFont (uiFont (tokens::aux));
+            g.setFont (getLabelFont());
             g.drawFittedText (item.detail, 30, row.getY() + 40, getWidth() - 64,
                               juce::jmax (16, h - 46), juce::Justification::topLeft, 4);
         }
