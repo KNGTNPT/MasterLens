@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.22)
 
-project(MasterLens VERSION 2.3.0 LANGUAGES C CXX)
+project(MasterLens VERSION 2.3.1 LANGUAGES C CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -15,7 +15,7 @@ add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/.tools/JUCE ${CMAKE_BINARY_DIR}/JUC
 
 juce_add_binary_data(MasterLensFonts
     HEADER_NAME MasterLensFonts.h NAMESPACE MasterLensFonts
-    SOURCES Resources/fonts/Geist-Regular.otf Resources/fonts/Geist-Medium.otf Resources/fonts/Geist-Bold.otf Resources/fonts/GeistMono-Regular.otf)
+    SOURCES Resources/fonts/Geist-Regular.otf Resources/fonts/Geist-Medium.otf Resources/fonts/Geist-Bold.otf Resources/fonts/GeistMono-Regular.otf Resources/brand/Berrystudio.svg)
 set_target_properties(MasterLensFonts PROPERTIES POSITION_INDEPENDENT_CODE TRUE)
 
 option(MASTERLENS_ENABLE_INSPECTOR "Build the Debug Melatonin component inspector" OFF)
@@ -29,7 +29,7 @@ if(MASTERLENS_ENABLE_INSPECTOR)
 endif()
 
 juce_add_plugin(MasterLens
-    VERSION 2.3.0
+    VERSION 2.3.1
     COMPANY_NAME "BerryStudio"
     BUNDLE_ID "com.berrystudio.masterlens"
     PLUGIN_MANUFACTURER_CODE OrcA

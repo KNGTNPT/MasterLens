@@ -1,0 +1,217 @@
+{
+  "version": "2.3.1",
+  "platform": "Darwin",
+  "architecture": "arm64",
+  "rendererSha256": "a1506c0d4ece50995c3c64046a6e054224542d180d8f132752c3ea1fc7d48f38",
+  "images": [
+    {
+      "path": "docs/light-2.3.1.png",
+      "sha256": "2048cba00aaacac3b442a5be6c17fdcae25746c3535fd1e4e369e80343e9ea8c",
+      "width": 2240,
+      "height": 1400,
+      "arguments": [
+        "page0",
+        "light",
+        "size1120",
+        "out=231"
+      ]
+    },
+    {
+      "path": "docs/screenshot-2.3.1.png",
+      "sha256": "f7d649f65584ce9509269b6c035f18a04e6b278a3facf73217f2abc3cf94cf97",
+      "width": 2240,
+      "height": 1400,
+      "arguments": [
+        "page0",
+        "size1120",
+        "out=231"
+      ]
+    },
+    {
+      "path": "docs/spectrum-2.3.1.png",
+      "sha256": "091437778763dbba5ef31dadfe242e662c2a4b3f4f49b5ac261a787c272fc069",
+      "width": 2240,
+      "height": 1400,
+      "arguments": [
+        "page2",
+        "size1120",
+        "out=231"
+      ]
+    },
+    {
+      "path": "docs/stereo-2.3.1.png",
+      "sha256": "90cba88bc6ccdbe451253d86248e6d77b4f1352ccacfd8d122eb3a0f6718b785",
+      "width": 2240,
+      "height": 1400,
+      "arguments": [
+        "page3",
+        "size1120",
+        "out=231"
+      ]
+    },
+    {
+      "path": "docs/peak-2.3.1.png",
+      "sha256": "876e47a8edddcc8a63eb8928f1dcc715686f5fdc73f40c9b03e1d1144be8bd11",
+      "width": 2240,
+      "height": 1400,
+      "arguments": [
+        "page1",
+        "size1120",
+        "out=231"
+      ]
+    },
+    {
+      "path": "docs/delivery-2.3.1.png",
+      "sha256": "49039d85647651caee67fa1b7b647efe65ec4ac3fdc527b46e73b17958069e69",
+      "width": 2240,
+      "height": 1400,
+      "arguments": [
+        "page4",
+        "size1120",
+        "out=231"
+      ]
+    },
+    {
+      "path": "docs/checks-2.3.1.png",
+      "sha256": "a6f104ded1d6c4bc5b22c87afce2f3916b4c984c087b4df87a94846f5dd2e5b9",
+      "width": 2240,
+      "height": 1400,
+      "arguments": [
+        "page7",
+        "size1120",
+        "out=231"
+      ]
+    },
+    {
+      "path": "docs/signal-2.3.1.png",
+      "sha256": "01e8125c25645956e1ef5f049646083190d4f7de532f62a3775104d5353886ba",
+      "width": 2240,
+      "height": 1400,
+      "arguments": [
+        "page6",
+        "size1120",
+        "out=231"
+      ]
+    },
+    {
+      "path": "docs/target-2.3.1.png",
+      "sha256": "02de4ee8d5634d99e7bb63f8ea09b045f79392d03399511de2ef7ec2180ea310",
+      "width": 2240,
+      "height": 1400,
+      "arguments": [
+        "page9",
+        "size1120",
+        "out=231"
+      ]
+    },
+    {
+      "path": "docs/timeline-2.3.1.png",
+      "sha256": "bc4251180a24582e839781d57e8dd954fd73ef02d1345ebcfb6ee3e08c2ef687",
+      "width": 2240,
+      "height": 1400,
+      "arguments": [
+        "page8",
+        "size1120",
+        "out=231"
+      ]
+    },
+    {
+      "path": "docs/english-2.3.1.png",
+      "sha256": "7ee48f1d22aeffed7fd6f8bdd8b4ed56b431f28ce220d89e6dde3711cae73683",
+      "width": 2240,
+      "height": 1400,
+      "arguments": [
+        "page0",
+        "en",
+        "size1120",
+        "out=231"
+      ]
+    },
+    {
+      "path": "docs/settings-2.3.1.png",
+      "sha256": "ff8808fd11d9ce71dd8271171cf4081edbd9317a6adce3ffaaffd86c58d0980e",
+      "width": 2240,
+      "height": 1400,
+      "arguments": [
+        "page0",
+        "settings",
+        "size1120",
+        "out=231"
+      ]
+    },
+    {
+      "path": "docs/about-2.3.1.png",
+      "sha256": "23f7a612eef4ed6a89d1b500c5b60c4a181c9df6cfcaf83c53646d7a8793b47f",
+      "width": 2240,
+      "height": 1400,
+      "arguments": [
+        "page0",
+        "about",
+        "size1120",
+        "out=231"
+      ]
+    },
+    {
+      "path": "docs/album-2.3.1.png",
+      "sha256": "3bf842629f45aaa50dd106485cd48404e0f5cce3e9d7f07b49736632af4807cb",
+      "width": 2240,
+      "height": 1400,
+      "arguments": [
+        "page5",
+        "albumcap",
+        "size1120",
+        "out=231album"
+      ]
+    },
+    {
+      "path": "docs/fileqc-2.3.1.png",
+      "sha256": "fb32b2e0fe445ba5df2a58abe1d05dc2389ace4f32ffe4534cead54c079ed0cd",
+      "width": 2240,
+      "height": 1400,
+      "arguments": [
+        "page10",
+        "fileqc",
+        "size1120",
+        "out=231files"
+      ]
+    },
+    {
+      "path": "docs/file-mono-2.3.1.png",
+      "sha256": "6a9ce51267084d423e1fa4418ff5106a3b07fa6d44868aa55e584918dcdd2c0e",
+      "width": 2240,
+      "height": 1400,
+      "arguments": [
+        "page10",
+        "fileqc",
+        "fileview1",
+        "size1120",
+        "out=231mono"
+      ]
+    },
+    {
+      "path": "docs/file-gain-2.3.1.png",
+      "sha256": "4e8f6b1615aa08b8edcbe8509569180aa419f0e282521fade16943d360a7dead",
+      "width": 2240,
+      "height": 1400,
+      "arguments": [
+        "page10",
+        "fileqc",
+        "fileview2",
+        "size1120",
+        "out=231gain"
+      ]
+    },
+    {
+      "path": "docs/waterfall-2.3.1.png",
+      "sha256": "56a1979f020017d4759a84af9c29e21b2ce085d30045561da0c730a913574931",
+      "width": 2240,
+      "height": 1400,
+      "arguments": [
+        "page2",
+        "spectrumview1",
+        "size1120",
+        "out=231waterfall"
+      ]
+    }
+  ]
+}

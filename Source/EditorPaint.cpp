@@ -16,13 +16,13 @@ void MasterLensAudioProcessorEditor::paint (juce::Graphics& g)
     auto brand = headerArea.reduced (24, 8);
     // A 44 px grid slot holds the exact 32 * 1.3 px mark, centred vertically.
     ml::paintLogoMark (g, brand.removeFromLeft (44).toFloat()
-        .withSizeKeepingCentre (32.0f * 1.3f, 32.0f * 1.3f));
+        .withSizeKeepingCentre (32.0f * 1.3f, 32.0f * 1.3f), false, logoAngle);
     brand.removeFromLeft (16);
     const auto& wordmark = ml::getMasterWordmark();
     const auto& byline = ml::getBrandByline (ml::Localisation::isEnglish());
     const auto titleInk = wordmark.getBoundingBox (0, -1, true);
     const auto bylineInk = byline.getBoundingBox (0, -1, true);
-    constexpr float brandScale = 1.3f;
+    constexpr float brandScale = 1.15f;
     constexpr float lineGap = 8.0f;
     const float titleHeight = titleInk.getHeight() * brandScale;
     const float totalHeight = titleHeight + lineGap + bylineInk.getHeight();

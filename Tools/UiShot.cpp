@@ -4,6 +4,8 @@
 #include <cstdlib>
 #include <ctime>
 #include <vector>
+#include <thread>
+#include <chrono>
 
 #include "PluginEditor.h"
 #include "PluginProcessor.h"
@@ -45,6 +47,7 @@ public:
         settingsShot = commandLine.containsIgnoreCase ("settings");
         fileQcShot = commandLine.containsIgnoreCase ("fileqc");
         benchMode = commandLine.containsIgnoreCase ("bench");
+        liveBenchMode = commandLine.containsIgnoreCase ("livebench");
 
         const int outTag = commandLine.indexOfIgnoreCase ("out=");
 
@@ -226,6 +229,33 @@ public:
 
         if (benchMode)
         {
+            if (liveBenchMode)
+            {
+                editor->addToDesktop (juce::ComponentPeer::windowIsTemporary);
+                editor->setVisible (true);
+                benchAudioStop.store (false);
+                benchAudio = std::thread ([this]
+                {
+                    juce::AudioBuffer<float> block (2, 512);
+                    juce::MidiBuffer midi;
+                    std::uint64_t sample = 0;
+                    auto next = std::chrono::steady_clock::now();
+                    while (! benchAudioStop.load())
+                    {
+                        for (int i = 0; i < 512; ++i, ++sample)
+                        {
+                            const double t = sample / 48000.0;
+                            const float amplitude = 0.12f + 0.08f * (float) std::sin (t * 3.0);
+                            block.setSample (0, i, amplitude * (float) std::sin (t * 2764.6015));
+                            block.setSample (1, i, amplitude * (float) std::sin (t * 2764.6015 + 0.5));
+                        }
+                        processor->processBlock (block, midi);
+                        next += std::chrono::microseconds (10667);
+                        std::this_thread::sleep_until (next);
+                    }
+                });
+            }
+            benchPaintStart = editor->getMeterPaintsForBenchmark();
             benchTimerStart = editor->getTimerTicksForBenchmark();
             benchPresentationStart = editor->getPresentationTicksForBenchmark();
             benchMeterStart = editor->getMeterTicksForBenchmark();
@@ -242,11 +272,18 @@ public:
                 const double presentationHz = (editor->getPresentationTicksForBenchmark()-benchPresentationStart)/wall;
                 const double meterHz = (editor->getMeterTicksForBenchmark()-benchMeterStart)/wall;
                 const double readoutHz = (editor->getReadoutTicksForBenchmark()-benchReadoutStart)/wall;
+                const double paintHz = (editor->getMeterPaintsForBenchmark() - benchPaintStart) / wall;
+                std::printf ("NATIVE_METER_PAINT %.2fHz (offscreen runs have no scheduled paints)\n", paintHz);
+                if (liveBenchMode && (pageShot == 0 || pageShot == 3) && paintHz < 58.0)
+                {
+                    std::fprintf (stderr, "Native meter presentation missed the 60 Hz target\n");
+                    setApplicationReturnValue (1);
+                }
                 std::printf("UI_CADENCE timer=%.1fHz presentation=%.1fHz meter=%.1fHz readout=%.1fHz\n",
                             timerHz,presentationHz,meterHz,readoutHz);
-                if ((pageShot==0 || pageShot==3) && (meterHz<45.0 || readoutHz<45.0))
+                if ((pageShot==0 || pageShot==3) && (meterHz<58.0 || readoutHz<58.0))
                 {
-                    std::fprintf(stderr,"Meter cadence below 45 Hz\n");
+                    std::fprintf(stderr,"Meter cadence below 60 Hz\n");
                     setApplicationReturnValue(1);
                 }
                 std::vector<double> frames;
@@ -294,6 +331,8 @@ public:
 
     void shutdown() override
     {
+        benchAudioStop.store (true);
+        if (benchAudio.joinable()) benchAudio.join();
 #if JUCE_DEBUG
         fifoCheck.reset();
 #endif
@@ -577,8 +616,10 @@ private:
     bool snapShot = false;
     bool settingsShot = false;
     bool fileQcShot = false;
-    bool benchMode = false;
-    int benchTimerStart=0, benchPresentationStart=0, benchMeterStart=0, benchReadoutStart=0;
+    bool benchMode = false, liveBenchMode = false;
+    std::atomic<bool> benchAudioStop { true };
+    std::thread benchAudio;
+    int benchPaintStart=0, benchTimerStart=0, benchPresentationStart=0, benchMeterStart=0, benchReadoutStart=0;
     std::clock_t benchCpuStart = 0;
     double benchWallStart = 0.0;
     juce::String outSuffix;

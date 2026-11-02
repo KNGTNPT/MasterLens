@@ -1,6 +1,7 @@
 #include "Widgets.h"
 #include "../Version.h"
 #include "Logo.h"
+#include "MasterLensFonts.h"
 
 namespace ml
 {
@@ -79,14 +80,17 @@ juce::String SnapshotChip::getTooltip()
 //==============================================================================
 static juce::Rectangle<int> aboutCardBounds (juce::Rectangle<int> area)
 {
-    const int w = juce::jmin (540, area.getWidth() - 64);
-    const int h = juce::jmin (470, area.getHeight() - 64);
+    const int w = juce::jmin (640, area.getWidth() - 64);
+    const int h = juce::jmin (520, area.getHeight() - 64);
 
     return area.withSizeKeepingCentre (w, h);
 }
 
 AboutPanel::AboutPanel()
 {
+    studioDark = juce::Drawable::createFromImageData (MasterLensFonts::Berrystudio_svg, MasterLensFonts::Berrystudio_svgSize);
+    studioLight = juce::Drawable::createFromImageData (MasterLensFonts::Berrystudio_svg, MasterLensFonts::Berrystudio_svgSize);
+    if (studioLight) studioLight->replaceColour (juce::Colour (0xff969c98), juce::Colour (0xff26352e));
     setOpaque (false);
 
     closeButton.setButtonText (ml::grid::controlText (T ("关闭", "Close")));
@@ -159,13 +163,17 @@ void AboutPanel::paint (juce::Graphics& g)
     };
 
     drawRow (T ("版本", "Version"), kVersion, theme::text);
-    drawRow (T ("开发者", "Developer"), juce::String::fromUTF8 (Localisation::isEnglish() ? kDeveloperEnglish : kDeveloper), theme::accent);
     drawRow (T ("机构", "Organisation"), kOrganisation, theme::violet);
 
     inner.removeFromTop (8);
 
     g.setColour (theme::textFaint);
     g.setFont (getLabelFont());
+    auto studioArea = inner.removeFromBottom (80).withTrimmedRight (112)
+        .withSizeKeepingCentre (300, 56);
+    if (auto* studio = theme::dark ? studioDark.get() : studioLight.get())
+        studio->drawWithin (g, studioArea.toFloat(), juce::RectanglePlacement::centred, 1.0f);
+    inner.removeFromBottom (12);
     g.drawFittedText (T ("测量标准：ITU-R BS.1770-4 · EBU R128 · EBU Tech 3342\n"
                          "真峰值 4× 过采样插值 · 零延迟 · 不修改音频\n"
                          "Built with JUCE 8",

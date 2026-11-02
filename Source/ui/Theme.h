@@ -14,12 +14,12 @@ namespace ml
 */
 namespace tokens
 {
-inline constexpr float display = 20.0f;   // main readout
-inline constexpr float value   = 13.0f;   // secondary readings
-inline constexpr float section = 11.0f;   // page / group title
-inline constexpr float label   = 11.0f;   // control label
-inline constexpr float aux     = 11.0f;   // secondary copy
-inline constexpr float unit    = 11.0f;   // units, axis labels, time codes
+inline constexpr float display = 26.0f;   // main readout
+inline constexpr float value   = 16.0f;   // secondary readings
+inline constexpr float section = 14.0f;   // page / group title
+inline constexpr float label   = 14.0f;   // control label
+inline constexpr float aux     = 14.0f;   // secondary copy
+inline constexpr float unit    = 14.0f;   // units, axis labels, time codes
 
 inline constexpr float radiusCard    = 6.0f;
 inline constexpr float radiusControl = 5.0f;
@@ -42,10 +42,10 @@ inline constexpr int spectrumAnchor = 32;
 */
 namespace ui
 {
-inline constexpr float minScale = 1.0f;
+inline constexpr float minScale = 0.8f;
 inline constexpr float maxScale = 2.0f;
 
-inline constexpr std::array<float, 5> scaleSteps { 1.0f, 1.25f, 1.5f, 1.75f, 2.0f };
+inline constexpr std::array<float, 5> scaleSteps { 0.8f, 1.0f, 1.25f, 1.5f, 2.0f };
 
 inline float scale = 1.0f;
 
@@ -218,16 +218,20 @@ public:
 };
 
 /** Only the two instrument control painters are customised. */
-class MasterLensLookAndFeel : public InstrumentTypography
+class MasterLensLookAndFeel : public InstrumentTypography, private juce::Timer
 {
 public:
     MasterLensLookAndFeel();
     void refreshColours();
+    void bindButtons (juce::Component& root);
     void drawRotarySlider (juce::Graphics&, int x, int y, int width, int height,
                            float position, float startAngle, float endAngle, juce::Slider&) override;
     void drawButtonBackground (juce::Graphics&, juce::Button&, const juce::Colour&,
                                bool isMouseOver, bool isButtonDown) override;
 private:
+    void timerCallback() override;
+    struct ButtonMotion { juce::Component::SafePointer<juce::Button> button; float depth = 0.0f, velocity = 0.0f; };
+    std::array<ButtonMotion, 128> buttonMotions;
     juce::Path rotaryBackground, rotaryValue, rotaryHighlight;
 };
 

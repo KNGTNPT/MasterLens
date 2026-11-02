@@ -174,6 +174,7 @@ void MasterLensAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, j
     }
 
     lastTransportPlaying = playing ? 1 : 0;
+    hostTransportPlaying.store (playing, std::memory_order_relaxed);
 
     if (auto* p = apvts.getRawParameterValue (commandId))
     {

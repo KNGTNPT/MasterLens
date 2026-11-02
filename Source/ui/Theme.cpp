@@ -218,9 +218,9 @@ namespace
         juce::Typeface::Ptr brandMono = juce::Typeface::createSystemTypefaceFor (
             MasterLensFonts::GeistMonoRegular_otf, MasterLensFonts::GeistMonoRegular_otfSize);
 
-        juce::Font label { options (regular, 11.0f).withKerningFactor (0.08f) };
-        juce::Font value { options (medium, 13.0f).withFeatureEnabled ("tnum") };
-        juce::Font critical { options (bold, 20.0f).withFeatureEnabled ("tnum") };
+        juce::Font label { options (regular, 14.0f).withKerningFactor (0.04f) };
+        juce::Font value { options (medium, 16.0f).withFeatureEnabled ("tnum") };
+        juce::Font critical { options (bold, 26.0f).withFeatureEnabled ("tnum") };
         juce::GlyphArrangement masterWordmark, brandBylineZh, brandBylineEn;
 
         InstrumentFonts()
@@ -228,11 +228,11 @@ namespace
             // User-requested 130% brand geometry; measurement font roles stay unchanged.
             masterWordmark.addLineOfText (value.withExtraKerningFactor (0.16f),
                                          "MASTERLENS", 0.0f, 0.0f);
-            const juce::Font byline { options (brandMono, 11.0f).withKerningFactor (0.12f) };
+            const juce::Font byline { options (brandMono, 12.0f).withKerningFactor (0.12f) };
             brandBylineZh.addLineOfText (byline, juce::String ("BERRYSTUDIO / ")
-                + kDeveloper + " / " + kVersion, 0.0f, 0.0f);
+                + kVersion, 0.0f, 0.0f);
             brandBylineEn.addLineOfText (byline, juce::String ("BERRYSTUDIO / ")
-                + kDeveloperEnglish + " / " + kVersion, 0.0f, 0.0f);
+                + kVersion, 0.0f, 0.0f);
         }
 
     private:
@@ -278,6 +278,34 @@ MasterLensLookAndFeel::MasterLensLookAndFeel()
     rotaryValue.preallocateSpace (2048);
     rotaryHighlight.preallocateSpace (2048);
     refreshColours();
+    startTimerHz (90);
+}
+
+void MasterLensLookAndFeel::bindButtons (juce::Component& root)
+{
+    if (auto* button = dynamic_cast<juce::Button*> (&root))
+    {
+        bool found = false;
+        for (const auto& motion : buttonMotions) if (motion.button.getComponent() == button) found = true;
+        if (! found) for (auto& motion : buttonMotions) if (motion.button == nullptr)
+        { motion.button = button; break; }
+    }
+    for (auto* child : root.getChildren()) bindButtons (*child);
+}
+
+void MasterLensLookAndFeel::timerCallback()
+{
+    for (auto& motion : buttonMotions)
+        if (auto* button = motion.button.getComponent())
+        {
+            if (! button->isShowing()) continue;
+            const float target = button->isDown() ? 1.0f : 0.0f;
+            if (std::abs (motion.depth - target) < 0.001f && std::abs (motion.velocity) < 0.001f) continue;
+            // Small damped rebound, entirely inside the existing hit area.
+            motion.velocity = (motion.velocity + (target - motion.depth) * 0.22f) * 0.65f;
+            motion.depth += motion.velocity;
+            button->repaint();
+        }
 }
 
 void MasterLensLookAndFeel::refreshColours()
@@ -327,7 +355,7 @@ juce::Font InstrumentTypography::getLabelFont (juce::Label& label)
     return dynamic_cast<juce::Slider*> (label.getParentComponent()) != nullptr
         ? ml::getValueFont() : label.getFont();
 }
-juce::Font InstrumentTypography::getPopupMenuFont() { return ml::getValueFont().withHeight (13.0f * ui::scale); }
+juce::Font InstrumentTypography::getPopupMenuFont() { return ml::getValueFont().withHeight (16.0f * ui::scale); }
 juce::Font InstrumentTypography::getTextButtonFont (juce::TextButton&, int) { return ml::getLabelFont(); }
 
 juce::Slider::SliderLayout InstrumentTypography::getSliderLayout (juce::Slider& slider)
@@ -408,7 +436,11 @@ void MasterLensLookAndFeel::drawRotarySlider (juce::Graphics& g, int x, int y, i
 void MasterLensLookAndFeel::drawButtonBackground (juce::Graphics& g, juce::Button& button,
     const juce::Colour&, bool hover, bool down)
 {
-    auto bounds = button.getLocalBounds().toFloat().reduced (0.5f);
+    float depth = down ? 1.0f : 0.0f;
+    for (const auto& motion : buttonMotions)
+        if (motion.button.getComponent() == &button) { depth = motion.depth; break; }
+    auto bounds = button.getLocalBounds().toFloat().reduced (0.5f)
+        .reduced (juce::jmax (0.0f, depth) * 0.5f).translated (0.0f, depth * 1.2f);
     auto base = button.findColour (juce::TextButton::buttonColourId);
     if (button.getToggleState()) base = base.brighter (0.07f);
     if (down) base = base.darker (0.18f);
@@ -421,6 +453,11 @@ void MasterLensLookAndFeel::drawButtonBackground (juce::Graphics& g, juce::Butto
         g.setColour (juce::Colours::white.withAlpha (0.08f));
         g.fillRoundedRectangle (bounds, tokens::radiusControl);
     }
+    // A top-left glint and lower contact shade explain the press depth.
+    g.setColour (juce::Colours::white.withAlpha (0.06f + 0.04f * juce::jmax (0.0f, depth)));
+    g.drawHorizontalLine (juce::roundToInt (bounds.getY() + 1), bounds.getX() + 5, bounds.getRight() - 5);
+    g.setColour (juce::Colours::black.withAlpha (0.18f));
+    g.drawHorizontalLine (juce::roundToInt (bounds.getBottom() - 1), bounds.getX() + 5, bounds.getRight() - 5);
     if (button.getToggleState())
     {
         g.setColour (theme::textDim);

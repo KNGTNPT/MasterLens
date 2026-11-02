@@ -31,6 +31,8 @@ fi
 cp "$ROOT/packaging/Install.command" "$STAGE/安装 Install.command"
 cp "$ROOT/packaging/Uninstall.command" "$STAGE/卸载 Uninstall.command"
 cp "$ROOT/packaging/README-DMG.txt" "$STAGE/使用说明 README.txt"
+mkdir -p "$STAGE/Licenses"
+cp "$ROOT/Resources/fonts/OFL.txt" "$STAGE/Licenses/Geist-OFL.txt"
 chmod +x "$STAGE/安装 Install.command" "$STAGE/卸载 Uninstall.command"
 
 for bundle in "$STAGE/MasterLens.vst3" "$STAGE/MasterLens.component" "$STAGE/MasterLens.app"; do

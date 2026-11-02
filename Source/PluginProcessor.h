@@ -51,6 +51,7 @@ public:
     ml::AuditionEngine auditionEngine;
     ml::ReferencePlayer referencePlayer;
     ml::FilePreviewPlayer filePreviewPlayer;
+    std::atomic<bool> hostTransportPlaying { false };
 
     ml::StatsSnapshot getStatsSnapshot() const { return ml::snapshot (stats); }
     void requestReset() { resetRequested.store (true); }

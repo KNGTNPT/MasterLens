@@ -11,7 +11,7 @@ namespace ml
     the About / Settings cards (48-64 px), the app icon (1024 px) and the SVG
     published in docs/logo.svg.
 */
-void paintLogoMark (juce::Graphics&, juce::Rectangle<float> area, bool monochrome = false);
+void paintLogoMark (juce::Graphics&, juce::Rectangle<float> area, bool monochrome = false, float angle = 0.0f);
 
 /** "BERRYSTUDIO" wordmark with optical tracking. */
 void paintBerryWordmark (juce::Graphics&, juce::Rectangle<int> area, juce::Colour,

@@ -161,11 +161,11 @@ void SettingsPanel::paint (juce::Graphics& g)
     // ---- reference list -----------------------------------------------------
     const auto row = [&] (const juce::String& key, const juce::String& value)
     {
-        auto r = l.list.removeFromTop (24);
+        auto r = l.list.removeFromTop (28);
 
         g.setColour (theme::textFaint);
         g.setFont (getLabelFont());
-        g.drawText (key, r.removeFromLeft (120), juce::Justification::centredLeft, false);
+        g.drawText (key, r.removeFromLeft (152), juce::Justification::centredLeft, false);
 
         g.setColour (theme::textDim);
         g.setFont (getLabelFont());
@@ -186,7 +186,7 @@ void SettingsPanel::paint (juce::Graphics& g)
 
     g.setColour (theme::textFaint);
     g.setFont (getLabelFont());
-    g.drawText ("BerryStudio  |  " + juce::String::fromUTF8 (ml::kDeveloper),
+    g.drawText ("BerryStudio  |  " + juce::String::fromUTF8 (Localisation::isEnglish() ? ml::kDeveloperEnglish : ml::kDeveloper),
                 l.footer.withTrimmedRight (120), juce::Justification::centredRight, false);
 }
 

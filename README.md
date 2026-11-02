@@ -5,13 +5,24 @@
 **母带响度 / 文件 QC / 频谱 / 声场 / 专辑交付 / CLI**<br>
 by **BerryStudio** · developer **KNGTNPT 兰**<br>
 macOS / Windows · VST3 / AU / 独立版 · C++17 + JUCE 8<br>
-当前版本：**2.3.0**
+当前版本：**2.3.1**
 
 MasterLens 是放在母带链末尾的小检查员：这首歌有多响、峰值会不会顶过头、立体声合成单声道后会不会变薄、交出去之前还有哪里值得听一遍，它都帮你留意着。把它插在 Master / Stereo Out 的最后一级就好。
 
 默认零延迟、逐位旁路，也就是只看、不动你的声音。点试听、开等响监听或切参考 A/B 时，才会临时改变输出。辛苦做好的声音，会好好留在原地。
 
 歌该做成什么样，还是你的耳朵说了算。数字有点多也没关系，我们一项项看；它负责把容易漏掉的小细节摊开，陪你把交付前的最后一遍检查做完。
+
+## 2.3.1：字大一点，眼睛就轻松一点喵
+
+这一版不让你再凑近屏幕猜小字啦。标签、数值、关键读数改成 **14 / 16 / 26px**，初次打开优先用 125%，再按屏幕可用空间收好。拖大拖小窗口时，文字、控件和留白整张一起缩放，位置不会各跑各的；设置里也可以选 80–200%。
+
+- **播放时，圆环陪着转**：左上角镜头围绕中心点每 8 秒转一圈，停止后停在原位；中心点不乱跑。
+- **按钮有一点手感**：按下会有轻浅光影，松开带一点阻尼回弹。幅度很小，点按位置保持原样，也不耽误读数。
+- **量表跟着屏幕走**：可见窗口优先使用显示器刷新时钟，以 60 FPS 为目标；后备时钟留有 90Hz 调度余量。FFT、报告和问题分析继续分开调度，不把声音处理拖进动画里。
+- **名字各就各位**：主界面副行只留 BERRYSTUDIO 和版本；开发者在设置中显示为 KNGTNPT 兰 / KNGTNPT LAN。关于页加入透明底的莓果工作室 SVG，文字也是矢量轮廓。
+
+2.3.0 的项目保存、证据复核与回听、交付规格、文件夹监控和 CLI 都继续保留。默认旁路、响度、真峰值与 M/S 测量沿用原有路径。测量和显示实测见 [2.3.1 验证记录](docs/performance-2.3.1.md)；显示速度仍会受宿主、屏幕刷新率和负载影响，不把调度目标写成所有机器上的保证。
 
 ## 2.3.0：曲线站前面，工作流也接起来喵
 
@@ -41,13 +52,13 @@ MasterLens 是放在母带链末尾的小检查员：这首歌有多响、峰值
 
 验证、限制和本地测量见 [2.3 验证记录](docs/performance-2.3.0.md) 与 [界面验收记录](docs/instrument-ui.md)。
 
-![MasterLens 2.3.0 响度与动态](docs/screenshot-2.3.0.png)
+![MasterLens 2.3.1 响度与动态](docs/screenshot-2.3.1.png)
 
-![MasterLens 2.3.0 频谱平衡](docs/spectrum-2.3.0.png)
+![MasterLens 2.3.1 频谱平衡](docs/spectrum-2.3.1.png)
 
-![MasterLens 2.3.0 声场与相位](docs/stereo-2.3.0.png)
+![MasterLens 2.3.1 声场与相位](docs/stereo-2.3.1.png)
 
-![MasterLens 2.3.0 文件 QC](docs/fileqc-2.3.0.png)
+![MasterLens 2.3.1 文件 QC](docs/fileqc-2.3.1.png)
 
 ## 从 2.1.1 到 2.3.0
 
@@ -72,7 +83,7 @@ MasterLens 是放在母带链末尾的小检查员：这首歌有多响、峰值
 
 ### 先装好，再播一首
 
-[下载 2.3.0](https://github.com/KNGTNPT/MasterLens/releases/tag/v2.3.0)。macOS 打开 DMG，运行「安装 Install.command」；Windows 运行对应 x64 / ARM64 的 EXE，然后重启 DAW。
+[下载 2.3.1](https://github.com/KNGTNPT/MasterLens/releases/tag/v2.3.1)。macOS 打开 DMG，运行「安装 Install.command」；Windows 运行对应 x64 / ARM64 的 EXE，然后重启 DAW。
 
 把 MasterLens 插在母带链最后，先播 20–30 秒，跟它打个招呼。左侧的综合响度看整体有多响，真峰值看最高处有没有越线；LRA 看强弱变化的范围，PLR 看峰值与平均响度之间还留了多少空间。中央曲线会把变化过程画出来。
 

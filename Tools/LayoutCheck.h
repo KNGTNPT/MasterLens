@@ -19,13 +19,26 @@ public:
             if (! pass) { ++failures; std::fprintf (stderr, "INSTRUMENT_FAIL %s\n", label); }
         };
         const auto label = ml::getLabelFont(), value = ml::getValueFont(), critical = ml::getCriticalFont();
-        check (label.getHeight() == 11.0f && value.getHeight() == 13.0f && critical.getHeight() == 20.0f,
-               "font tiers must be 11 / 13 / 20");
+        check (label.getHeight() == 14.0f && value.getHeight() == 16.0f && critical.getHeight() == 26.0f,
+               "font tiers must be 14 / 16 / 26");
         check (value.getHeight() - label.getHeight() >= 2.0f, "label/value separation");
         const auto zeros = juce::GlyphArrangement::getStringWidth (value, "000000");
         const auto ones = juce::GlyphArrangement::getStringWidth (value, "111111");
         check (std::abs (zeros - ones) < 0.01f, "tabular numerals");
         check (! banned (label) && ! banned (value) && ! banned (critical), "font family");
+        // Playback rotates around a fixed centre; a stopped/stale stream freezes.
+        juce::AudioBuffer<float> block (2, 512); block.clear();
+        editor.processor.hostTransportPlaying.store (true);
+        editor.processor.outputSpectrumFifo.pushMainOutput (block);
+        editor.logoTickMs = juce::Time::getMillisecondCounterHiRes() - 16.0;
+        const float beforeAngle = editor.logoAngle;
+        editor.updateUiFrame();
+        check (editor.logoAngle > beforeAngle, "playing logo rotates");
+        editor.processor.hostTransportPlaying.store (false);
+        editor.lastAudioMs = juce::Time::getMillisecondCounterHiRes() - 500.0;
+        const float stoppedAngle = editor.logoAngle;
+        editor.updateUiFrame();
+        check (editor.logoAngle == stoppedAngle, "stopped logo freezes");
         juce::TextButton button;
         button.setSize (80, 32);
         button.setLookAndFeel (&editor.lnf);
@@ -53,9 +66,12 @@ public:
             for (const float scale : ml::ui::scaleSteps)
             {
                 editor.setUiScale (scale, false);
-                for (const auto size : { juce::Point<int> { 880, 560 }, { 1120, 700 }, { 1440, 900 }, { 1123, 703 } })
+                for (const auto size : { juce::Point<int> { 896, 560 }, { 1120, 700 }, { 1440, 900 }, { 1123, 703 } })
                 {
                     editor.setSize (juce::roundToInt (size.x * scale), juce::roundToInt (size.y * scale));
+                    check (std::abs (editor.uiScale - juce::jmin (editor.getWidth() / 1120.0f,
+                        editor.getHeight() / 700.0f)) < 0.001f, "continuous resize scale");
+                    check (editor.baseBounds() == juce::Rectangle<int> (1120, 700), "stable layout canvas");
                     for (int page = 0; page < ml::numPages; ++page)
                     {
                         editor.setPage (page);
@@ -88,7 +104,7 @@ public:
         visit (editor, failures, checked);
         editor.hideOverlay (editor.genrePanel);
         editor.setPage ((int) ml::PageId::spectrum);
-        std::printf ("INSTRUMENT_LAYOUT %s boundaries=%d failures=%d fonts=%s/%s/%s sizes=11/13/20\n",
+        std::printf ("INSTRUMENT_LAYOUT %s boundaries=%d failures=%d fonts=%s/%s/%s sizes=14/16/26\n",
             failures == 0 ? "PASS" : "FAIL", checked, failures,
             label.getTypefaceName().toRawUTF8(), value.getTypefaceName().toRawUTF8(), critical.getTypefaceName().toRawUTF8());
         return failures == 0;
@@ -123,7 +139,11 @@ private:
                 const auto b = c->getBounds();
                 const bool aligned = b.getX() % 4 == 0 && b.getY() % 4 == 0
                                   && b.getWidth() % 4 == 0 && b.getHeight() % 4 == 0;
-                if (! aligned || ! parent.getLocalBounds().contains (b))
+                const auto* editor = dynamic_cast<MasterLensAudioProcessorEditor*> (&parent);
+                const auto logicalParent = editor != nullptr ? editor->baseBounds() : parent.getLocalBounds();
+                const bool physicalInside = editor == nullptr || parent.getLocalBounds().toFloat().expanded (1.0f)
+                    .contains (b.toFloat().transformedBy (c->getTransform()));
+                if (! aligned || ! logicalParent.contains (b) || ! physicalInside)
                 {
                     ++failures;
                     std::fprintf (stderr, "INSTRUMENT_BOUNDS %s %s parent=%s\n", typeid (*c).name(),

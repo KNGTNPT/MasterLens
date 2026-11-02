@@ -21,6 +21,7 @@ void StereoMeters::setValues (const StatsSnapshot& s)
 
 void StereoMeters::paint (juce::Graphics& g)
 {
+    ++paintCount;
     auto area = getLocalBounds();
     if (area.getWidth()<160 || area.getHeight()<140) return;
     auto bands = area.removeFromBottom (juce::jmin (100, area.getHeight()/3));

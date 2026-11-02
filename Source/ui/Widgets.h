@@ -116,10 +116,11 @@ class LevelMeters : public juce::Component
 public:
     void setValues (const StatsSnapshot& s, float targetLufs);
     void paint (juce::Graphics&) override;
+    int getPaintCount() const noexcept { return paintCount; }
     int getUpdateCount() const noexcept { return updateCount; }
 
 private:
-    int updateCount = 0;
+    int updateCount = 0, paintCount = 0;
     void paintRow (juce::Graphics&, juce::Rectangle<int>, const juce::String& label,
                    const juce::String& windowText, float valueDb, float holdDb, juce::Colour colour);
 
@@ -139,10 +140,11 @@ class StereoMeters : public juce::Component
 public:
     void setValues (const StatsSnapshot& s);
     void paint (juce::Graphics&) override;
+    int getPaintCount() const noexcept { return paintCount; }
     int getUpdateCount() const noexcept { return updateCount; }
 
 private:
-    int updateCount = 0;
+    int updateCount = 0, paintCount = 0;
     void paintMeter (juce::Graphics&, juce::Rectangle<int>, const juce::String& label,
                      const juce::String& readout, float normalised, juce::Colour fill,
                      float marker = -1.0f, juce::Colour status = juce::Colour (0xff6c6f75));
@@ -400,6 +402,7 @@ public:
 
 private:
     juce::TextButton closeButton;
+    std::unique_ptr<juce::Drawable> studioDark, studioLight;
 };
 //==============================================================================
 /** Loudness-war explainer + target controls for the selected genre.

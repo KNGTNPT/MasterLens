@@ -60,6 +60,7 @@ public:
     }
     void runTimerTickForSnapshot() { timerCallback(); }
     int getMeterTicksForBenchmark() const noexcept { return detail.getMeterUpdates(); }
+    int getMeterPaintsForBenchmark() const noexcept { return detail.getMeterPaints(); }
     int getReadoutTicksForBenchmark() const noexcept { return readout.getUpdateCount(); }
     int getTimerTicksForBenchmark() const noexcept { return timerTicks; }
     int getPresentationTicksForBenchmark() const noexcept { return presentationTicks; }
@@ -136,6 +137,7 @@ private:
     void setPage (int index);
     void toggleTheme();
     void applyTheme();
+    void updateUiFrame();
     void setUiScale (float scale, bool store);
     float computeInitialUiScale() const;
     juce::Rectangle<int> baseBounds() const;
@@ -153,6 +155,8 @@ private:
     ml::MasterLensLookAndFeel lnf;
     juce::TooltipWindow tooltipWindow { this, 650 };
     juce::ComponentAnimator animator;
+    juce::VBlankAttachment displayClock;
+    double lastVBlankMs = -1000.0;
 #if JUCE_DEBUG && defined(MASTERLENS_ENABLE_INSPECTOR)
     std::unique_ptr<melatonin::Inspector> inspector;
 #endif
@@ -235,7 +239,10 @@ private:
     bool frozen = false;
     bool holdFromKeyboard = false;
     bool updatingPreset = false;
-    float uiScale = 2.0f;
+    float uiScale = 1.25f;
+    float logoAngle = 0.0f;
+    double logoTickMs = 0.0, lastAudioMs = 0.0;
+    std::uint64_t lastAudioSample = 0;
     float lraTargetSetting = 8.0f;
     float clipAllowSetting = 0.0f;
     int frameCounter = 0;

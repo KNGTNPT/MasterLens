@@ -68,7 +68,7 @@ namespace
     const ApertureGeometry aperture; // prepare once, outside painting
 }
 
-void paintLogoMark (juce::Graphics& g, juce::Rectangle<float> area, bool /*monochrome*/)
+void paintLogoMark (juce::Graphics& g, juce::Rectangle<float> area, bool /*monochrome*/, float angle)
 {
     if (area.getWidth() < 4.0f || area.getHeight() < 4.0f)
         return;
@@ -76,7 +76,8 @@ void paintLogoMark (juce::Graphics& g, juce::Rectangle<float> area, bool /*monoc
     const float s = juce::jmin (area.getWidth(), area.getHeight());
     area = area.withSizeKeepingCentre (s, s);
     g.setColour (theme::textDim);
-    const auto transform = juce::AffineTransform::scale (s).translated (area.getPosition());
+    const auto transform = juce::AffineTransform::rotation (angle, 0.5f, 0.5f)
+        .scaled (s).translated (area.getPosition());
     g.strokePath (aperture.paths[s < 32.0f ? 0 : 1],
                   juce::PathStrokeType (juce::jmax (1.0f, s * 0.060f), juce::PathStrokeType::curved,
                                         juce::PathStrokeType::rounded), transform);

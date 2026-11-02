@@ -22,59 +22,28 @@ namespace
 //==============================================================================
 juce::Rectangle<int> MasterLensAudioProcessorEditor::baseBounds() const
 {
-    const float s = uiScale > 0.01f ? uiScale : 1.0f;
-
-    return { 0, 0,
-             ml::grid::down (juce::roundToInt ((float) getWidth() / s)),
-             ml::grid::down (juce::roundToInt ((float) getHeight() / s)) };
+    return { 0, 0, 1120, 700 };
 }
 
 //==============================================================================
 float MasterLensAudioProcessorEditor::computeInitialUiScale() const
 {
-    const auto area = screenWorkArea (const_cast<MasterLensAudioProcessorEditor&> (*this));
-    const float availW = (float) area.getWidth() * 0.96f;
-    const float availH = (float) juce::jmax (320, area.getHeight() - 36) * 0.96f;
-
-    // The largest scale whose *minimum* layout still fits on this display.
-    float fitScale = ml::ui::minScale;
-
-    for (float step : ml::ui::scaleSteps)
-        if (880.0f * step <= availW && 560.0f * step <= availH)
-            fitScale = step;
-
-    const auto stored = processor.apvts.state.getProperty ("uiScale");
-
-    if (! stored.isVoid())
-    {
-        // Older sessions may have saved 150 / 200 % on a laptop. Clamp the
-        // restored scale to what the current display can actually show instead
-        // of opening a window that cannot fit under the menu bar / Dock.
-        const float requested = juce::jlimit (ml::ui::minScale, ml::ui::maxScale, (float) stored);
-        const float fitted = juce::jmin (requested, fitScale);
-
-        if (std::abs (fitted - requested) > 0.001f)
-            processor.apvts.state.setProperty ("uiScale", fitted, nullptr);
-
-        return fitted;
-    }
-
-    // First launch: pick the largest step whose minimum layout still fits.
-    processor.apvts.state.setProperty ("uiScale", fitScale, nullptr);
-    return fitScale;
+    const auto area = screenWorkArea (*const_cast<MasterLensAudioProcessorEditor*> (this));
+    const float fit = juce::jmin ((float) area.getWidth() * 0.96f / 1120.0f,
+        (float) juce::jmax (320, area.getHeight() - 36) * 0.96f / 700.0f);
+    // Migrate old sessions once: their tiny font scale was not a readable preference.
+    const bool migrated = (bool) processor.apvts.state.getProperty ("responsive231", false);
+    const float preferred = migrated ? (float) processor.apvts.state.getProperty ("uiScale", 1.25f) : 1.25f;
+    return juce::jlimit (ml::ui::minScale, ml::ui::maxScale, juce::jmin (preferred, fit));
 }
 
 //==============================================================================
 void MasterLensAudioProcessorEditor::resized()
 {
+    uiScale = juce::jmax (0.1f, juce::jmin (getWidth() / 1120.0f, getHeight() / 700.0f));
+    ml::ui::setScale (uiScale);
     const auto base = baseBounds();
-    const int alignedWidth = ml::ui::scaled (base.getWidth());
-    const int alignedHeight = ml::ui::scaled (base.getHeight());
-    if (getWidth() != alignedWidth || getHeight() != alignedHeight)
-    {
-        setSize (alignedWidth, alignedHeight);
-        return;
-    }
+    settingsPanel.setScale (uiScale);
     auto remaining = base;
     headerArea = remaining.removeFromTop (64);
     footerArea = remaining.removeFromBottom (32);
@@ -149,51 +118,26 @@ void MasterLensAudioProcessorEditor::resized()
             child->setTransform (dynamic_cast<juce::ResizableCornerComponent*> (child) != nullptr
                 ? juce::AffineTransform() : juce::AffineTransform::scale (uiScale));
 
-    processor.apvts.state.setProperty ("editorWidth", base.getWidth(), nullptr);
-    processor.apvts.state.setProperty ("editorHeight", base.getHeight(), nullptr);
+    processor.apvts.state.setProperty ("uiScale", uiScale, nullptr);
+    processor.apvts.state.setProperty ("responsive231", true, nullptr);
+    processor.apvts.state.setProperty ("editorWidth", getWidth(), nullptr);
+    processor.apvts.state.setProperty ("editorHeight", getHeight(), nullptr);
 }
 
 //==============================================================================
 void MasterLensAudioProcessorEditor::setUiScale (float newScale, bool store)
 {
     newScale = juce::jlimit (ml::ui::minScale, ml::ui::maxScale, newScale);
-
     if (store)
     {
-        // Never let a zoom step open a window that cannot fit the current
-        // display's work area (MacBook Air default scaling is the common case).
         const auto area = screenWorkArea (*this);
-        float fitScale = ml::ui::minScale;
-
-        for (float step : ml::ui::scaleSteps)
-            if (880.0f * step <= (float) area.getWidth() * 0.96f
-                && 560.0f * step <= (float) juce::jmax (320, area.getHeight() - 36) * 0.96f)
-                fitScale = step;
-
-        newScale = juce::jmin (newScale, fitScale);
+        const float fit = juce::jmin (area.getWidth() * 0.96f / 1120.0f,
+            juce::jmax (320, area.getHeight() - 36) * 0.96f / 700.0f);
+        newScale = juce::jmax (ml::ui::minScale, juce::jmin (newScale, fit));
     }
-
-    if (std::abs (newScale - uiScale) < 0.001f)
-        return;
-
-    const int baseW = juce::jlimit (880, 1900, juce::roundToInt ((float) getWidth() / uiScale));
-    const int baseH = juce::jlimit (560, 1400, juce::roundToInt ((float) getHeight() / uiScale));
-
-    uiScale = newScale;
-    ml::ui::setScale (uiScale);
-
-    if (store)
-        processor.apvts.state.setProperty ("uiScale", uiScale, nullptr);
-
-    setResizeLimits (ml::ui::scaled (880), ml::ui::scaled (560),
-                     ml::ui::scaled (1900), ml::ui::scaled (1400));
-    setSize (ml::ui::scaled (baseW), ml::ui::scaled (baseH));
-
+    setSize (juce::roundToInt (1120.0f * newScale), juce::roundToInt (700.0f * newScale));
     settingsPanel.setScale (uiScale);
     detail.invalidateDisplays();
-    readout.repaint();
-    rail.repaint();
-    timeline.repaint();
     repaint();
 }
 

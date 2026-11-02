@@ -196,6 +196,7 @@ class DetailArea : public juce::Component
 {
 public:
     DetailArea();
+    int getMeterPaints() const noexcept { return page == PageId::stereo ? meters.getPaintCount() : levelBars.getPaintCount(); }
     int getMeterUpdates() const noexcept { return page == PageId::stereo ? meters.getUpdateCount() : levelBars.getUpdateCount(); }
 
     void setPage (PageId p);

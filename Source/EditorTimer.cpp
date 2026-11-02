@@ -74,10 +74,35 @@ void MasterLensAudioProcessorEditor::addManualMarker (double time)
 
 void MasterLensAudioProcessorEditor::timerCallback()
 {
+    // Prefer the actual display clock. The timer is a fallback for offscreen
+    // rendering, hosts without vblank support, and a stalled display callback.
+    if (isShowing() && juce::Time::getMillisecondCounterHiRes() - lastVBlankMs < 100.0) return;
+    updateUiFrame();
+}
+
+void MasterLensAudioProcessorEditor::updateUiFrame()
+{
     // Hidden real windows cost nothing; the offscreen UiShot renderer has no
     // peer and must still be able to drive its timer.
     if (! isShowing() && getPeer() != nullptr)
         return;
+
+    const double logoNow = juce::Time::getMillisecondCounterHiRes();
+    const double dt = logoTickMs > 0.0 ? juce::jlimit (0.0, 0.1, (logoNow - logoTickMs) * 0.001) : 0.0;
+    logoTickMs = logoNow;
+    const auto produced = processor.outputSpectrumFifo.getProducedSamples();
+    if (produced != lastAudioSample) { lastAudioSample = produced; lastAudioMs = logoNow; }
+    const auto liveStats = processor.getStatsSnapshot();
+    const bool active = processor.isFilePreviewActive() || processor.isAuditionActive()
+        || ((logoNow - lastAudioMs) < 150.0 &&
+            (processor.hostTransportPlaying.load (std::memory_order_relaxed)
+             || (liveStats.hasSignal && liveStats.tailSilenceMs < 250.0f)));
+    if (active)
+    {
+        logoAngle = std::fmod (logoAngle + (float) dt * juce::MathConstants<float>::twoPi / 8.0f,
+                              juce::MathConstants<float>::twoPi);
+        repaint (headerArea.toFloat().transformedBy (juce::AffineTransform::scale (uiScale)).toNearestInt());
+    }
 
     // Drain even on slow pages and during Hold. The output tap has its own
     // Blackman-windowed cache; it does not replace the existing input analyser.

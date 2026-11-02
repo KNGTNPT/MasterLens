@@ -46,13 +46,13 @@ void LevelMeters::paintRow (juce::Graphics& g, juce::Rectangle<int> area, const 
 
     g.setColour (theme::textDim);
     g.setFont (getLabelFont());
-    g.drawText (label, row.getX(), row.getY() + 2, 66, 17, juce::Justification::centredLeft);
+    g.drawText (label, row.getX(), row.getY() + 2, 100, 20, juce::Justification::centredLeft);
 
     if (row.getHeight() >= 36)
     {
         g.setColour (theme::textFaint);
         g.setFont (getLabelFont());
-        g.drawText (windowText, row.getX(), row.getY() + 20, 66, 14, juce::Justification::centredLeft);
+        g.drawText (windowText, row.getX(), row.getY() + 20, 100, 16, juce::Justification::centredLeft);
     }
 
     auto readout = row.removeFromRight (64);
@@ -70,7 +70,7 @@ void LevelMeters::paintRow (juce::Graphics& g, juce::Rectangle<int> area, const 
                                 (float) readout.getBottom() - 3.0f, 24.0f, 2.0f, 1.0f);
     }
 
-    auto trackArea = row.withTrimmedLeft (72).withTrimmedRight (12);
+    auto trackArea = row.withTrimmedLeft (108).withTrimmedRight (12);
     auto track = juce::Rectangle<float> ((float) trackArea.getX(),
                                          (float) trackArea.getCentreY() - 2.0f,
                                          (float) trackArea.getWidth(), 4.0f);
@@ -117,6 +117,7 @@ void LevelMeters::paintRow (juce::Graphics& g, juce::Rectangle<int> area, const 
 
 void LevelMeters::paint (juce::Graphics& g)
 {
+    ++paintCount;
     auto b = getLocalBounds();
 
     if (b.getHeight() < 40)
@@ -132,7 +133,7 @@ void LevelMeters::paint (juce::Graphics& g)
               displayS, holdS, theme::accent.withAlpha (0.72f));
 
     // ---- shared scale labels -------------------------------------------------
-    const auto trackArea = scaleRow.withTrimmedLeft (72).withTrimmedRight (76);
+    const auto trackArea = scaleRow.withTrimmedLeft (108).withTrimmedRight (76);
     const auto normFor = [] (float db) { return juce::jlimit (0.0f, 1.0f, (db + 36.0f) / 36.0f); };
     const float labelDbs[] { -36.0f, -24.0f, -12.0f, -6.0f, 0.0f };
 

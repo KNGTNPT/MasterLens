@@ -14,7 +14,7 @@ concurrency:
 
 env:
   JUCE_TAG: "8.0.15"
-  APP_VERSION: "2.3.0"
+  APP_VERSION: "2.3.1"
 
 jobs:
   macos:
@@ -52,6 +52,8 @@ jobs:
           cp packaging/Install.command "stage/安装 Install.command"
           cp packaging/Uninstall.command "stage/卸载 Uninstall.command"
           cp packaging/README-DMG.txt "stage/使用说明 README.txt"
+          mkdir -p stage/Licenses
+          cp Resources/fonts/OFL.txt stage/Licenses/Geist-OFL.txt
           chmod +x "stage/安装 Install.command" "stage/卸载 Uninstall.command"
           codesign --force --deep -s - stage/MasterLens.vst3 || true
           codesign --force --deep -s - stage/MasterLens.component || true
@@ -130,6 +132,8 @@ jobs:
           Copy-Item -Recurse "build/MasterLens_artefacts/Release/VST3/MasterLens.vst3" $stage
           Copy-Item "build/MasterLens_artefacts/Release/Standalone/MasterLens.exe" $stage
           Copy-Item "build/MasterLensCli_artefacts/Release/MasterLensCli.exe" $stage
+          New-Item -ItemType Directory -Force -Path "$stage/Licenses" | Out-Null
+          Copy-Item "Resources/fonts/OFL.txt" "$stage/Licenses/Geist-OFL.txt"
           "STAGE_DIR=$stage" | Out-File -FilePath $env:GITHUB_ENV -Append
 
       - name: Build installer (NSIS)
@@ -176,4 +180,4 @@ jobs:
           sha256sum *.dmg *.exe > SHA256SUMS.txt
           gh release create "$RELEASE_TAG" *.dmg *.exe SHA256SUMS.txt \
             --verify-tag --title "MasterLens ${APP_VERSION}" \
-            --notes-file ../docs/release-2.3.0.md
+            --notes-file ../docs/release-2.3.1.md

@@ -9,26 +9,6 @@
 
 using ml::T;
 
-namespace
-{
-    /** Keeps the very first window inside the current display, while never
-        going below the supported 880 x 560 base layout. */
-    juce::Point<int> fittedBaseSize (float scale, int width, int height)
-    {
-        if (auto* d = juce::Desktop::getInstance().getDisplays().getPrimaryDisplay())
-        {
-            const auto area = d->userBounds.toNearestInt();
-            const int maxW = juce::jmax (880, (int) std::floor ((float) area.getWidth() * 0.96f / scale));
-            const int maxH = juce::jmax (560, (int) std::floor ((float) juce::jmax (320, area.getHeight() - 36) * 0.96f / scale));
-
-            width = juce::jlimit (880, maxW, width);
-            height = juce::jlimit (560, maxH, height);
-        }
-
-        return { width, height };
-    }
-} // namespace
-
 //==============================================================================
 MasterLensAudioProcessorEditor::MasterLensAudioProcessorEditor (MasterLensAudioProcessor& p)
     : juce::AudioProcessorEditor (&p), processor (p)
@@ -161,16 +141,10 @@ MasterLensAudioProcessorEditor::MasterLensAudioProcessorEditor (MasterLensAudioP
     targetWarPct = juce::jlimit (0.0f, 100.0f,
         (float) processor.apvts.state.getProperty ("targetWarPct", 50.0));
 
-    const int storedW = (int) processor.apvts.state.getProperty ("editorWidth", 1120);
-    const int storedH = (int) processor.apvts.state.getProperty ("editorHeight", 700);
-    const auto start = fittedBaseSize (uiScale,
-                                       juce::jlimit (880, 1900, storedW),
-                                       juce::jlimit (560, 1400, storedH));
-
     setResizable (true, true);
-    setResizeLimits (ml::ui::scaled (880), ml::ui::scaled (560),
-                     ml::ui::scaled (1900), ml::ui::scaled (1400));
-    setSize (ml::ui::scaled (start.x), ml::ui::scaled (start.y));
+    setResizeLimits (896, 560, 2240, 1400);
+    if (auto* limits = getConstrainer()) limits->setFixedAspectRatio (1.6);
+    setSize (juce::roundToInt (1120.0f * uiScale), juce::roundToInt (700.0f * uiScale));
 
     updateTexts();
     detail.refreshTexts();
@@ -193,7 +167,13 @@ MasterLensAudioProcessorEditor::MasterLensAudioProcessorEditor (MasterLensAudioP
     }
 
     attachShortcutListener (*this);
-    startTimerHz (60);
+    lnf.bindButtons (*this);
+    displayClock = juce::VBlankAttachment (this, [this] (double)
+    {
+        lastVBlankMs = juce::Time::getMillisecondCounterHiRes();
+        updateUiFrame();
+    });
+    startTimerHz (90); // headroom for a 60 Hz presentation target under GUI load
 }
 
 MasterLensAudioProcessorEditor::~MasterLensAudioProcessorEditor()
@@ -201,6 +181,7 @@ MasterLensAudioProcessorEditor::~MasterLensAudioProcessorEditor()
 #if JUCE_DEBUG && defined(MASTERLENS_ENABLE_INSPECTOR)
     inspector.reset();
 #endif
+    displayClock = {};
     stopTimer();
     ml::Localisation::clearOnChange();
     setLookAndFeel (nullptr);
