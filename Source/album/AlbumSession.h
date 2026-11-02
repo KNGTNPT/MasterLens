@@ -57,6 +57,7 @@ struct Snapshot
 {
     int schemaVersion = 1;
     int revision = 0;
+    juce::StringArray reviewedEvidence;
     juce::String albumName { "Album" };
     juce::String projectId;
     juce::String projectVersion { "1.0" };
@@ -111,7 +112,7 @@ struct Diff
 class Session
 {
 public:
-    static Session& get();
+    explicit Session (bool useSharedCache = false) : sharedCache (useSharedCache) {}
 
     /** Reloads from disk when another instance changed the file. */
     Snapshot snapshot();
@@ -121,6 +122,7 @@ public:
     /** Adds or replaces a track (by label), recomputes the median and saves. */
     void addTrack (const TrackRecord& track);
     void clearTracks();
+    void setReviewed (const juce::String& evidenceId, bool reviewed);
     void setRules (const Rules& rules);
     void setAlbumName (const juce::String& name);
     void setReference (const StatsSnapshot&, const std::array<float, 10>& bands,
@@ -148,7 +150,7 @@ public:
     static juce::File albumFile();
 
 private:
-    Session() = default;
+    bool sharedCache = false;
     void save (Snapshot& snapshot);
     juce::String toJson (const Snapshot&, bool includeHash) const;
     bool fromJson (const juce::String&, Snapshot&) const;

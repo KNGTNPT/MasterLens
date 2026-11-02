@@ -9,6 +9,7 @@
 #include "dsp/ReferenceSpectrum.h"
 #include "audio/AuditionEngine.h"
 #include "audio/ReferencePlayer.h"
+#include "../Tools/MeasureProbe.h"
 #include "file/FileAnalyzer.h"
 #include "file/DeliverySpec.h"
 #include "Delivery.h"
@@ -28,8 +29,10 @@ static void check (const juce::String& name, double actual, double expected, dou
         ++failures;
 }
 
-int main()
+int main (int argc, char** argv)
 {
+    if (argc >= 3 && juce::String (argv[1]) == "--measure")
+        return runMeasurementProbe (argv[2], argc > 3 ? juce::String (argv[3]).getIntValue() : 0);
     constexpr double sr = 48000.0;
     constexpr int blockSize = 256;
 
@@ -870,7 +873,7 @@ int main()
        #else
         setenv ("MASTERLENS_ALBUM_FILE", dir.getChildFile ("album.json").getFullPathName().toRawUTF8(), 1);
        #endif
-        auto& session = ml::album::Session::get();
+        ml::album::Session session;
         ml::album::TrackRecord track;
         track.label = "QC regression";
         track.stats.hasSignal = true; track.stats.integrated = -14; track.stats.truePeakDb = -6;

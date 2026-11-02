@@ -458,7 +458,7 @@ private:
     float shortCurve[curveSize] {};
     std::atomic<int> curveWrite { 0 };
 
-    juce::uint32 elapsedSamples = 0;
+    juce::uint64 elapsedSamples = 0;
     double timeOrigin = 0.0;
 };
 } // namespace ml

@@ -414,18 +414,13 @@ juce::File Session::albumFile()
     return dir.getChildFile ("album.json");
 }
 
-Session& Session::get()
-{
-    static Session instance;
-    return instance;
-}
-
 juce::String Session::toJson (const Snapshot& s, bool includeHash) const
 {
     auto* root = new juce::DynamicObject();
 
     root->setProperty ("schemaVersion", s.schemaVersion);
     root->setProperty ("revision", s.revision);
+    root->setProperty ("reviewedEvidence", juce::var (s.reviewedEvidence));
     root->setProperty ("albumName", s.albumName);
     root->setProperty ("projectId", s.projectId);
     root->setProperty ("projectVersion", s.projectVersion);
@@ -484,6 +479,8 @@ bool Session::fromJson (const juce::String& text, Snapshot& s) const
     s = Snapshot {};
     s.schemaVersion = (int) root->getProperty ("schemaVersion");
     s.revision = (int) root->getProperty ("revision");
+    if (auto* reviews = root->getProperty ("reviewedEvidence").getArray())
+        for (const auto& v : *reviews) s.reviewedEvidence.addIfNotAlreadyThere (v.toString());
     s.albumName = root->getProperty ("albumName").toString();
     s.projectId = root->getProperty ("projectId").toString();
     s.projectVersion = root->getProperty ("projectVersion").toString();
@@ -522,6 +519,7 @@ bool Session::fromJson (const juce::String& text, Snapshot& s) const
 void Session::reload()
 {
     const juce::ScopedLock sl (lock);
+    if (! sharedCache) { loaded = true; return; }
     const auto file = albumFile();
     const auto stamp = file.existsAsFile() ? file.getLastModificationTime().toMilliseconds() : 0;
 
@@ -562,15 +560,15 @@ void Session::save (Snapshot& s)
     s.hash = juce::SHA256 (payload.toRawUTF8(),
                            (size_t) payload.getNumBytesAsUTF8()).toHexString();
 
-    const auto file = albumFile();
-    file.replaceWithText (toJson (s, true));
+    const auto file = sharedCache ? albumFile() : juce::File {};
+    if (sharedCache) file.replaceWithText (toJson (s, true));
 
     // Named sidecar for backups / project hand-off. The global album.json stays
     // the "most recent" cache, exactly as the 1.5 session did.
     auto safeName = s.albumName.retainCharacters ("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_ ");
     safeName = safeName.trim().replaceCharacter (' ', '_');
 
-    if (safeName.isNotEmpty())
+    if (sharedCache && safeName.isNotEmpty())
         file.getSiblingFile ("Album_" + safeName + ".json").replaceWithText (toJson (s, true));
 
     const juce::ScopedLock sl (lock);
@@ -604,6 +602,24 @@ void Session::addTrack (const TrackRecord& track)
 
     ++s.revision;
     save (s);
+}
+
+void Session::setReviewed (const juce::String& id, bool reviewed)
+{
+    if (id.isEmpty()) return;
+    auto s = snapshot();
+    if (reviewed) s.reviewedEvidence.addIfNotAlreadyThere (id); else s.reviewedEvidence.removeString (id);
+    for (auto& track : s.tracks)
+    {
+        // Deep-copy before editing: a previous revision must remain immutable.
+        auto forensic = juce::JSON::parse (juce::JSON::toString (track.fileForensics));
+        if (auto* events = forensic["findings"].getArray())
+            for (auto& event : *events)
+                if (event["evidenceId"].toString() == id)
+                    if (auto* object = event.getDynamicObject()) object->setProperty ("reviewed", reviewed);
+        track.fileForensics = forensic;
+    }
+    ++s.revision; save (s);
 }
 
 void Session::clearTracks()
@@ -678,8 +694,10 @@ bool Session::saveProject (const juce::File& file, const juce::String& versionLa
     s.projectVersion = versionLabel.isNotEmpty() ? versionLabel : "1.0";
     s.updatedAt = juce::Time::getCurrentTime().toISO8601 (true);
 
+    save (s);
     const auto json = toJson (s, true);
-    return file.replaceWithText (json);
+    juce::TemporaryFile temp (file);
+    return temp.getFile().replaceWithText (json) && temp.overwriteTargetFileWithTemporary();
 }
 
 bool Session::loadProject (const juce::File& file)
@@ -689,7 +707,7 @@ bool Session::loadProject (const juce::File& file)
 
     Snapshot imported;
 
-    if (! fromJson (file.loadFileAsString(), imported) || imported.tracks.empty())
+    if (! fromJson (file.loadFileAsString(), imported))
         return false;
 
     ++imported.revision;
@@ -950,6 +968,7 @@ juce::String Session::buildEvidenceJson (const Snapshot& s, const GateResult& ga
     root->setProperty ("version", kVersion);
     root->setProperty ("schemaVersion", s.schemaVersion);
     root->setProperty ("revision", s.revision);
+    root->setProperty ("reviewedEvidence", juce::var (s.reviewedEvidence));
     root->setProperty ("albumName", s.albumName);
     root->setProperty ("snapshotHash", s.hash);
     root->setProperty ("snapshot", juce::JSON::parse (toJson (s, true)));
@@ -1017,9 +1036,6 @@ bool Session::restoreState (const juce::String& json)
     Snapshot restored;
 
     if (! fromJson (json, restored))
-        return false;
-
-    if (restored.tracks.empty())
         return false;
 
     save (restored);

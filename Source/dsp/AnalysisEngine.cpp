@@ -366,6 +366,7 @@ void AnalysisEngine::process (const juce::AudioBuffer<float>& buffer, Stats& sta
         // Exact 100 ms partitions: a host block may straddle the boundary, so
         // close the partial here instead of dropping the overshoot from the
         // next block. This keeps live M/S windows and the offline pass aligned.
+        ++elapsedSamples;
         ++partialSamples;
         partialProcessed += 1.0;
 
@@ -373,7 +374,6 @@ void AnalysisEngine::process (const juce::AudioBuffer<float>& buffer, Stats& sta
             finishPartialBlock (stats);
     }
 
-    elapsedSamples += (juce::uint32) numSamples;
     stats.elapsed = (double) elapsedSamples / fs;
     stats.timeOrigin = timeOrigin;
     stats.hostPosition = timeOrigin + stats.elapsed.load();
@@ -388,13 +388,30 @@ void AnalysisEngine::process (const juce::AudioBuffer<float>& buffer, Stats& sta
 
 void AnalysisEngine::finish (Stats& stats)
 {
-    if (partialSamples > 0)
-        finishPartialBlock (stats);
+    // An incomplete 100 ms slice is not a complete 400 ms integrated gate.
+    // Flush interpolator delay without inventing extra file duration / energy.
+    for (int i = 0; i < 32; ++i)
+    {
+        partialMaxTruePeakL = juce::jmax (partialMaxTruePeakL, (double) truePeak[0].process (0.0f));
+        if (channels > 1) partialMaxTruePeakR = juce::jmax (partialMaxTruePeakR, (double) truePeak[1].process (0.0f));
+        partialMaxSideTruePeak = juce::jmax (partialMaxSideTruePeak, (double) sideTruePeakDetector.process (0.0f));
+    }
+    partialMaxTruePeak = juce::jmax (partialMaxTruePeak, partialMaxTruePeakL, partialMaxTruePeakR);
+    const auto peak = [] (double v) { return juce::Decibels::gainToDecibels ((float) v, -100.0f); };
+    if (peak (partialMaxTruePeak) > stats.truePeakDb.load())
+        stats.truePeakMaxTime = (float) (timeOrigin + (double) elapsedSamples / fs);
+    stats.truePeakDb = juce::jmax (stats.truePeakDb.load(), peak (partialMaxTruePeak));
+    stats.samplePeakDb = juce::jmax (stats.samplePeakDb.load(), peak (partialMaxSamplePeak));
+    stats.truePeakLeft = juce::jmax (stats.truePeakLeft.load(), peak (partialMaxTruePeakL));
+    stats.truePeakRight = juce::jmax (stats.truePeakRight.load(), peak (partialMaxTruePeakR));
+    stats.sideTruePeak = juce::jmax (stats.sideTruePeak.load(), peak (partialMaxSideTruePeak));
+    partialSamples = 0;
 }
 
 //==============================================================================
 void AnalysisEngine::finishPartialBlock (Stats& stats)
 {
+    stats.elapsed = (double) elapsedSamples / fs;
     const double inv = 1.0 / (double) juce::jmax (1, partialSamples);
     const double energy = sumWeightedK * inv;
 
@@ -425,8 +442,8 @@ void AnalysisEngine::finishPartialBlock (Stats& stats)
     const int windowM = juce::jmin (4, ringCount);
     const int windowS = juce::jmin (30, ringCount);
 
-    const float mDb = energyToLufs (meanOfLast (windowM));
-    const float sDb = energyToLufs (meanOfLast (windowS));
+    const float mDb = windowM >= 4 ? energyToLufs (meanOfLast (windowM)) : kSilentDb;
+    const float sDb = windowS >= 30 ? energyToLufs (meanOfLast (windowS)) : kSilentDb;
 
     stats.momentary = mDb;
     stats.shortTerm = sDb;
@@ -437,7 +454,7 @@ void AnalysisEngine::finishPartialBlock (Stats& stats)
     if (windowS >= 30 && sDb > stats.maxShortTerm.load())
         stats.maxShortTerm = sDb;
 
-    if (sDb > -60.0f)
+    if (energyToLufs (energy) > -70.0f)
         stats.hasSignal = true;
 
     {

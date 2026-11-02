@@ -12,13 +12,13 @@ ReferencePlayer::ReferencePlayer()
 ReferencePlayer::~ReferencePlayer()
 {
     signalThreadShouldExit();
-    stopThread (4000);
+    notify();
+    stopThread (-1);
 }
 
 void ReferencePlayer::load (const juce::StringArray& files, double sampleRate)
 {
-    stopThread (4000);
-
+    const juce::SpinLock::ScopedLockType command (lock);
     pendingPath.clear();
 
     for (const auto& f : files)
@@ -31,38 +31,28 @@ void ReferencePlayer::load (const juce::StringArray& files, double sampleRate)
     targetRate.store (sampleRate > 0.0 ? sampleRate : 48000.0, std::memory_order_relaxed);
 
     {
-        const juce::SpinLock::ScopedLockType sl (lock);
         status = pendingPath.isEmpty() ? "empty" : "loading";
         fileName.clear();
 
-        if (pendingPath.isEmpty())
-            data.reset();
+
     }
 
     ready.store (false, std::memory_order_release);
     busy.store (! pendingPath.isEmpty(), std::memory_order_release);
 
-    if (pendingPath.isNotEmpty())
-        startThread();
+    enabled.store (false);
+    request.fetch_add (1);
+    if (! isThreadRunning()) startThread();
+    notify();
 }
 
 void ReferencePlayer::clear()
 {
-    stopThread (4000);
-
-    {
-        const juce::SpinLock::ScopedLockType sl (lock);
-        data.reset();
-        status = "empty";
-        fileName.clear();
-    }
-
-    ready.store (false, std::memory_order_release);
-    busy.store (false, std::memory_order_release);
-    enabled.store (false, std::memory_order_release);
-    duration.store (0.0, std::memory_order_relaxed);
-    offsetSeconds.store (0.0, std::memory_order_relaxed);
-    loudnessLufs.store (kSilentDb, std::memory_order_relaxed);
+    load ({}, targetRate.load());
+    enabled.store (false);
+    duration.store (0.0);
+    offsetSeconds.store (0.0);
+    loudnessLufs.store (kSilentDb);
 }
 
 juce::String ReferencePlayer::getStatus() const
@@ -85,14 +75,9 @@ bool ReferencePlayer::render (juce::AudioBuffer<float>& output, double hostSecon
 
     output.clear();
 
-    std::shared_ptr<const Data> d;
+    const auto d = data.acquire();
 
-    {
-        const juce::SpinLock::ScopedLockType sl (lock);
-        d = data;
-    }
-
-    if (d == nullptr || ! hostPlaying || output.getNumSamples() <= 0)
+    if (! d || ! hostPlaying || output.getNumSamples() <= 0)
         return true;
 
     const auto& src = d->audio;
@@ -139,11 +124,11 @@ bool ReferencePlayer::render (juce::AudioBuffer<float>& output, double hostSecon
         const float r = sourceChannels > 1 ? sampleCubic (1, pos) : l;
 
         if (output.getNumChannels() == 1)
-            output.setSample (0, i, juce::jlimit (-1.0f, 1.0f, 0.5f * (l + r) * gain));
+            output.setSample (0, i, 0.5f * (l + r) * gain);
         else
         {
-            output.setSample (0, i, juce::jlimit (-1.0f, 1.0f, l * gain));
-            output.setSample (1, i, juce::jlimit (-1.0f, 1.0f, r * gain));
+            output.setSample (0, i, l * gain);
+            output.setSample (1, i, r * gain);
         }
 
         pos += ratio;
@@ -157,56 +142,56 @@ bool ReferencePlayer::render (juce::AudioBuffer<float>& output, double hostSecon
 
 void ReferencePlayer::run()
 {
-    juce::AudioFormatManager formats;
-    formats.registerBasicFormats();
-
-    const juce::File file (pendingPath);
-    std::unique_ptr<juce::AudioFormatReader> reader (formats.createReaderFor (file));
-
-    if (reader == nullptr || reader->lengthInSamples <= 1)
+    unsigned handled = 0;
+    while (! threadShouldExit())
     {
+        data.collect();
+        const auto serial = request.load();
+        if (serial == handled) { wait (25); continue; }
+        handled = serial;
+        juce::String path;
+        { const juce::SpinLock::ScopedLockType sl (lock); path = pendingPath; }
+        if (path.isEmpty()) { data.publish ({}); continue; }
+        juce::AudioFormatManager formats;
+        formats.registerBasicFormats();
+        const juce::File file (path);
+        std::unique_ptr<juce::AudioFormatReader> reader (formats.createReaderFor (file));
+        const auto fail = [&] ()
+        {
+            const juce::SpinLock::ScopedLockType sl (lock);
+            if (request.load() == serial) { status = "failed"; ready.store (false); busy.store (false); }
+        };
+        if (! reader || reader->lengthInSamples <= 1 || reader->numChannels > 2
+            || reader->lengthInSamples > (juce::int64) (reader->sampleRate * 3600.0))
+        { fail(); continue; }
+        auto loaded = std::make_unique<Data>();
+        loaded->sourceRate = reader->sampleRate;
+        loaded->length = reader->lengthInSamples;
+        loaded->audio.setSize ((int) reader->numChannels, (int) loaded->length);
+        AnalysisEngine measure; Stats measured; resetStats (measured);
+        measure.prepare (loaded->sourceRate, loaded->audio.getNumChannels());
+        bool ok = true;
+        for (int offset = 0; offset < (int) loaded->length; offset += 4096)
+        {
+            if (threadShouldExit() || request.load() != serial) { ok = false; break; }
+            const int count = juce::jmin (4096, (int) loaded->length - offset);
+            if (! reader->read (&loaded->audio, offset, count, offset, true, true)) { ok = false; break; }
+            juce::AudioBuffer<float> view (loaded->audio.getArrayOfWritePointers(),
+                loaded->audio.getNumChannels(), offset, count);
+            measure.process (view, measured, count);
+        }
+        if (! ok) { if (request.load() == serial) fail(); continue; }
+        measure.finish (measured);
         const juce::SpinLock::ScopedLockType sl (lock);
-        status = "failed";
-        busy.store (false, std::memory_order_release);
-        return;
+        if (request.load() != serial || threadShouldExit()) continue;
+        const auto length = loaded->length;
+        const auto rate = loaded->sourceRate;
+        data.publish (std::move (loaded));
+        status = "ready"; fileName = file.getFileName();
+        loudnessLufs.store (snapshot (measured).integrated);
+        duration.store ((double) length / rate);
+        ready.store (true); busy.store (false);
     }
-
-    const int channels = juce::jlimit (1, 2, (int) reader->numChannels);
-    const int length = (int) juce::jmin ((juce::int64) juce::jmax (1, 48000 * 60 * 60),
-                                          reader->lengthInSamples);
-
-    auto loaded = std::make_shared<Data>();
-    loaded->sourceRate = reader->sampleRate > 0.0 ? reader->sampleRate : 48000.0;
-    loaded->length = length;
-    loaded->audio.setSize (channels, length);
-    loaded->audio.clear();
-
-    reader->read (&loaded->audio, 0, length, 0, true, true);
-
-    if (threadShouldExit())
-        return;
-
-    // Measure the reference on the worker thread so the monitor can match its
-    // loudness instead of applying the input's trim to an already-mastered file.
-    ml::AnalysisEngine measure;
-    ml::Stats referenceStats;
-    ml::resetStats (referenceStats);
-    measure.prepare (loaded->sourceRate, channels);
-    measure.process (loaded->audio, referenceStats, length);
-    measure.finish (referenceStats);
-    const auto measuredLoudness = ml::snapshot (referenceStats).integrated;
-
-    {
-        const juce::SpinLock::ScopedLockType sl (lock);
-        data = std::move (loaded);
-        status = "ready";
-        fileName = file.getFileName();
-    }
-
-    loudnessLufs.store (measuredLoudness, std::memory_order_relaxed);
-    duration.store ((double) length / juce::jmax (1.0, reader->sampleRate),
-                    std::memory_order_relaxed);
-    ready.store (true, std::memory_order_release);
-    busy.store (false, std::memory_order_release);
+    data.publish ({});
 }
 } // namespace ml

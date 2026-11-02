@@ -1,0 +1,38 @@
+name: Measurement quality (independent and EBU)
+on:
+  workflow_dispatch:
+  push:
+    branches: ["quality/2.3.2"]
+    paths: [".github/workflows/measurement-quality.yml", "Tests/validate_measurements.py", "Tools/MeasureProbe.h", "Source/dsp/AnalysisEngine.*"]
+permissions:
+  contents: read
+jobs:
+  measurement:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Build prerequisites
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y ffmpeg libasound2-dev libfreetype6-dev libfontconfig1-dev libx11-dev libxext-dev libxinerama-dev libxrandr-dev libxcursor-dev libxcomposite-dev libgl1-mesa-dev
+          git clone --depth 1 --branch 8.0.15 https://github.com/juce-framework/JUCE.git .tools/JUCE
+      - name: Build engine probe
+        run: |
+          cmake -S . -B build-quality -DCMAKE_BUILD_TYPE=Release
+          cmake --build build-quality --target MasterLensDspTest -j 4
+      - name: Fetch EBU material for internal R&D only
+        run: |
+          mkdir -p .tools/ebu
+          curl --fail --location --retry 3 https://tech.ebu.ch/files/live/sites/tech/files/shared/testmaterial/ebu-loudness-test-setv05.zip -o .tools/ebu.zip
+          sha256sum .tools/ebu.zip > ebu-archive-sha256.txt
+          unzip -q .tools/ebu.zip -d .tools/ebu
+      - name: Compare dynamic, random-buffer and standard material
+        run: python3 Tests/validate_measurements.py build-quality/MasterLensDspTest_artefacts/Release/MasterLensDspTest --ebu-dir .tools/ebu --output measurement-2.3.2.json
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: measurement-report-only
+          path: |
+            measurement-2.3.2.json
+            ebu-archive-sha256.txt
+          if-no-files-found: warn

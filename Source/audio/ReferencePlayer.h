@@ -2,6 +2,7 @@
 
 #include <atomic>
 #include <memory>
+#include "RealtimeAsset.h"
 
 #include <juce_audio_basics/juce_audio_basics.h>
 #include <juce_audio_formats/juce_audio_formats.h>
@@ -64,7 +65,8 @@ private:
     void run() override;
 
     mutable juce::SpinLock lock;
-    std::shared_ptr<const Data> data;
+    RealtimeAsset<Data> data;
+    std::atomic<unsigned> request { 0 };
     juce::String pendingPath;
     std::atomic<double> targetRate { 48000.0 };
     juce::String status { "empty" };
