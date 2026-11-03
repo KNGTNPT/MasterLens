@@ -161,6 +161,8 @@ void MasterLensAudioProcessorEditor::updateUiFrame()
         if (filePreviewPath.isNotEmpty())
         {
             const auto* selected = detail.selectedFile();
+            detail.setFileProgress (processor.getFilePreviewPosition(),
+                                    processor.getFilePreviewDuration());
 
             if (! processor.isFilePreviewActive() || selected == nullptr
                 || selected->path != filePreviewPath)

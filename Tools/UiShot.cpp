@@ -46,6 +46,7 @@ public:
         genreShot = commandLine.containsIgnoreCase ("info");
         settingsShot = commandLine.containsIgnoreCase ("settings");
         fileQcShot = commandLine.containsIgnoreCase ("fileqc");
+        const bool standaloneShot = commandLine.containsIgnoreCase ("standalone");
         benchMode = commandLine.containsIgnoreCase ("bench");
         liveBenchMode = commandLine.containsIgnoreCase ("livebench");
 
@@ -138,6 +139,8 @@ public:
         processor->apvts.state.setProperty ("uiScale", scale, nullptr);
 
         editor = std::make_unique<MasterLensAudioProcessorEditor> (*processor);
+        if (standaloneShot)
+            editor->setFilePlaybackAvailableForSnapshot (true);
         editor->setScaleForSnapshot (scale);
         const bool standardShot = commandLine.containsIgnoreCase ("size1120");
         const float shotW = minShot ? 880.0f : (smallShot ? 900.0f : (standardShot ? 1120.0f : 1280.0f));

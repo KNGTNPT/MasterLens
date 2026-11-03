@@ -5,13 +5,45 @@
 **母带响度 / 文件 QC / 频谱 / 声场 / 专辑交付 / CLI**<br>
 by **BerryStudio** · developer **KNGTNPT 兰**<br>
 macOS / Windows · VST3 / AU / 独立版 · C++17 + JUCE 8<br>
-当前版本：**2.3.3**
+当前版本：**2.4.0**
 
 MasterLens 是放在母带链末尾的小检查员：这首歌有多响、峰值会不会顶过头、立体声合成单声道后会不会变薄、交出去之前还有哪里值得听一遍，它都帮你留意着。把它插在 Master / Stereo Out 的最后一级就好。
 
 默认零延迟、逐位旁路，也就是只看、不动你的声音。点试听、开等响监听或切参考 A/B 时，才会临时改变输出。辛苦做好的声音，会好好留在原地。
 
 歌该做成什么样，还是你的耳朵说了算。数字有点多也没关系，我们一项项看；它负责把容易漏掉的小细节摊开，陪你把交付前的最后一遍检查做完。
+
+## 2.4.0：导入文件真正进入测量链路喵
+
+2.4.0 修的是“看起来在播、其实没有进入测量”的问题，同时处理三处会被专业用户一眼看出的底层技术债。
+
+- **独立版导入文件会更新全部页面**：播放文件时，音频先进入 400 ms / 3 s / LRA / TP / 频段 / 声场分析，再送到输出；不再只是覆盖扬声器输出。切换响度、峰值、频谱、声场、诊断等页面都能看到实时读数。
+- **文件播放进度与定位**：独立版 File QC 增加进度条和时间显示；拖动进度条可从头定位文件，播放 / 停止仍然由文件页按钮控制。
+- **Logic Pro 空格键**：插件窗口在前台时，普通空格不再被 MasterLens 的 Hold 快捷键吞掉，而是交回宿主 transport；Hold 改为 `Shift+Space`，避免占用 DAW 的播放 / 停止。
+- **SpectrumRing 线程安全**：音频线程写入的每个样本改成 atomic float，UI 读取不再与普通 float 写入构成 C++ data race；允许显示器撕裂，但不允许未定义行为。
+- **TpEventRing 读取校验**：事件槽改为 atomic，读取端在复制前后检查版本并重试；注释里承诺的版本校验现在真的执行。
+- **真峰值采样率基准**：TP 插值目标改为 BS.1770 的 192 kHz 基准：48 kHz 使用 4×、96 kHz 使用 2×、192 kHz 使用 1×，不再把 96 kHz 当成 384 kHz 的 4×。
+- **关于页 SVG**：原始矢量字节与几何不变；移动到卡片左下角。暗色模式只把黑色 ink 提升为白色，红色保持原色，不重画、不识别内容。
+- **标签栏下划线**：继续保留 2.3.3 的修复，点击顶部标签时指示线跟随当前页面。
+
+### 2.4.0 验证
+
+详细结果见 [2.4.0 验证记录](docs/performance-2.4.0.md)。
+
+- DSP / 可靠性断言：151 项通过。
+- CLI 集成检查：66 项通过。
+- UI 布局检查：35/35 通过。
+- 新增 96 kHz / 192 kHz 真峰值倍率、TpEventRing 版本和事件快照检查。
+- macOS Universal AU / VST3 / Standalone / CLI 与 DMG 构建通过；`auval` 通过。
+- Windows ARM64 仍为交叉构建，未做该环境实机测试；macOS 仍为 ad-hoc 签名、未公证。
+
+![MasterLens 2.4.0 响度与动态](docs/screenshot-2.4.0.png)
+
+![MasterLens 2.4.0 信号健康](docs/signal-2.4.0.png)
+
+![MasterLens 2.4.0 文件 QC](docs/fileqc-2.4.0.png)
+
+![MasterLens 2.4.0 关于页原始 SVG](docs/about-2.4.0.png)
 
 ## 2.3.3：把播放、试听和导航接清楚喵
 
@@ -131,13 +163,13 @@ Windows ARM64 安装包由交叉构建生成；**手头没有 Windows on ARM 设
 
 ### 先装好，再播一首
 
-[下载 2.3.3](https://github.com/KNGTNPT/MasterLens/releases/tag/v2.3.3)。macOS 打开 DMG，运行「安装 Install.command」；Windows 运行对应 x64 / ARM64 的 EXE，然后重启 DAW。
+[下载 2.4.0](https://github.com/KNGTNPT/MasterLens/releases/tag/v2.4.0)。macOS 打开 DMG，运行「安装 Install.command」；Windows 运行对应 x64 / ARM64 的 EXE，然后重启 DAW。
 
 把 MasterLens 插在母带链最后，先播 20–30 秒，跟它打个招呼。左侧的综合响度看整体有多响，真峰值看最高处有没有越线；LRA 看强弱变化的范围，PLR 看峰值与平均响度之间还留了多少空间。中央曲线会把变化过程画出来。
 
 底部「比较基准」决定拿谁来对照：平台参照、参考曲、专辑中位，或者你自己设定的目标。想手动填目标，就选「手动参考值」再改 REF；CEIL 是你设定的真峰值上限。先用默认值熟悉界面也完全可以呀。
 
-要重新测一次，点「清零」或按 R。按住空格可保持显示；A / B 存放读数快照，右键清空。
+要重新测一次，点「清零」或按 R。按住 Shift+空格可保持显示；A / B 存放读数快照，右键清空。
 
 ### 整张专辑，拖进来一起看看
 
@@ -181,7 +213,7 @@ MasterLensCli analyze track.wav --codec mp3 --json codec-qc.json
 
 ### 快捷键
 
-空格保持，R 清零，1–9 切模块，0 曲风目标，F 文件 QC，Esc 停止试听或关闭面板，Cmd+E 导出。
+Shift+空格保持，R 清零，1–9 切模块，0 曲风目标，F 文件 QC，Esc 停止试听或关闭面板，Cmd+E 导出。
 
 | 分频单声道折叠 | 增益预算 |
 | --- | --- |
@@ -235,7 +267,7 @@ cmake --build build --config Release --target MasterLensUiShot -j 4
 
 无显示服务的 Linux 需要 Xvfb 和中文字体。同一个构建目录请串行执行 CMake / Ninja。
 
-本次本地验证包含 **144 项 DSP / 可靠性断言**、**66 项 CLI 集成检查**、默认旁路 / 零延迟检查、各页面布局、五档缩放及离屏性能。原生 macOS / Windows 安装包由 [GitHub Actions](https://github.com/KNGTNPT/MasterLens/actions) 构建；三个发布目标全部成功后才上传 Release，附带 `SHA256SUMS.txt`。离屏检查和构建不能代替真实 DAW 与音频硬件回归。
+本次本地验证包含 **151 项 DSP / 可靠性断言**、**66 项 CLI 集成检查**、默认旁路 / 零延迟检查、各页面布局、五档缩放及离屏性能。原生 macOS / Windows 安装包由 [GitHub Actions](https://github.com/KNGTNPT/MasterLens/actions) 构建；三个发布目标全部成功后才上传 Release，附带 `SHA256SUMS.txt`。离屏检查和构建不能代替真实 DAW 与音频硬件回归。
 
 ## 工程结构
 

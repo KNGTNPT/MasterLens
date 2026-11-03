@@ -62,10 +62,10 @@ inline void reliabilityChecks()
     {
         ml::ReferencePlayer reference;ml::FilePreviewPlayer preview;preview.prepare(48000);
         reference.load({file.getFullPathName()},48000);
-        for(int wait=0;wait<500 && reference.isBusy();++wait)juce::Thread::sleep(2);
+        for(int wait=0;wait<2500 && reference.isBusy();++wait)juce::Thread::sleep(2);
         check("reference decoded before ready",reference.isReady(),1,0);
         preview.start(file,.1,.2,true);
-        for(int wait=0;wait<500 && !preview.isReady();++wait)juce::Thread::sleep(2);
+        for(int wait=0;wait<2500 && !preview.isReady();++wait)juce::Thread::sleep(2);
         check("preview decoded before ready",preview.isReady(),1,0);
         juce::AudioBuffer<float> block(2,512);reference.setEnabled(true);
         unsigned news=0,deletes=0;

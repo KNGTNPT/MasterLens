@@ -107,10 +107,10 @@ void DetailArea::paintTruePeak (juce::Graphics& g)
 
         g.setColour (theme::textFaint);
         g.setFont (getLabelFont());
-        g.drawFittedText (T ("4× 过采样线性插值（48 kHz → 192 kHz），阈值 = 顶部设定的真峰值上限；"
+        g.drawFittedText (T ("真峰值以 192 kHz 为插值基准（48 kHz 4× / 96 kHz 2× / 192 kHz 1×），阈值 = 顶部设定的真峰值上限；"
                              "超限事件写入时间线并出现在导出报告中，判断规则全部可追溯到实际读数。",
-                             "4x oversampled linear interpolation (48 kHz -> 192 kHz); the threshold is the "
-                             "true-peak ceiling above. Overs are written to the timeline and the exported "
+                             "True peak uses a 192 kHz interpolation target (4x at 48 kHz / 2x at 96 kHz / 1x at 192 kHz); "
+                             "the threshold is the true-peak ceiling above. Overs are written to the timeline and the exported "
                              "report - every rule traces back to a measured value."),
                           inner, juce::Justification::topLeft, 3);
     }

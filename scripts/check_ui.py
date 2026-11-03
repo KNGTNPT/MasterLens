@@ -40,7 +40,7 @@ for i, flags in enumerate(cases):
     results.append({'arguments': command[1:], 'returncode': result.returncode,
                     'stdout': result.stdout, 'stderr': result.stderr})
     print(f'{i+1}/{len(cases)} exit={result.returncode}: {" ".join(flags)}', flush=True)
-report = ROOT / 'docs/layout-2.3.3.json'
+report = ROOT / 'docs/layout-2.4.0.json'
 report.write_text(json.dumps({'platform': platform.system(), 'cases': results}, indent=2) + '\n')
 failures = [x for x in results if x['returncode'] != 0]
 for failure in failures:

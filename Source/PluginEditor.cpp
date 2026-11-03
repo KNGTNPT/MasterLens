@@ -78,6 +78,7 @@ MasterLensAudioProcessorEditor::MasterLensAudioProcessorEditor (MasterLensAudioP
     detail.onChooseFiles = [this] { chooseFiles(); };
     detail.onChooseFolder = [this] { chooseFolder(); };
     detail.onPlayFile = [this] { toggleFilePlayback(); };
+    detail.onSeekFile = [this] (double seconds) { processor.seekFilePreview (seconds); };
     detail.onAddFileResultsToAlbum = [this] { addFileResultsToAlbum(); };
     detail.onClearFileResults = [this] { clearFileResults(); };
     detail.onExportFileTable = [this] { exportFileTable(); };

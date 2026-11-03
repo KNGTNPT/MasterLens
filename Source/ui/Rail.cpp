@@ -164,7 +164,7 @@ static const char* moduleHintZh (int index)
     switch (index)
     {
         case 0: return "响度、动态与响度范围（ITU-R BS.1770-4 / EBU Tech 3342）";
-        case 1: return "4× 过采样真峰值与跨采样过载事件";
+        case 1: return "192 kHz 基准真峰值与跨采样过载事件";
         case 2: return "10 段能量相对粉噪 / 参考谱的偏差";
         case 3: return "相关性、宽度与三段分频侧向能量";
         case 4: return "8 个本机交付情景：安全增益、预测峰值与目标差额";
@@ -182,7 +182,7 @@ static const char* moduleHintEn (int index)
     switch (index)
     {
         case 0: return "Loudness, dynamics and LRA (ITU-R BS.1770-4 / EBU Tech 3342)";
-        case 1: return "4x oversampled true peak and inter-sample overs";
+        case 1: return "192 kHz target true peak and inter-sample overs";
         case 2: return "10 band energy deviation against pink noise / reference";
         case 3: return "Correlation, width and three-band side energy";
         case 4: return "Eight local delivery scenarios: safe gain, predicted peak and target shortfall";

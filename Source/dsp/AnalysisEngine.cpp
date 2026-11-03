@@ -37,17 +37,24 @@ void Biquad::designHighPass (double sampleRate, double freq, double q) noexcept
 //==============================================================================
 void TruePeakDetector::prepare (double sampleRate)
 {
-    juce::ignoreUnused (sampleRate);
+    // BS.1770's base is 4x at 48 kHz (192 kHz effective). At 96 kHz only 2x
+    // is needed, and at 192 kHz the sample stream already has the required
+    // resolution. This keeps the interpolation target sample-rate independent
+    // instead of blindly multiplying every host rate by four.
+    const double rate = std::isfinite (sampleRate) && sampleRate >= 1000.0
+                            ? sampleRate : 48000.0;
+    activePhases = juce::jlimit (1, maxPhases,
+                                 (int) std::llround (192000.0 / rate));
 
-    constexpr int total = phases * tapsPerPhase;
+    const int total = activePhases * tapsPerPhase;
     const double center = (total - 1) * 0.5;
 
-    double h[total] {};
+    double h[tapsPerPhase * maxPhases] {};
     double sum = 0.0;
 
     for (int k = 0; k < total; ++k)
     {
-        const double t = ((double) k - center) / (double) phases;
+        const double t = ((double) k - center) / (double) activePhases;
         const double sinc = std::abs (t) < 1.0e-9 ? 1.0 : std::sin (kPi * t) / (kPi * t);
         const double x = (double) k / (double) (total - 1);
         const double w = 0.35875 - 0.48829 * std::cos (2.0 * kPi * x)
@@ -57,11 +64,12 @@ void TruePeakDetector::prepare (double sampleRate)
         sum += h[k];
     }
 
-    const double scale = (double) phases / juce::jmax (1.0e-9, sum);
+    const double scale = (double) activePhases / juce::jmax (1.0e-9, sum);
 
-    for (int p = 0; p < phases; ++p)
+    for (int p = 0; p < maxPhases; ++p)
         for (int j = 0; j < tapsPerPhase; ++j)
-            coeffs[j][p] = (float) (h[p + phases * j] * scale);
+            coeffs[j][p] = p < activePhases
+                ? (float) (h[p + activePhases * j] * scale) : 0.0f;
 
     reset();
 }
@@ -295,7 +303,7 @@ void AnalysisEngine::process (const juce::AudioBuffer<float>& buffer, Stats& sta
         sumMidK += weightedMid * weightedMid;
         sumSideK += weightedSide * weightedSide;
 
-        // --- true peak, 4x oversampled (per channel + side) ------------------
+        // --- true peak, 192 kHz target (per channel + side) ------------------
         const float tpL = truePeak[0].process (l);
         const float tpR = isStereo ? truePeak[1].process (r) : tpL;
         const float tp = juce::jmax (tpL, tpR);

@@ -177,6 +177,15 @@ void MasterLensAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, j
         engine.setTimeOrigin (hostPosition);
     }
 
+    // Standalone file transport is an analysis source, not just an output
+    // override. Render it before the spectrum/loudness taps so every page sees
+    // the imported file. Evidence audition stays as a post-analysis override.
+    const bool fileFeedsAnalysis = filePreviewPlayer.isActive()
+                                   && filePreviewPlayer.feedsAnalysis();
+
+    if (fileFeedsAnalysis)
+        filePreviewPlayer.render (buffer);
+
     // mono sum for the visualiser
     if (numChannels >= 2)
     {
@@ -192,11 +201,13 @@ void MasterLensAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, j
     engine.process (buffer, stats, numSamples);
     auditionEngine.process (buffer);
 
-    // File QC evidence preview is an explicit, user-triggered output override.
-    // Measurements above still see the untouched bus.
-    const bool previewOutput = filePreviewPlayer.render (buffer);
+    // Evidence preview replaces only the output; the untouched bus above stays
+    // the measurement source. A standalone file transport already fed analysis.
+    const bool previewOutput = fileFeedsAnalysis || filePreviewPlayer.render (buffer);
 
-    const double knownLength = trackLengthSeconds.load (std::memory_order_relaxed);
+    const double knownLength = fileFeedsAnalysis
+        ? filePreviewPlayer.getDurationSeconds()
+        : trackLengthSeconds.load (std::memory_order_relaxed);
     stats.hostLength = knownLength;
 
     if (hostValid)
@@ -206,8 +217,9 @@ void MasterLensAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, j
         markHostCoverage (hostPosition, hostPosition + (double) numSamples / currentSampleRate);
 
     const double covered = hostValid ? coverageTracker.seconds (knownLength) : -1.0;
-    float coverage = covered >= 0.0 ? (float) (100.0 * covered / knownLength) : -1.0f;
-    if (covered >= 0.0 && covered < knownLength - 1.0e-9)
+    float coverage = fileFeedsAnalysis ? 100.0f
+        : (covered >= 0.0 ? (float) (100.0 * covered / knownLength) : -1.0f);
+    if (! fileFeedsAnalysis && covered >= 0.0 && covered < knownLength - 1.0e-9)
         coverage = std::nextafter (juce::jmin (100.0f, coverage), 0.0f);
     stats.coveragePct = coverage;
     if (previewOutput) { outputSpectrumFifo.pushMainOutput (buffer); return; }

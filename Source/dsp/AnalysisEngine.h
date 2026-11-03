@@ -97,7 +97,12 @@ struct TpEvent
     float  overshootDb = 0.0f;
 };
 
-/** Fixed-size ring for true-peak events (single producer, no allocation). */
+/** Fixed-size ring for true-peak events (single producer, no allocation).
+
+    The writer never blocks. The reader takes the version before and after a
+    candidate copy and retries when the writer advanced, so a display snapshot
+    is internally consistent instead of trusting a torn slot.
+*/
 class TpEventRing
 {
 public:
@@ -105,37 +110,61 @@ public:
 
     void push (const TpEvent& e) noexcept
     {
-        data[write] = e;
-        write = (write + 1) % capacity;
+        const int slot = write.load (std::memory_order_relaxed);
+        data[slot].time.store (e.time, std::memory_order_relaxed);
+        data[slot].overshoot.store (e.overshootDb, std::memory_order_relaxed);
 
-        if (count < capacity)
-            ++count;
+        write.store ((slot + 1) % capacity, std::memory_order_relaxed);
 
+        const int current = count.load (std::memory_order_relaxed);
+        count.store (current < capacity ? current + 1 : capacity, std::memory_order_relaxed);
         version.fetch_add (1, std::memory_order_release);
     }
 
     void reset() noexcept
     {
-        write = 0;
-        count = 0;
+        write.store (0, std::memory_order_relaxed);
+        count.store (0, std::memory_order_relaxed);
         version.fetch_add (1, std::memory_order_release);
     }
 
-    int size() const noexcept { return count; }
+    int size() const noexcept { return count.load (std::memory_order_acquire); }
 
-    /** Oldest first. Safe enough for display: the reader validates the version. */
+    /** Oldest first. Validates the version and retries a snapshot on writer overlap. */
     TpEvent get (int i) const noexcept
     {
-        const int index = (write - count + i + capacity * 4) % capacity;
-        return data[index];
+        for (int attempt = 0; attempt < 4; ++attempt)
+        {
+            const auto before = getVersion();
+            const int w = write.load (std::memory_order_acquire);
+            const int c = count.load (std::memory_order_acquire);
+
+            if (i < 0 || i >= c)
+                return {};
+
+            const int index = (w - c + i + capacity * 4) % capacity;
+            const TpEvent e { data[index].time.load (std::memory_order_relaxed),
+                              data[index].overshoot.load (std::memory_order_relaxed) };
+
+            if (getVersion() == before)
+                return e;
+        }
+
+        return {};
     }
 
     unsigned int getVersion() const noexcept { return version.load (std::memory_order_acquire); }
 
 private:
-    TpEvent data[capacity] {};
-    int write = 0;
-    int count = 0;
+    struct Slot
+    {
+        std::atomic<double> time { 0.0 };
+        std::atomic<float> overshoot { 0.0f };
+    };
+
+    Slot data[capacity] {};
+    std::atomic<int> write { 0 };
+    std::atomic<int> count { 0 };
     std::atomic<unsigned int> version { 0 };
 };
 
@@ -303,7 +332,7 @@ struct Biquad
 };
 
 //==============================================================================
-/** 4x oversampling true-peak detector (windowed-sinc polyphase interpolator).
+/** Sample-rate-aware true-peak detector (windowed-sinc polyphase interpolator).
 
     Peak magnitude is independent of the group delay, so the plugin stays
     latency-free while still catching inter-sample overs.
@@ -318,8 +347,8 @@ public:
     inline float process (float x) noexcept
     {
         // Mirroring makes the 24-tap window contiguous across the ring wrap.
-        // Accumulate the four phases together: one history load per tap, and
-        // independent SIMD lanes without reassociating any phase's sum.
+        // The number of phases is sample-rate dependent: 4x at 48 kHz,
+        // 2x at 96 kHz and 1x at 192 kHz, keeping the 192 kHz BS.1770 base.
         history[(size_t) head] = history[(size_t) (head + historySize)] = x;
         const float* samples = history + head + historySize;
         head = (head + 1) & (historySize - 1);
@@ -327,25 +356,34 @@ public:
         for (int j = 0; j < tapsPerPhase; ++j)
         {
             const float sample = samples[-j];
-            phase0 += coeffs[j][0] * sample;
-            phase1 += coeffs[j][1] * sample;
-            phase2 += coeffs[j][2] * sample;
-            phase3 += coeffs[j][3] * sample;
+
+            if (activePhases > 0) phase0 += coeffs[j][0] * sample;
+            if (activePhases > 1) phase1 += coeffs[j][1] * sample;
+            if (activePhases > 2) phase2 += coeffs[j][2] * sample;
+            if (activePhases > 3) phase3 += coeffs[j][3] * sample;
         }
-        const float maxAbs = juce::jmax (std::abs (x), std::abs (phase0), std::abs (phase1),
-                                        juce::jmax (std::abs (phase2), std::abs (phase3)));
+
+        float maxAbs = std::abs (x);
+
+        if (activePhases > 0) maxAbs = juce::jmax (maxAbs, std::abs (phase0));
+        if (activePhases > 1) maxAbs = juce::jmax (maxAbs, std::abs (phase1));
+        if (activePhases > 2) maxAbs = juce::jmax (maxAbs, std::abs (phase2));
+        if (activePhases > 3) maxAbs = juce::jmax (maxAbs, std::abs (phase3));
 
         return maxAbs;
     }
 
+    int getOversamplingFactor() const noexcept { return activePhases; }
+
 private:
-    static constexpr int phases = 4;
+    static constexpr int maxPhases = 4;
     static constexpr int tapsPerPhase = 24;
     static constexpr int historySize = 32;   // power of two, >= tapsPerPhase
 
-    alignas (16) float coeffs[tapsPerPhase][phases] {};
+    alignas (16) float coeffs[tapsPerPhase][maxPhases] {};
     float history[historySize * 2] {};
     int head = 0;
+    int activePhases = maxPhases;
 };
 
 //==============================================================================

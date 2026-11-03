@@ -96,6 +96,22 @@ DetailArea::DetailArea()
     for (auto* b : { &fileChoose, &fileFolder, &filePlay, &fileAddAlbum, &fileClear })
         addChildComponent (*b);
 
+    addChildComponent (fileProgress);
+    addChildComponent (fileTime);
+    fileProgress.setSliderStyle (juce::Slider::LinearHorizontal);
+    fileProgress.setTextBoxStyle (juce::Slider::NoTextBox, false, 0, 0);
+    fileProgress.setRange (0.0, 1.0, 0.01);
+    fileProgress.setWantsKeyboardFocus (false);
+    fileProgress.onValueChange = [this]
+    {
+        if (! updatingFileProgress && onSeekFile != nullptr)
+            onSeekFile (fileProgress.getValue());
+    };
+    fileTime.setJustificationType (juce::Justification::centredRight);
+    fileTime.setFont (getValueFont());
+    fileTime.setColour (juce::Label::textColourId, theme::textFaint);
+    fileTime.setText ("00:00 / 00:00", juce::dontSendNotification);
+
     fileChoose.onClick = [this] { if (onChooseFiles != nullptr) onChooseFiles(); };
     fileFolder.onClick = [this] { if (onChooseFolder != nullptr) onChooseFolder(); };
     filePlay.onClick = [this] { if (onPlayFile != nullptr) onPlayFile(); };
@@ -289,6 +305,8 @@ void DetailArea::hideAllChildren()
     fileChoose.setVisible (false);
     fileFolder.setVisible (false);
     filePlay.setVisible (false);
+    fileProgress.setVisible (false);
+    fileTime.setVisible (false);
     fileAddAlbum.setVisible (false);
     fileClear.setVisible (false);
     fileExport.setVisible (false);
@@ -746,6 +764,18 @@ void DetailArea::resized()
         case PageId::files:
         {
             auto buttons = area.removeFromBottom (36);
+
+            if (filePlaybackAvailable)
+            {
+                auto transport = area.removeFromBottom (48);
+                fileProgress.setBounds (transport.removeFromLeft (juce::jmax (80, transport.getWidth() - 176))
+                                                    .reduced (0, 12));
+                fileTime.setBounds (transport.reduced (8, 0));
+            }
+
+            fileProgress.setVisible (filePlaybackAvailable);
+            fileTime.setVisible (filePlaybackAvailable);
+
             fileClear.setBounds (buttons.removeFromRight (76).withSizeKeepingCentre (76, 30));
             buttons.removeFromRight (8);
             fileExport.setBounds (buttons.removeFromRight (104).withSizeKeepingCentre (102, 30));

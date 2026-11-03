@@ -1,0 +1,44 @@
+{
+  "version": "2.4.0",
+  "platform": "Darwin",
+  "architecture": "arm64",
+  "renderer": "MasterLensUiShot 2.4.0",
+  "images": [
+    {
+      "path": "docs/screenshot-2.4.0.png",
+      "sha256": "bab1cf633d22f12301906d91e447ee281f2e70e3730fea9772acc057b7114547",
+      "width": 2240,
+      "height": 1400
+    },
+    {
+      "path": "docs/signal-2.4.0.png",
+      "sha256": "c8f712b6f5e0088a0791766bffa1f66609f3ad78ff8b97435f151d6cb6a31d46",
+      "width": 2240,
+      "height": 1400
+    },
+    {
+      "path": "docs/spectrum-2.4.0.png",
+      "sha256": "76d997f0449eb71c9df4a9afeb3b3968e3b20fea7eaabe1a1ba952320b480b01",
+      "width": 2240,
+      "height": 1400
+    },
+    {
+      "path": "docs/stereo-2.4.0.png",
+      "sha256": "a25fd0f4cc33564a9011d66639194d1f87ce7a0f18b7603b14e2553658dfb617",
+      "width": 2240,
+      "height": 1400
+    },
+    {
+      "path": "docs/fileqc-2.4.0.png",
+      "sha256": "9c300961ba1dfd243bb6a968216ae8360a8a62ac720f11727cd7e27dc4afa4ae",
+      "width": 2240,
+      "height": 1400
+    },
+    {
+      "path": "docs/about-2.4.0.png",
+      "sha256": "6c0f53d80041671815271cd0d0fae4196f417300ec77d38a754fb136c5b57ce1",
+      "width": 2240,
+      "height": 1400
+    }
+  ]
+}

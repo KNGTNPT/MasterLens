@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <array>
 #include <atomic>
+#include <memory>
 #include <vector>
 
 #include "AnalysisEngine.h"
@@ -12,24 +13,33 @@ namespace ml
 {
 /** Single-producer / single-consumer ring of mono samples.
 
-    The audio thread only ever writes one sample at a time; the UI thread copies
-    the most recent window. A torn read at worst produces a single display glitch,
-    which is acceptable for a visualiser and keeps the audio path allocation free.
+    The audio thread writes samples while the UI thread copies the latest window.
+    Every shared sample is an atomic float, so the reader cannot race a plain
+    float store. The frame may still be overwritten while it is being copied
+    (visual tearing only); that is acceptable for a spectrum display and keeps
+    the audio path allocation-free.
 */
 class SpectrumRing
 {
 public:
     void prepare (int sizePow2 = 32768)
     {
-        data.assign ((size_t) sizePow2, 0.0f);
+        data = std::make_unique<std::atomic<float>[]> ((size_t) sizePow2);
+
+        for (int i = 0; i < sizePow2; ++i)
+            data[(size_t) i].store (0.0f, std::memory_order_relaxed);
+
         mask = sizePow2 - 1;
         index.store (0, std::memory_order_relaxed);
     }
 
     void reset() noexcept
     {
-        for (auto& s : data)
-            s = 0.0f;
+        if (data == nullptr)
+            return;
+
+        for (int i = 0; i <= mask; ++i)
+            data[(size_t) i].store (0.0f, std::memory_order_relaxed);
 
         index.store (0, std::memory_order_relaxed);
     }
@@ -37,7 +47,7 @@ public:
     inline void write (float v) noexcept
     {
         const int i = index.load (std::memory_order_relaxed);
-        data[(size_t) i] = v;
+        data[(size_t) i].store (v, std::memory_order_relaxed);
         index.store ((i + 1) & mask, std::memory_order_release);
     }
 
@@ -48,7 +58,7 @@ public:
 
         for (int k = 0; k < n; ++k)
         {
-            data[(size_t) i] = source[k];
+            data[(size_t) i].store (source[k], std::memory_order_relaxed);
             i = (i + 1) & mask;
         }
 
@@ -62,7 +72,7 @@ public:
 
         for (int k = 0; k < n; ++k)
         {
-            data[(size_t) i] = 0.5f * (left[k] + right[k]);
+            data[(size_t) i].store (0.5f * (left[k] + right[k]), std::memory_order_relaxed);
             i = (i + 1) & mask;
         }
 
@@ -75,11 +85,12 @@ public:
         const int size = mask + 1;
 
         for (int i = 0; i < n; ++i)
-            dest[i] = data[(size_t) ((idx - n + i + size) & mask)];
+            dest[i] = data[(size_t) ((idx - n + i + size) & mask)]
+                          .load (std::memory_order_relaxed);
     }
 
 private:
-    std::vector<float> data;
+    std::unique_ptr<std::atomic<float>[]> data;
     std::atomic<int> index { 0 };
     int mask = 0;
 };

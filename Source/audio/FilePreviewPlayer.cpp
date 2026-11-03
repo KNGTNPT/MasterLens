@@ -23,14 +23,21 @@ void FilePreviewPlayer::prepare (double targetSampleRate)
 }
 
 void FilePreviewPlayer::start (const juce::File& file, double startSeconds,
-                               double endSeconds, bool shouldLoop)
+                               double endSeconds, bool shouldLoop, bool analyse)
 {
     {
         const juce::SpinLock::ScopedLockType sl (lock);
         request.fetch_add (1);
         pendingFile = file; pendingStart = juce::jmax (0.0, startSeconds);
         pendingEnd = juce::jmax (pendingStart + 0.05, endSeconds);
-        loop.store (shouldLoop); ready.store (false); active.store (true); busy.store (true);
+        pendingLoop = shouldLoop;
+        loop.store (shouldLoop);
+        feedAnalysis.store (analyse, std::memory_order_release);
+        positionSeconds.store (pendingStart, std::memory_order_relaxed);
+        durationSeconds.store (juce::jmax (0.0, pendingEnd - pendingStart),
+                               std::memory_order_relaxed);
+        seekRequest.store (-1.0);
+        ready.store (false); active.store (true); busy.store (true);
         status = "loading";
     }
 
@@ -42,10 +49,17 @@ void FilePreviewPlayer::stop()
 {
     active.store (false, std::memory_order_release);
     ready.store (false, std::memory_order_release);
+    feedAnalysis.store (false, std::memory_order_release);
     request.fetch_add (1);
     const juce::SpinLock::ScopedLockType sl (lock);
     pendingFile = juce::File(); status = "idle";
+    seekRequest.store (-1.0);
     notify();
+}
+
+void FilePreviewPlayer::seek (double fileSeconds)
+{
+    seekRequest.store (juce::jmax (0.0, fileSeconds), std::memory_order_release);
 }
 
 juce::String FilePreviewPlayer::getStatus() const
@@ -89,6 +103,7 @@ void FilePreviewPlayer::run()
         auto loaded = std::make_unique<Data>();
         loaded->sourceRate = reader->sampleRate; loaded->startSample = first;
         loaded->length = length; loaded->generation = serial;
+        durationSeconds.store ((double) length / reader->sampleRate, std::memory_order_relaxed);
         loaded->audio.setSize ((int) reader->numChannels, length);
         bool ok = true;
         for (int offset = 0; offset < length; offset += 4096)
@@ -121,7 +136,21 @@ bool FilePreviewPlayer::render (juce::AudioBuffer<float>& output)
     if (! d || ! ready.load (std::memory_order_acquire) || d->length <= 1)
         return true;
 
-    if (audioGeneration != d->generation) { audioGeneration = d->generation; readPosition = 0.0; }
+    if (audioGeneration != d->generation)
+    {
+        audioGeneration = d->generation;
+        readPosition = 0.0;
+    }
+
+    const double requestedSeek = seekRequest.exchange (-1.0, std::memory_order_acquire);
+
+    if (requestedSeek >= 0.0)
+    {
+        const double maxPosition = (double) juce::jmax ((juce::int64) 0, d->length - 1);
+        readPosition = juce::jlimit (0.0, maxPosition,
+                                     requestedSeek * d->sourceRate - (double) d->startSample);
+    }
+
     const double ratio = d->sourceRate / juce::jmax (1.0, targetRate.load());
     const int outChannels = output.getNumChannels();
 
@@ -158,6 +187,10 @@ bool FilePreviewPlayer::render (juce::AudioBuffer<float>& output)
 
         readPosition += ratio;
     }
+
+    positionSeconds.store ((double) d->startSample / d->sourceRate
+                               + readPosition / d->sourceRate,
+                           std::memory_order_relaxed);
 
     for (int ch = 2; ch < outChannels; ++ch)
         output.clear (ch, 0, output.getNumSamples());

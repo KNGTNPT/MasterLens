@@ -19,11 +19,16 @@ public:
     ~FilePreviewPlayer() override;
 
     void prepare (double targetSampleRate);
-    void start (const juce::File& file, double startSeconds, double endSeconds, bool shouldLoop);
+    void start (const juce::File& file, double startSeconds, double endSeconds,
+                bool shouldLoop, bool feedAnalysis = false);
     void stop();
+    void seek (double fileSeconds);
 
     bool isActive() const noexcept { return active.load (std::memory_order_acquire); }
     bool isReady() const noexcept { return ready.load (std::memory_order_acquire); }
+    bool feedsAnalysis() const noexcept { return feedAnalysis.load (std::memory_order_acquire); }
+    double getPositionSeconds() const noexcept { return positionSeconds.load (std::memory_order_relaxed); }
+    double getDurationSeconds() const noexcept { return durationSeconds.load (std::memory_order_relaxed); }
     juce::String getStatus() const;
 
     /** Returns true when the preview owns the output buffer. */
@@ -48,6 +53,9 @@ private:
     juce::File pendingFile;
     double pendingStart = 0.0, pendingEnd = 0.0;
     std::atomic<double> targetRate { 48000.0 };
+    std::atomic<double> positionSeconds { 0.0 };
+    std::atomic<double> durationSeconds { 0.0 };
+    std::atomic<double> seekRequest { -1.0 };
     double readPosition = 0.0;
     bool pendingLoop = true;
     juce::String status { "idle" };
@@ -55,5 +63,6 @@ private:
     std::atomic<bool> ready { false };
     std::atomic<bool> busy { false };
     std::atomic<bool> loop { true };
+    std::atomic<bool> feedAnalysis { false };
 };
 } // namespace ml

@@ -113,10 +113,12 @@ void MasterLensAudioProcessorEditor::toggleFilePlayback()
     }
 
     processor.stopFilePreview();
+    resetAnalysis();
     filePreviewPath = selected->path;
     const double duration = juce::jmax (1.0, selected->durationSeconds);
-    processor.startFilePreview (juce::File (selected->path), 0.0, duration, false);
+    processor.startFilePreview (juce::File (selected->path), 0.0, duration, false, true);
     detail.setFilePlayActive (true);
+    detail.setFileProgress (0.0, duration);
     footerStatusText = T ("独立版播放 · ", "Standalone playback · ") + selected->fileName;
     footerStatusColour = ml::theme::accent;
     repaint();

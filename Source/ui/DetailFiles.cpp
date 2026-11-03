@@ -8,6 +8,8 @@ void DetailArea::setFilePlaybackAvailable (bool available)
 {
     filePlaybackAvailable = available;
     filePlay.setVisible (available && page == PageId::files);
+    fileProgress.setVisible (available && page == PageId::files);
+    fileTime.setVisible (available && page == PageId::files);
 }
 
 void DetailArea::setFilePlayActive (bool active)
@@ -18,11 +20,29 @@ void DetailArea::setFilePlayActive (bool active)
     repaint();
 }
 
+void DetailArea::setFileProgress (double positionSeconds, double durationSeconds)
+{
+    fileProgressDuration = juce::jmax (0.001, durationSeconds);
+
+    if (std::abs (fileProgress.getMaximum() - fileProgressDuration) > 0.01)
+        fileProgress.setRange (0.0, fileProgressDuration, 0.01);
+
+    updatingFileProgress = true;
+    fileProgress.setValue (juce::jlimit (0.0, fileProgressDuration, positionSeconds),
+                          juce::dontSendNotification);
+    updatingFileProgress = false;
+
+    fileTime.setText (ml::fmtTime (juce::jlimit (0.0, fileProgressDuration, positionSeconds))
+                          + " / " + ml::fmtTime (fileProgressDuration),
+                      juce::dontSendNotification);
+}
+
 namespace
 {
 constexpr int kFileRowHeight = 32;
 constexpr int kFileHeaderHeight = 26;
 constexpr int kFileButtonRow = 40;
+constexpr int kFileTransportRow = 48;
 constexpr int kFileBandRow = 22;
 constexpr int kFileDropGap = 8;
 
@@ -91,6 +111,10 @@ juce::Rectangle<int> DetailArea::fileTableBounds() const
 {
     auto area = contentArea().withTrimmedTop (32);
     area.removeFromBottom (kFileButtonRow);
+
+    if (filePlaybackAvailable)
+        area.removeFromBottom (kFileTransportRow);
+
     area.removeFromTop (kFileBandRow + kFileDropGap);
 
     const int dropH = fileResults.empty() ? 76 : 28;
@@ -107,6 +131,9 @@ void DetailArea::paintFiles (juce::Graphics& g)
     auto area = contentArea().withTrimmedTop (32);
     area.removeFromBottom (kFileButtonRow);
 
+    if (filePlaybackAvailable)
+        area.removeFromBottom (kFileTransportRow);
+
     // ---- offline mode band (flat, no card) ----------------------------------
     {
         auto band = area.removeFromTop (kFileBandRow);
@@ -114,8 +141,8 @@ void DetailArea::paintFiles (juce::Graphics& g)
         g.fillEllipse ((float) band.getX(), (float) band.getCentreY() - 3.0f, 6.0f, 6.0f);
         g.setColour (theme::textDim);
         g.setFont (getLabelFont());
-        g.drawText (T ("文件 QC · 离线分析结果 · 不随播放更新",
-                       "File QC · offline results · does not follow playback"),
+        g.drawText (T ("文件 QC · 离线结果 · 独立版实时播放",
+                       "File QC · offline · standalone live play"),
                     band.withTrimmedLeft (16), juce::Justification::centredLeft);
         g.setColour (theme::textFaint);
         g.setFont (getValueFont());
@@ -310,6 +337,10 @@ juce::Rectangle<int> DetailArea::fileInspectorBounds() const
 {
     auto area = contentArea().withTrimmedTop (30 + kFileBandRow + kFileDropGap + 28 + kFileDropGap);
     area.removeFromBottom (kFileButtonRow);
+
+    if (filePlaybackAvailable)
+        area.removeFromBottom (kFileTransportRow);
+
     return area.removeFromBottom (juce::jlimit (88, 240, juce::roundToInt (area.getHeight() * 0.58f)));
 }
 

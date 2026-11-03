@@ -50,9 +50,9 @@ void MasterLensAudioProcessorEditor::updateTexts()
 
     infoButton.setVisible (false);
 
-    holdButton.setTooltip (T ("保持 (Hold)：锁定当前读数，便于对比改动前后；再次点击恢复实时（按住 Space）",
+    holdButton.setTooltip (T ("保持 (Hold)：锁定当前读数，便于对比改动前后；再次点击恢复实时（Shift+Space）",
                               "Hold: freezes the current readings for before / after comparison; "
-                              "press again to resume (hold Space)"));
+                              "press again to resume (Shift+Space)"));
     clearButton.setTooltip (T ("清零统计：Integrated / LRA / 真峰值超限计数归零，不改变任何参数（R）",
                                "Clear stats: resets Integrated / LRA / true-peak overs. "
                                "Parameters are untouched (R)"));
@@ -96,7 +96,30 @@ bool MasterLensAudioProcessorEditor::keyPressed (const juce::KeyPress& key)
         return true;
     }
 
-    if (key == juce::KeyPress::spaceKey)
+    // Plain Space belongs to the host transport. In Logic this lets the
+    // foreground plug-in window start/stop playback like other plug-ins.
+    // Shift+Space keeps the old local Hold gesture; standalone uses Space to
+    // stop an active file transport when there is no host to forward to.
+    if (key.getKeyCode() == juce::KeyPress::spaceKey
+        && ! key.getModifiers().isShiftDown())
+    {
+        if (processor.wrapperType == juce::AudioProcessor::wrapperType_Standalone
+            && processor.isFilePreviewActive())
+        {
+            processor.stopFilePreview();
+            filePreviewPath.clear();
+            detail.setFilePlayActive (false);
+            footerStatusText = T ("文件播放已停止", "File playback stopped");
+            footerStatusColour = ml::theme::textDim;
+            repaint();
+            return true;
+        }
+
+        return false;
+    }
+
+    if (key.getKeyCode() == juce::KeyPress::spaceKey
+        && key.getModifiers().isShiftDown())
     {
         holdFromKeyboard = true;
         setHold (true, true);

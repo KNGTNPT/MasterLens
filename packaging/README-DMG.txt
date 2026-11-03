@@ -1,4 +1,4 @@
-MasterLens 2.3.3 —— 把播放、试听和导航接清楚喵
+MasterLens 2.4.0 —— 导入文件真正进入测量链路喵
 by BerryStudio · 开发者 KNGTNPT 兰
 =====================================================================
 
@@ -6,6 +6,13 @@ by BerryStudio · 开发者 KNGTNPT 兰
 1. 运行「安装 Install.command」。首次运行未公证版本，可能需要右键 → 打开。
 2. VST3 / AU 复制到用户 Library/Audio/Plug-Ins；独立版放入 ~/Applications。
 3. 重启 DAW，在 BerryStudio 下搜索 MasterLens，并放到母带链最后。
+
+【2.4.0】
+独立版文件播放先进入响度 / TP / LRA / 频谱 / 声场 / 诊断分析，再输出；其它页面同步更新。
+文件页加入播放进度条和时间显示，可拖动定位。
+Logic Pro 前台时普通空格交回宿主 transport；Hold 改为 Shift+Space。
+SpectrumRing、TpEventRing 和 TP 插值器完成线程安全 / 版本校验 / 192 kHz 基准修正。
+关于页 SVG 移到左下角，暗色模式仅将黑色 ink 变白，红色保持。
 
 【2.3.3】
 独立版 File QC 选中已分析文件后可播放文件；播放结束或停止后恢复旁路。

@@ -82,7 +82,7 @@ std::vector<CheckResult> buildChecklist (const StatsSnapshot& s,
         add (T ("真峰值 / 上限", "True peak / ceiling"),
              valid ? num (s.truePeakDb) + " dBTP  (" + T ("余量 ", "headroom ") + num (headroom) + ")"
                    : noValue(), sev,
-             T ("上限 ", "Ceiling ") + num (ceilingDb) + " dBTP · 4× oversampling");
+             T ("上限 ", "Ceiling ") + num (ceilingDb) + " dBTP · 192 kHz TP target");
     }
 
     // 3) loudness range 3 - 16 LU

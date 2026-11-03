@@ -88,10 +88,17 @@ static juce::Rectangle<int> aboutCardBounds (juce::Rectangle<int> area)
 
 AboutPanel::AboutPanel()
 {
-    // Render the supplied vector asset exactly as authored. No colour remap,
-    // redraw, tracing or interpretation is applied here.
-    studioDrawable = juce::Drawable::createFromImageData (MasterLensFonts::Berrystudio_svg,
-                                                          MasterLensFonts::Berrystudio_svgSize);
+    // Keep the supplied vector bytes and geometry. The light theme uses the
+    // original black artwork; the dark theme only promotes its black ink to
+    // white so it remains legible. Red is untouched.
+    studioLight = juce::Drawable::createFromImageData (MasterLensFonts::Berrystudio_svg,
+                                                        MasterLensFonts::Berrystudio_svgSize);
+    studioDark = juce::Drawable::createFromImageData (MasterLensFonts::Berrystudio_svg,
+                                                       MasterLensFonts::Berrystudio_svgSize);
+
+    if (studioDark != nullptr)
+        studioDark->replaceColour (juce::Colours::black, juce::Colours::white);
+
     setOpaque (false);
 
     closeButton.setButtonText (ml::grid::controlText (T ("关闭", "Close")));
@@ -170,16 +177,16 @@ void AboutPanel::paint (juce::Graphics& g)
 
     g.setColour (theme::textFaint);
     g.setFont (getLabelFont());
-    auto studioArea = inner.removeFromBottom (80).withTrimmedRight (112)
+    auto studioArea = inner.removeFromBottom (80).removeFromLeft (300)
         .withSizeKeepingCentre (300, 56);
-    if (studioDrawable != nullptr)
-        studioDrawable->drawWithin (g, studioArea.toFloat(), juce::RectanglePlacement::centred, 1.0f);
+    if (auto* studio = theme::dark ? studioDark.get() : studioLight.get())
+        studio->drawWithin (g, studioArea.toFloat(), juce::RectanglePlacement::centred, 1.0f);
     inner.removeFromBottom (12);
     g.drawFittedText (T ("测量标准：ITU-R BS.1770-4 · EBU R128 · EBU Tech 3342\n"
-                         "真峰值 4× 过采样插值 · 零延迟 · 不修改音频\n"
+                         "真峰值 192 kHz 插值基准 · 零延迟 · 不修改音频\n"
                          "Built with JUCE 8",
                          "Standards: ITU-R BS.1770-4 · EBU R128 · EBU Tech 3342\n"
-                         "4x oversampled true peak · zero latency · never alters audio\n"
+                         "True peak at a 192 kHz target · zero latency · never alters audio\n"
                          "Built with JUCE 8"),
                       inner, juce::Justification::topLeft, 4);
 }

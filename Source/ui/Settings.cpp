@@ -172,8 +172,8 @@ void SettingsPanel::paint (juce::Graphics& g)
         g.drawText (value, r, juce::Justification::centredLeft, false);
     };
 
-    row (T ("快捷键", "Shortcuts"), T ("空格 保持 · R 清零 · 1-9 模块 · 0 曲风目标 · Esc 关闭 · Cmd+E 导出",
-                                        "Space hold | R clear | 1-9 pages | 0 genre target | Esc close | Cmd+E export"));
+    row (T ("快捷键", "Shortcuts"), T ("Shift+空格 保持 · R 清零 · 1-9 模块 · 0 曲风目标 · Esc 关闭 · Cmd+E 导出",
+                                        "Shift+Space hold | R clear | 1-9 pages | 0 genre target | Esc close | Cmd+E export"));
     row (T ("缩放快捷键", "Zoom keys"), T ("Cmd + = 放大 · Cmd + - 缩小",
                                             "Cmd + = larger | Cmd + - smaller"));
     row (T ("主题 / 语言", "Theme / language"), T ("顶部按钮即时切换，偏好随工程保存",

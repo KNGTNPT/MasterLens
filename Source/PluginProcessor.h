@@ -96,13 +96,18 @@ public:
         auditionEngine.startLive (lowHz, highHz, monoFold);
     }
 
-    void startFilePreview (const juce::File& file, double start, double end, bool loop)
+    void startFilePreview (const juce::File& file, double start, double end,
+                           bool loop, bool feedAnalysis = false)
     {
-        filePreviewPlayer.start (file, start, end, loop);
+        filePreviewPlayer.start (file, start, end, loop, feedAnalysis);
     }
 
     void stopFilePreview() { filePreviewPlayer.stop(); }
+    void seekFilePreview (double seconds) { filePreviewPlayer.seek (seconds); }
     bool isFilePreviewActive() const noexcept { return filePreviewPlayer.isActive(); }
+    bool filePreviewFeedsAnalysis() const noexcept { return filePreviewPlayer.feedsAnalysis(); }
+    double getFilePreviewPosition() const noexcept { return filePreviewPlayer.getPositionSeconds(); }
+    double getFilePreviewDuration() const noexcept { return filePreviewPlayer.getDurationSeconds(); }
     juce::String getFilePreviewStatus() const { return filePreviewPlayer.getStatus(); }
 
     void stopAudition() { auditionEngine.stop(); }

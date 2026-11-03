@@ -805,6 +805,27 @@ int main (int argc, char** argv)
         check("TP reset clears mirror",detector.process(0.0f),0.0,0.0);
     }
 
+    // TP interpolation target: 4x @ 48k, 2x @ 96k, 1x @ 192k.
+    {
+        ml::TruePeakDetector detector;
+        detector.prepare (48000.0);
+        check ("TP phases @48k", detector.getOversamplingFactor(), 4, 0);
+        detector.prepare (96000.0);
+        check ("TP phases @96k", detector.getOversamplingFactor(), 2, 0);
+        detector.prepare (192000.0);
+        check ("TP phases @192k", detector.getOversamplingFactor(), 1, 0);
+
+        ml::TpEventRing ring;
+        const auto versionBefore = ring.getVersion();
+        ring.push ({ 12.5, -0.25f });
+        check ("TP event version", (double) (ring.getVersion() - versionBefore), 1, 0);
+        check ("TP event time", ring.get (0).time, 12.5, 0.000001);
+        check ("TP event overshoot", ring.get (0).overshootDb, -0.25, 0.000001);
+        ring.reset();
+        check ("TP event reset", ring.size(), 0, 0);
+    }
+
+
     // 2.1: sample-addressed QC must be invariant to callback / file chunk size.
     {
         juce::AudioBuffer<float> audio (2, 48000);

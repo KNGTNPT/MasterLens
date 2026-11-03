@@ -402,7 +402,7 @@ public:
 
 private:
     juce::TextButton closeButton;
-    std::unique_ptr<juce::Drawable> studioDrawable;
+    std::unique_ptr<juce::Drawable> studioDark, studioLight;
 };
 //==============================================================================
 /** Loudness-war explainer + target controls for the selected genre.

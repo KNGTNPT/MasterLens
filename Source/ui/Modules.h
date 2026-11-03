@@ -261,6 +261,8 @@ public:
     void setDeliverySpec (const DeliverySpec& s) { spec = s; repaint(); }
     void setFilePlaybackAvailable (bool available);
     void setFilePlayActive (bool active);
+    void setFileProgress (double positionSeconds, double durationSeconds);
+    std::function<void (double)> onSeekFile;
     const std::vector<FileAnalysisResult>& getFileResults() const noexcept { return fileResults; }
     const FileAnalysisResult* selectedFile() const
     {
@@ -337,7 +339,11 @@ private:
     juce::TextButton applyTarget;
 
     juce::TextButton fileChoose, fileFolder, filePlay, fileAddAlbum, fileClear, fileExport;
+    juce::Slider fileProgress;
+    juce::Label fileTime;
     bool filePlaybackAvailable = false;
+    bool updatingFileProgress = false;
+    double fileProgressDuration = 0.0;
     std::array<juce::TextButton, 3> fileViewButtons;
     std::vector<FileAnalysisResult> fileResults;
     DeliverySpec spec;

@@ -49,6 +49,7 @@ public:
     void expandFirstIssueForSnapshot();
     void setPageForSnapshot (int page);
     void setFileViewForSnapshot (int view) { detail.setFileView (view); }
+    void setFilePlaybackAvailableForSnapshot (bool available) { detail.setFilePlaybackAvailable (available); }
     void setThemeForSnapshot (bool useDark);
     void setScaleForSnapshot (float scale) { setUiScale (scale, false); }
     void captureSnapshotForSnapshot (int slot);
