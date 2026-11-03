@@ -35,6 +35,7 @@ CodecCheckResult runCodecCheck (const juce::File& input, const juce::String& cod
         return r;
     }
 
+    r.sourceSha256 = juce::SHA256 (input).toHexString();
     outputDirectory.createDirectory();
     const auto work = outputDirectory.getNonexistentChildFile ("masterlens-codec", "", false);
     if (! work.createDirectory()) { r.error = "temporary directory unavailable"; return r; }
@@ -86,6 +87,8 @@ CodecCheckResult runCodecCheck (const juce::File& input, const juce::String& cod
     }
 
     r.decodedSha256 = results[0].forensic.sha256;
+    if (! input.existsAsFile() || juce::SHA256 (input).toHexString() != r.sourceSha256)
+    { r.error = "source changed during codec check"; return r; }
     r.ok = true;
     r.integratedLufs = results[0].stats.integrated;
     r.truePeakDbtp = results[0].stats.truePeakDb;

@@ -10,7 +10,7 @@ struct CodecCheckResult
     juce::String codec;
     juce::String error;
     juce::String decodedPath; // legacy field; temporary files are not retained
-    juce::String encodedContainer, encodedSha256, decodedSha256;
+    juce::String encodedContainer, encodedSha256, decodedSha256, sourceSha256;
     juce::int64 encodedBytes = 0;
     float integratedLufs = -100.0f;
     float truePeakDbtp = -100.0f;

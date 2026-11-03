@@ -109,6 +109,14 @@ with tempfile.TemporaryDirectory(prefix='masterlens-qc-') as temp:
     run(quoted,'--codec','aac','--json',root/'codec-missing.json',code=1,env=missing_env)
     error_report=json.loads((root/'codec-missing.json').read_text())
     check(not error_report['analysisOk'] and error_report['gateFailed'] and not error_report['codecChecks'][0]['ok'],'codec failure is never a success')
+    # A hung encoder must fail promptly, with no successful evidence left behind.
+    if os.name != 'nt':
+        fake=root/'hung-ffmpeg';fake.write_text('#!/bin/sh\nexec sleep 3\n');fake.chmod(0o755)
+        timeout_env=dict(os.environ,MASTERLENS_FFMPEG=str(fake),MASTERLENS_CODEC_TIMEOUT_MS='100')
+        run(quoted,'--codec','aac','--json',root/'codec-timeout.json',code=1,env=timeout_env)
+        check(not json.loads((root/'codec-timeout.json').read_text())['analysisOk'],'encoder timeout cannot pass')
+    original=quoted.read_bytes();run(quoted,'--json',quoted,code=1)
+    check(quoted.read_bytes()==original,'report export cannot overwrite input audio')
     # Real encoded packets -> float WAV -> analysis, both supported codecs.
     import shutil
     if not shutil.which('ffmpeg'):

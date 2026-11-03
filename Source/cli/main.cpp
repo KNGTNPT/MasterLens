@@ -130,11 +130,14 @@ int main (int argc, char** argv)
             if (! r.ok)
                 continue;
 
-            const auto cc = ml::runCodecCheck (juce::File (r.path), codec, tempDir);
+            auto cc = ml::runCodecCheck (juce::File (r.path), codec, tempDir);
+            if (cc.ok && cc.sourceSha256 != r.forensic.sha256)
+            { cc.ok = false; cc.error = "source changed since analysis"; }
             failed |= ! cc.ok;
             blocked |= cc.ok && cc.truePeakDbtp > (deliverySpec.enabled ? deliverySpec.ceilingDbtp : ceiling) + 0.05f;
             if (! cc.ok) std::fprintf (stderr, "Codec check failed: %s: %s\n", r.fileName.toRawUTF8(), cc.error.toRawUTF8());
             auto* o = new juce::DynamicObject();
+            o->setProperty ("sourceSha256", cc.sourceSha256);
             o->setProperty ("encodedContainer", cc.encodedContainer);
             o->setProperty ("encodedBytes", cc.encodedBytes);
             o->setProperty ("encodedSha256", cc.encodedSha256);

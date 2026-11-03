@@ -91,7 +91,7 @@ if a.ebu_dir:
    except wave.Error:continue
    if channels<=2:compare(path,'EBU-standard-material')
 if a.ebu_dir and sum(r['kind']=='EBU-standard-material' for r in rows)<10: failures.append('insufficient EBU standard material coverage')
-report=dict(reference='FFmpeg ebur128 (independent of MasterLens)',ffmpegVersion=subprocess.check_output([ffmpeg,'-version'],text=True).splitlines()[0],
+report=dict(version=re.search(r'kVersion\s*=\s*"([^"]+)"',Path('Source/Version.h').read_text()).group(1),probeSha256=hashlib.sha256(Path(probe).read_bytes()).hexdigest(),scriptSha256=hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),ebuArchiveSha512='60d022fdac47ad0be2688411be9daecbff85da994d6fa4921bba6cffab841b081d8b15d9ce284ad2253efb686463450a84a0d19cb0bad7a934546cc52dd73771' if a.ebu_dir else None,reference='FFmpeg ebur128 (independent of MasterLens)',ffmpegVersion=subprocess.check_output([ffmpeg,'-version'],text=True).splitlines()[0],
             standardCredit='© EBU' if a.ebu_dir else 'EBU material not supplied; generated vectors only',rows=rows,failures=failures)
 Path(a.output).parent.mkdir(parents=True,exist_ok=True);Path(a.output).write_text(json.dumps(report,indent=2)+'\n')
 if failures:raise SystemExit('\n'.join(failures))

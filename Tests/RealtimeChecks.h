@@ -83,6 +83,15 @@ inline void reliabilityChecks()
         ml::album::Session a,b; a.setAlbumName("project A"); b.setAlbumName("project B");
         check("project instances isolated",a.snapshot().albumName=="project A" && b.snapshot().albumName=="project B",1,0);
         check("project identities unique",a.snapshot().projectId!=b.snapshot().projectId,1,0);
+        check("empty project not PASS",!ml::album::Session::evaluate(a.snapshot()).passed(),1,0);
+        ml::album::Snapshot delivery;ml::album::TrackRecord track;
+        track.label="coverage";track.durationSeconds=10;track.coveragePct=-1;
+        track.stats.hasSignal=true;track.stats.integrated=-14;track.stats.truePeakDb=-6;
+        delivery.tracks.push_back(track);
+        check("unknown coverage not PASS",!ml::album::Session::evaluate(delivery).passed(),1,0);
+        delivery.tracks[0].coveragePct=99.999f;
+        check("incomplete coverage not PASS",!ml::album::Session::evaluate(delivery).passed(),1,0);
+        check("invalid project rejected",!b.restoreState("{}"),1,0);
         a.setReviewed("hash|version|event",true);
         check("review persists in state",a.serializeState().contains("hash|version|event"),1,0);
         const auto state=a.serializeState();
