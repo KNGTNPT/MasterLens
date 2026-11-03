@@ -2,6 +2,7 @@
 #include <cstdio>
 #include <cmath>
 #include <limits>
+#include "AllocationAudit.h"
 
 #include "dsp/AnalysisEngine.h"
 #include "dsp/SpectrumAnalyzer.h"
@@ -29,10 +30,13 @@ static void check (const juce::String& name, double actual, double expected, dou
         ++failures;
 }
 
+#include "RealtimeChecks.h"
+
 int main (int argc, char** argv)
 {
     if (argc >= 3 && juce::String (argv[1]) == "--measure")
         return runMeasurementProbe (argv[2], argc > 3 ? juce::String (argv[3]).getIntValue() : 0);
+    reliabilityChecks();
     constexpr double sr = 48000.0;
     constexpr int blockSize = 256;
 
@@ -732,6 +736,7 @@ int main (int argc, char** argv)
 
                 player.setEnabled (true);
                 juce::AudioBuffer<float> out (2, 512);
+                out.clear();
                 player.render (out, 1.0, true, 0.0f);
 
                 double energy = 0.0;
@@ -876,6 +881,7 @@ int main (int argc, char** argv)
         ml::album::Session session;
         ml::album::TrackRecord track;
         track.label = "QC regression";
+        track.durationSeconds = 10.0; track.coveragePct = 100;
         track.stats.hasSignal = true; track.stats.integrated = -14; track.stats.truePeakDb = -6;
         auto evidence = q;
         evidence.sha256 = juce::String::repeatedString ("a", 64);

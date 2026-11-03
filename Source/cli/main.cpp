@@ -88,7 +88,9 @@ int main (int argc, char** argv)
         const auto parsed = juce::JSON::parse (specFile.loadFileAsString());
         if (auto* root = parsed.getDynamicObject())
         {
-            deliverySpec = ml::DeliverySpec::fromVar (parsed);
+            juce::String error;
+            if (! ml::DeliverySpec::parse (parsed, deliverySpec, error))
+            { std::fprintf (stderr, "%s\n", error.toRawUTF8()); return 1; }
             deliverySpec.enabled = true;
         }
         else
@@ -98,6 +100,9 @@ int main (int argc, char** argv)
         for (const auto& path : ml::FileAnalyzer::expandPaths (paths))
             if (juce::File (jsonPath) == juce::File (path))
             { std::fprintf (stderr, "Report cannot overwrite an audio source.\n"); return 1; }
+
+    if (jsonPath.isNotEmpty() && specPath.isNotEmpty() && juce::File (jsonPath) == juce::File (specPath))
+    { std::fprintf (stderr, "Report cannot overwrite a delivery spec\n"); return 1; }
 
     ml::FileAnalyzer analyzer;
     if (! analyzer.analyse (paths)) return 1;
@@ -111,7 +116,7 @@ int main (int argc, char** argv)
         for (size_t b = 0; b < 10; ++b)
             warning |= r.forensic.bandAvailable[b] && r.forensic.monoLossDb[b] >= 6.0f;
         const auto specCheck = ml::evaluateSpec (r, deliverySpec);
-        blocked |= r.forensic.blockers() > 0 || r.stats.truePeakDb > ceiling + 0.05f
+        blocked |= r.forensic.blockers() > 0 || r.stats.truePeakDb > (deliverySpec.enabled ? deliverySpec.ceilingDbtp : ceiling) + 0.05f
                    || (deliverySpec.enabled && ! specCheck.ok)
                    || (failOn == "warning" && warning);
     }
@@ -126,7 +131,14 @@ int main (int argc, char** argv)
                 continue;
 
             const auto cc = ml::runCodecCheck (juce::File (r.path), codec, tempDir);
+            failed |= ! cc.ok;
+            blocked |= cc.ok && cc.truePeakDbtp > (deliverySpec.enabled ? deliverySpec.ceilingDbtp : ceiling) + 0.05f;
+            if (! cc.ok) std::fprintf (stderr, "Codec check failed: %s: %s\n", r.fileName.toRawUTF8(), cc.error.toRawUTF8());
             auto* o = new juce::DynamicObject();
+            o->setProperty ("encodedContainer", cc.encodedContainer);
+            o->setProperty ("encodedBytes", cc.encodedBytes);
+            o->setProperty ("encodedSha256", cc.encodedSha256);
+            o->setProperty ("decodedSha256", cc.decodedSha256);
             o->setProperty ("file", r.fileName);
             o->setProperty ("codec", codec);
             o->setProperty ("ok", cc.ok);
@@ -155,17 +167,20 @@ int main (int argc, char** argv)
         root->setProperty ("schemaVersion", 3);
         root->setProperty ("generatedAt", juce::Time::getCurrentTime().toISO8601 (true));
         root->setProperty ("gatePolicy", failOn.isEmpty() ? "none" : failOn);
-        root->setProperty ("gateFailed", failOn.isNotEmpty() && blocked);
+        root->setProperty ("analysisOk", ! failed && ! results.empty());
+        root->setProperty ("gateFailed", failed || ((failOn.isNotEmpty() || deliverySpec.enabled) && blocked));
         juce::Array<juce::var> files;
         for (const auto& r : results)
             files.add (ml::fileResultToVar (r, target, ceiling, &deliverySpec));
         root->setProperty ("files", files);
         root->setProperty ("deliverySpec", deliverySpec.toVar());
         root->setProperty ("codecChecks", codecChecks);
-        if (! juce::File (jsonPath).replaceWithText (juce::JSON::toString (juce::var (root), true)))
+        juce::TemporaryFile reportTemp { juce::File (jsonPath) };
+        if (! reportTemp.getFile().replaceWithText (juce::JSON::toString (juce::var (root), true))
+            || ! reportTemp.overwriteTargetFileWithTemporary())
         { std::fprintf (stderr, "Could not write JSON: %s\n", jsonPath.toRawUTF8()); return 1; }
         std::fprintf (stderr, "JSON: %s\n", jsonPath.toRawUTF8());
     }
-    if (failed || results.empty()) return 1;
-    return failOn.isNotEmpty() && blocked ? 2 : 0;
+    if (failed || results.empty()) { std::fprintf (stderr, "Analysis FAILED; no delivery pass established\n"); return 1; }
+    return (failOn.isNotEmpty() || deliverySpec.enabled) && blocked ? 2 : 0;
 }

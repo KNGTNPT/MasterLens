@@ -134,7 +134,7 @@ void MasterLensAudioProcessorEditor::updateRail()
         if (level >= 0) note (level);
         rail.setModule (5, T ("专辑门禁", "Album gate"),
                         juce::String ((int) albumSnapshot.tracks.size()) + T (" 首", " tracks"),
-                        hasTracks ? (albumGate.blocked ? T ("阻断", "BLOCK") : T ("放行", "PASS"))
+                        hasTracks ? (! albumGate.passed() ? T ("未通过", "NOT PASSED") : T ("放行", "PASS"))
                                   : T ("未采集", "No capture"),
                         hasTracks ? (albumGate.blocked ? ml::theme::bad
                                                        : (warnings > 0 ? ml::theme::warn : ml::theme::good))

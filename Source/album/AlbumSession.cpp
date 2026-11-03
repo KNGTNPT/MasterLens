@@ -28,6 +28,7 @@ namespace
         o->setProperty ("widthPct", s.widthPct);
         o->setProperty ("lowSidePct", s.lowSidePct);
         o->setProperty ("dcOffsetDb", s.dcOffsetDb);
+        o->setProperty ("invalidSamples", (juce::int64) s.invalidSamples);
         o->setProperty ("clipEvents", s.clipEvents);
         o->setProperty ("clickEvents", s.clickEvents);
         o->setProperty ("oversCount", s.oversCount);
@@ -90,6 +91,7 @@ namespace
             s.widthPct = get ("widthPct", 0.0);
             s.lowSidePct = get ("lowSidePct", 0.0);
             s.dcOffsetDb = get ("dcOffsetDb", -100.0);
+            s.invalidSamples = (juce::int64) o->getProperty ("invalidSamples");
             s.clipEvents = (int) get ("clipEvents", 0.0);
             s.clickEvents = (int) get ("clickEvents", 0.0);
             s.oversCount = (int) get ("oversCount", 0.0);
@@ -120,7 +122,7 @@ namespace
             s.timeOrigin = get ("timeOrigin", 0.0);
             s.hostPosition = get ("hostPosition", 0.0);
             s.hostLength = get ("hostLength", 0.0);
-            s.coveragePct = get ("coveragePct", 100.0);
+            s.coveragePct = get ("coveragePct", -1.0);
             s.truePeakLeft = get ("truePeakLeft", -100.0);
             s.truePeakRight = get ("truePeakRight", -100.0);
             s.sideTruePeak = get ("sideTruePeak", -100.0);
@@ -473,7 +475,7 @@ bool Session::fromJson (const juce::String& text, Snapshot& s) const
     const auto parsed = juce::JSON::parse (text);
     auto* root = parsed.getDynamicObject();
 
-    if (root == nullptr)
+    if (root == nullptr || (int) root->getProperty ("schemaVersion") != 1 || ! root->getProperty ("tracks").isArray())
         return false;
 
     s = Snapshot {};
@@ -589,9 +591,16 @@ void Session::addTrack (const TrackRecord& track)
 
     for (auto& t : s.tracks)
     {
-        if (t.label.equalsIgnoreCase (track.label))
+        if ((! track.id.isEmpty() && t.id == track.id)
+            || (! track.sourceFile.isEmpty() && t.sourceFile == track.sourceFile)
+            || (t.label.equalsIgnoreCase (track.label) &&
+                (t.sourceFile.isEmpty() || track.sourceFile.isEmpty()
+                 || (! t.fileForensics["sha256"].toString().isEmpty()
+                     && t.fileForensics["sha256"].toString() == track.fileForensics["sha256"].toString()))))
         {
+            const auto identity = t.id;
             t = track;
+            if (! identity.isEmpty()) t.id = identity;
             replaced = true;
             break;
         }
@@ -694,10 +703,14 @@ bool Session::saveProject (const juce::File& file, const juce::String& versionLa
     s.projectVersion = versionLabel.isNotEmpty() ? versionLabel : "1.0";
     s.updatedAt = juce::Time::getCurrentTime().toISO8601 (true);
 
-    save (s);
+    deriveMedian (s);
+    const auto payload = toJson (s, false);
+    s.hash = juce::SHA256 (payload.toRawUTF8(), (size_t) payload.getNumBytesAsUTF8()).toHexString();
     const auto json = toJson (s, true);
     juce::TemporaryFile temp (file);
-    return temp.getFile().replaceWithText (json) && temp.overwriteTargetFileWithTemporary();
+    if (! temp.getFile().replaceWithText (json) || ! temp.overwriteTargetFileWithTemporary()) return false;
+    const juce::ScopedLock sl (lock); cached = std::move (s); loaded = true;
+    return true;
 }
 
 bool Session::loadProject (const juce::File& file)
@@ -710,8 +723,7 @@ bool Session::loadProject (const juce::File& file)
     if (! fromJson (file.loadFileAsString(), imported))
         return false;
 
-    ++imported.revision;
-    save (imported);
+    const juce::ScopedLock sl (lock); cached = std::move (imported); loaded = true;
     return true;
 }
 
@@ -758,11 +770,15 @@ GateResult Session::evaluate (const Snapshot& input)
             gate.risks.push_back (std::move (r));
         };
 
-        if (t.durationSeconds > 0.0 && t.coveragePct > 0.0f && t.coveragePct < 95.0f)
-            add (2, 120.0f + (95.0f - t.coveragePct),
-                 T ("测量覆盖度", "measurement coverage"),
-                 T ("仅覆盖 ", "only ") + juce::String (t.coveragePct, 1)
-                     + T ("% 曲目；未覆盖全程不允许通过", "% of the track; no pass without full coverage"));
+        if (t.durationSeconds <= 0.0 || t.coveragePct < 0.0f)
+        {
+            gate.incomplete = true;
+            add (2, 150.0f, T ("测量覆盖度", "measurement coverage"),
+                 T ("覆盖度未知，不能认定全曲通过", "Coverage unknown; full-track pass is not established"));
+        }
+        else if (t.coveragePct < 100.0f)
+            add (2, 120.0f + (100.0f-t.coveragePct), T ("测量覆盖度", "measurement coverage"),
+                 T ("尚未完整测量全曲：", "Full track not measured: ") + juce::String (t.coveragePct, 3) + "%");
 
         if (t.platformOverCount > 0 || t.platformLimitedDb > 0.05f)
             add (s.rules.blockPlatform ? 2 : 1,
@@ -975,6 +991,8 @@ juce::String Session::buildEvidenceJson (const Snapshot& s, const GateResult& ga
     root->setProperty ("rules", rulesToVar (s.rules));
 
     auto* g = new juce::DynamicObject();
+    g->setProperty ("passed", gate.passed());
+    g->setProperty ("verdict", gate.verdict());
     g->setProperty ("blocked", gate.blocked);
     g->setProperty ("incomplete", gate.incomplete);
     g->setProperty ("blockers", gate.blockers);
@@ -1038,7 +1056,7 @@ bool Session::restoreState (const juce::String& json)
     if (! fromJson (json, restored))
         return false;
 
-    save (restored);
+    const juce::ScopedLock sl (lock); cached = std::move (restored); loaded = true;
     return true;
 }
 
@@ -1087,7 +1105,7 @@ juce::String Session::exportProofText() const
              << juce::String (s.medianStats.getPlr(), 1) << " PLR  "
              << juce::String (s.medianStats.truePeakDb, 1) << " dBTP\n";
 
-    text << "\nGATE: " << (gate.blocked ? "BLOCKED" : "PASS") << " (" << gate.blockers << " blockers)\n";
+    text << "\nGATE: " << gate.verdict() << " (" << gate.blockers << " blockers)\n";
 
     for (const auto& r : gate.reasons)
         text << "  - " << r << "\n";

@@ -93,6 +93,8 @@ struct Risk
 
 struct GateResult
 {
+    bool passed() const noexcept { return ! blocked && ! incomplete; }
+    const char* verdict() const noexcept { return blocked ? "BLOCKED" : (incomplete ? "INCOMPLETE" : "PASS"); }
     bool blocked = false;
     bool incomplete = false;
     int blockers = 0;
@@ -112,7 +114,7 @@ struct Diff
 class Session
 {
 public:
-    explicit Session (bool useSharedCache = false) : sharedCache (useSharedCache) {}
+    explicit Session (bool useSharedCache = false) : sharedCache (useSharedCache) { cached.projectId = "prj-" + juce::Uuid().toString(); }
 
     /** Reloads from disk when another instance changed the file. */
     Snapshot snapshot();

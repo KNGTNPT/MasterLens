@@ -162,7 +162,7 @@ std::vector<float> MasterLensAudioProcessorEditor::currentBandDevs() const
 
 void MasterLensAudioProcessorEditor::refreshAlbum()
 {
-    auto& session = ml::album::Session::get();
+    auto& session = processor.albumSession;
     albumSnapshot = session.snapshot();
     albumGate = ml::album::Session::evaluate (albumSnapshot);
     albumDiff = ml::album::Session::diffVersions (albumSnapshot);
@@ -193,7 +193,7 @@ void MasterLensAudioProcessorEditor::captureAlbum()
         return;
     }
 
-    auto& session = ml::album::Session::get();
+    auto& session = processor.albumSession;
     auto snap = session.snapshot();
 
     const auto label = detail.getAlbumTrackLabel().isNotEmpty()
@@ -205,6 +205,7 @@ void MasterLensAudioProcessorEditor::captureAlbum()
     t.label = label;
     t.capturedAt = juce::Time::getCurrentTime().toISO8601 (true);
     t.stats = stats;
+    if (stats.invalidSamples > 0) t.stats.hasSignal = false;
     t.defects = signalDefects;
     t.bandDb = analyzer.getBandDensities();
     t.tpCeiling = processor.getCeilingDb();
@@ -254,16 +255,17 @@ void MasterLensAudioProcessorEditor::exportAlbumProof()
     fileChooser->launchAsync (juce::FileBrowserComponent::saveMode
                                   | juce::FileBrowserComponent::canSelectFiles
                                   | juce::FileBrowserComponent::warnAboutOverwriting,
-                              [this] (const juce::FileChooser& fc)
+                              [this, lifetime = juce::Component::SafePointer<MasterLensAudioProcessorEditor> (this)] (const juce::FileChooser& fc)
                               {
+                                  if (lifetime == nullptr) return;
                                   const auto file = fc.getResult();
 
                                   if (file == juce::File {})
                                       return;
 
-                                  auto& session = ml::album::Session::get();
-                                  file.replaceWithText (session.exportProofJson());
-                                  file.withFileExtension (".txt").replaceWithText (session.exportProofText());
+                                  auto& session = processor.albumSession;
+                                  setExportResult (ml::writeTextAtomic (file, session.exportProofJson())
+                                      && ml::writeTextAtomic (file.withFileExtension (".txt"), session.exportProofText()));
                               });
 }
 
@@ -275,11 +277,12 @@ void MasterLensAudioProcessorEditor::importAlbumSnapshot()
 
     fileChooser->launchAsync (juce::FileBrowserComponent::openMode
                                   | juce::FileBrowserComponent::canSelectFiles,
-                              [this] (const juce::FileChooser& fc)
+                              [this, lifetime = juce::Component::SafePointer<MasterLensAudioProcessorEditor> (this)] (const juce::FileChooser& fc)
                               {
+                                  if (lifetime == nullptr) return;
                                   const auto file = fc.getResult();
 
-                                  if (file != juce::File {} && ml::album::Session::get().importJson (file))
+                                  if (file != juce::File {} && processor.albumSession.importJson (file))
                                   {
                                       refreshAlbum();
                                       detail.invalidateDisplays();
@@ -290,7 +293,7 @@ void MasterLensAudioProcessorEditor::importAlbumSnapshot()
 
 void MasterLensAudioProcessorEditor::clearAlbum()
 {
-    ml::album::Session::get().clearTracks();
+    processor.albumSession.clearTracks();
     refreshAlbum();
     detail.invalidateDisplays();
     repaint();
@@ -298,7 +301,7 @@ void MasterLensAudioProcessorEditor::clearAlbum()
 
 void MasterLensAudioProcessorEditor::setAlbumRule (int index, bool enabled)
 {
-    auto rules = ml::album::Session::get().snapshot().rules;
+    auto rules = processor.albumSession.snapshot().rules;
 
     switch (index)
     {
@@ -309,7 +312,7 @@ void MasterLensAudioProcessorEditor::setAlbumRule (int index, bool enabled)
         default: rules.blockInconsistency = enabled; break;
     }
 
-    ml::album::Session::get().setRules (rules);
+    processor.albumSession.setRules (rules);
     refreshAlbum();
     repaint();
 }
@@ -560,8 +563,9 @@ void MasterLensAudioProcessorEditor::importReference()
     fileChooser->launchAsync (juce::FileBrowserComponent::openMode
                                   | juce::FileBrowserComponent::canSelectFiles
                                   | juce::FileBrowserComponent::canSelectMultipleItems,
-                              [this] (const juce::FileChooser& fc)
+                              [this, lifetime = juce::Component::SafePointer<MasterLensAudioProcessorEditor> (this)] (const juce::FileChooser& fc)
                               {
+                                  if (lifetime == nullptr) return;
                                   const auto results = fc.getResults();
 
                                   if (results.isEmpty())
@@ -759,21 +763,20 @@ void MasterLensAudioProcessorEditor::exportReport()
     fileChooser->launchAsync (juce::FileBrowserComponent::saveMode
                                   | juce::FileBrowserComponent::canSelectFiles
                                   | juce::FileBrowserComponent::warnAboutOverwriting,
-                              [this] (const juce::FileChooser& fc)
+                              [this, lifetime = juce::Component::SafePointer<MasterLensAudioProcessorEditor> (this)] (const juce::FileChooser& fc)
                               {
+                                  if (lifetime == nullptr) return;
                                   const auto file = fc.getResult();
 
                                   if (file == juce::File {})
                                       return;
 
-                                  file.replaceWithText (buildReport());
-                                  file.withFileExtension (".json").replaceWithText (buildReportJson());
-                                  file.withFileExtension (".csv").replaceWithText (buildReportCsv());
-                                  file.withFileExtension (".timeseries.csv")
-                                      .replaceWithText (buildRawTimeSeriesCsv());
-
                                   const auto pdf = buildReportPdf();
-                                  file.withFileExtension (".pdf")
-                                      .replaceWithData (pdf.getData(), pdf.getSize());
+                                  const bool ok = ml::writeTextAtomic (file, buildReport())
+                                      && ml::writeTextAtomic (file.withFileExtension (".json"), buildReportJson())
+                                      && ml::writeTextAtomic (file.withFileExtension (".csv"), buildReportCsv())
+                                      && ml::writeTextAtomic (file.withFileExtension (".timeseries.csv"), buildRawTimeSeriesCsv())
+                                      && ml::writeDataAtomic (file.withFileExtension (".pdf"), pdf);
+                                  setExportResult (ok);
                               });
 }

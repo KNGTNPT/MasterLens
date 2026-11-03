@@ -26,6 +26,7 @@ public:
     ReferencePlayer();
     ~ReferencePlayer() override;
 
+    void prepare (double sampleRate) noexcept { targetRate.store (sampleRate); }
     void load (const juce::StringArray& files, double targetSampleRate);
     void clear();
 
@@ -52,7 +53,7 @@ public:
     /** Replaces the output with the reference at the host position.
         @returns true when reference audio was written. */
     bool render (juce::AudioBuffer<float>& output, double hostSeconds,
-                 bool hostPlaying, float extraGainDb);
+                 bool hostPlaying, float extraGainDb, float inputGainDb = 0.0f);
 
 private:
     struct Data
@@ -67,6 +68,9 @@ private:
     mutable juce::SpinLock lock;
     RealtimeAsset<Data> data;
     std::atomic<unsigned> request { 0 };
+    float audioMix = 0.0f;
+    double audioPosition = 0.0;
+    std::atomic<float> liveMix { 0.0f };
     juce::String pendingPath;
     std::atomic<double> targetRate { 48000.0 };
     juce::String status { "empty" };

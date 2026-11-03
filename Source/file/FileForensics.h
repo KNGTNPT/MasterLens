@@ -18,6 +18,7 @@ struct FileFinding
 
 struct FileForensics
 {
+    juce::String evidenceKey (const FileFinding&) const;
     bool measured = false;
     juce::String sha256;
     std::array<double, 2> dcOffset {};

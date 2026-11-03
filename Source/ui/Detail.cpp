@@ -388,13 +388,13 @@ void DetailArea::setFileResults (std::vector<FileAnalysisResult> results, bool b
         for (const auto& old : fileResults)
             for (const auto& f : old.forensic.findings)
                 if (f.reviewed)
-                    reviewed.insert (old.path + "|" + juce::String (f.startSample) + "|" + f.code);
+                    reviewed.insert (old.forensic.evidenceKey (f));
 
     fileResults = std::move (results);
 
     for (auto& r : fileResults)
         for (auto& f : r.forensic.findings)
-            if (reviewed.count (r.path + "|" + juce::String (f.startSample) + "|" + f.code) > 0)
+            if (reviewed.count (r.forensic.evidenceKey (f)) > 0)
                 f.reviewed = true;
     fileBusy = busy;
     fileDone = done;

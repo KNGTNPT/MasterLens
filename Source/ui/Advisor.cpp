@@ -58,6 +58,10 @@ void Advisor::update (const StatsSnapshot& stats,
         found.push_back (std::move (i));
     };
 
+    if (stats.invalidSamples > 0)
+        add ("nonfinite_input", T ("输入含无效采样", "Non-finite input samples"),
+             T ("测量已标为无效，请检查上游并清零重测", "Measurement invalid; check upstream processing and reset"), Severity::critical);
+
     // ---------------------------------------------------------------- loudness
     if (stats.integrated > -70.0f)
     {

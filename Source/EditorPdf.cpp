@@ -99,7 +99,7 @@ juce::MemoryBlock MasterLensAudioProcessorEditor::buildReportPdf() const
     lines.push_back ("Album: " + albumSnapshot.albumName + "   revision "
                      + juce::String (albumSnapshot.revision) + "   tracks "
                      + juce::String ((int) albumSnapshot.tracks.size()));
-    lines.push_back (gate.blocked ? "Result: BLOCKED" : "Result: PASS");
+    lines.push_back (juce::String ("Result: ") + gate.verdict());
     lines.push_back ("Blockers: " + juce::String (gate.blockers));
 
     for (int i = 0; i < juce::jmin (5, (int) gate.risks.size()); ++i)

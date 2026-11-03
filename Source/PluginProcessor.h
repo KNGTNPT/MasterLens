@@ -1,4 +1,6 @@
 #pragma once
+#include "album/AlbumSession.h"
+#include "dsp/CoverageTracker.h"
 
 #include <array>
 #include <atomic>
@@ -50,6 +52,7 @@ public:
     ml::SpectrumFifo outputSpectrumFifo;
     ml::AuditionEngine auditionEngine;
     ml::ReferencePlayer referencePlayer;
+    ml::album::Session albumSession;
     ml::FilePreviewPlayer filePreviewPlayer;
     std::atomic<bool> hostTransportPlaying { false };
 
@@ -123,18 +126,9 @@ private:
         return false;
     }
 
-    // Coverage is measured as the union of host-time intervals actually seen,
-    // not as elapsed processing time. Looping the same eight bars therefore
-    // cannot make a four-minute track look 100 % measured.
-    static constexpr double coverageBucketSeconds = 0.1;
-    static constexpr int coverageBucketCount = 144000; // 4 hours at 10 Hz
-    static constexpr int coverageWordCount = (coverageBucketCount + 63) / 64;
-
     void resetHostCoverage() noexcept;
     void markHostCoverage (double startSeconds, double endSeconds) noexcept;
-
-    std::array<std::atomic<std::uint64_t>, coverageWordCount> hostCoverage {};
-    std::atomic<int> coveredBuckets { 0 };
+    ml::CoverageTracker coverageTracker;
 
     std::atomic<int> pendingUiCommand { 0 };
     std::atomic<float> monitorTargetLufs { -14.0f };

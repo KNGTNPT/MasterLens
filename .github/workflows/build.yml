@@ -14,7 +14,7 @@ concurrency:
 
 env:
   JUCE_TAG: "8.0.15"
-  APP_VERSION: "2.3.1"
+  APP_VERSION: "2.3.2"
 
 jobs:
   macos:
@@ -36,8 +36,14 @@ jobs:
       - name: DSP regression
         run: ./build/MasterLensDspTest_artefacts/Release/MasterLensDspTest
 
+      - name: FFmpeg test dependency
+        run: command -v ffmpeg || brew install ffmpeg
+
       - name: File QC integration
         run: python3 Tests/test_cli.py build/MasterLensCli_artefacts/Release/MasterLensCli
+
+      - name: Independent measurement regression
+        run: python3 Tests/validate_measurements.py build/MasterLensDspTest_artefacts/Release/MasterLensDspTest --output measurement-generated.json
 
       - name: Package DMG
         run: |
@@ -120,6 +126,10 @@ jobs:
       - name: Install NSIS
         run: choco install nsis -y --no-progress
 
+      - name: FFmpeg test dependency (native x64)
+        if: matrix.arch == 'x64'
+        run: choco install ffmpeg -y --no-progress
+
       - name: File QC integration (native x64)
         if: matrix.arch == 'x64'
         run: python Tests/test_cli.py build/MasterLensCli_artefacts/Release/MasterLensCli.exe
@@ -180,4 +190,4 @@ jobs:
           sha256sum *.dmg *.exe > SHA256SUMS.txt
           gh release create "$RELEASE_TAG" *.dmg *.exe SHA256SUMS.txt \
             --verify-tag --title "MasterLens ${APP_VERSION}" \
-            --notes-file ../docs/release-2.3.1.md
+            --notes-file ../docs/release-2.3.2.md

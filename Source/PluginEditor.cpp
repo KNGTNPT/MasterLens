@@ -88,6 +88,14 @@ MasterLensAudioProcessorEditor::MasterLensAudioProcessorEditor (MasterLensAudioP
         footerStatusColour = ml::theme::accent;
         repaint();
     };
+    detail.onReviewEvidence = [this] (const juce::String& id, bool reviewed)
+    {
+        processor.albumSession.setReviewed (id, reviewed);
+        for (auto& result : fileResults)
+            for (auto& finding : result.forensic.findings)
+                if (result.forensic.evidenceKey (finding) == id) finding.reviewed = reviewed;
+        refreshAlbum();
+    };
     detail.onRevealFile = [] (const juce::String& path)
     {
         juce::File (path).revealToUser();

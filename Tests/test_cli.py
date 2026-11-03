@@ -23,8 +23,8 @@ def check(condition, message):
     checks += 1
 
 
-def run(*args, code=0):
-    result = subprocess.run([cli, 'analyze', *map(str, args)], capture_output=True, text=True)
+def run(*args, code=0, env=None):
+    result = subprocess.run([cli, 'analyze', *map(str, args)], capture_output=True, text=True, env=env)
     check(result.returncode == code, f'exit {result.returncode} != {code}: {args}\n{result.stderr}')
     return result
 
@@ -91,4 +91,33 @@ with tempfile.TemporaryDirectory(prefix='masterlens-qc-') as temp:
     broken = root / 'broken.wav'
     broken.write_bytes(b'not a WAV file')
     run(broken, code=1)
+    # Strict delivery specs: end-to-end, not just direct evaluateSpec calls.
+    spec = root / 'spec.json'
+    measured = json.loads((root / 'quoted.json').read_text())['files'][0]['stats']['integratedLufs']
+    spec.write_text(json.dumps(dict(targetLufs=measured, ceilingDbtp=-1, loudnessToleranceLu=.2, sampleRate=48000,bitDepth=16,channels=2)))
+    run(quoted, '--spec', spec, '--json', root/'spec-pass.json')
+    checked=json.loads((root/'spec-pass.json').read_text())
+    check(checked['analysisOk'] and not checked['gateFailed'], 'spec pass is reported accurately')
+    bad=json.loads(spec.read_text());bad['bitDepth']=24;spec.write_text(json.dumps(bad))
+    run(quoted, '--spec', spec, '--json', root/'spec-fail.json',code=2)
+    check(json.loads((root/'spec-fail.json').read_text())['gateFailed'], 'spec failure gates even without --fail-on')
+    for invalid in ({'sampleRate':'48000'},{'loudnessToleranceLu':-1},{'channels':7},{'sampleRate':48000.5}):
+        spec.write_text(json.dumps(invalid));run(quoted,'--spec',spec,code=1)
+    spec.write_text('{}');run(silent,'--spec',spec,code=2)
+    # Failures must affect the process exit and structured result.
+    missing_env=dict(os.environ,MASTERLENS_FFMPEG=str(root/'absent-ffmpeg'))
+    run(quoted,'--codec','aac','--json',root/'codec-missing.json',code=1,env=missing_env)
+    error_report=json.loads((root/'codec-missing.json').read_text())
+    check(not error_report['analysisOk'] and error_report['gateFailed'] and not error_report['codecChecks'][0]['ok'],'codec failure is never a success')
+    # Real encoded packets -> float WAV -> analysis, both supported codecs.
+    import shutil
+    if not shutil.which('ffmpeg'):
+        raise AssertionError('ffmpeg required: codec round-trip coverage must not silently skip')
+    for codec in ('aac','mp3'):
+        report=root/f'codec-{codec}.json';run(quoted,'--codec',codec,'--json',report)
+        cc=json.loads(report.read_text())['codecChecks'][0]
+        check(cc['ok'] and cc['encodedBytes']>100 and cc['encodedContainer'] in ('m4a','mp3'),'real codec container and packets')
+        check(len(cc['encodedSha256'])==64 and len(cc['decodedSha256'])==64,'encoded and decoded content fingerprints')
+        check(cc['integratedLufs']>-70 and cc['truePeakDbtp']>-90,'decoded measurements are valid')
+        check(not cc['decodedPath'],'temporary decoded audio is not leaked as a durable evidence path')
 print(f'{checks} CLI integration checks passed')

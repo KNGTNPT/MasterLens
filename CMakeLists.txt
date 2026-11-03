@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.22)
 
-project(MasterLens VERSION 2.3.1 LANGUAGES C CXX)
+project(MasterLens VERSION 2.3.2 LANGUAGES C CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -29,7 +29,7 @@ if(MASTERLENS_ENABLE_INSPECTOR)
 endif()
 
 juce_add_plugin(MasterLens
-    VERSION 2.3.1
+    VERSION 2.3.2
     COMPANY_NAME "BerryStudio"
     BUNDLE_ID "com.berrystudio.masterlens"
     PLUGIN_MANUFACTURER_CODE OrcA
@@ -146,6 +146,7 @@ target_sources(MasterLensDspTest PRIVATE
     Source/dsp/ReferenceSpectrum.cpp
     Source/audio/AuditionEngine.cpp
     Source/audio/ReferencePlayer.cpp
+    Source/audio/FilePreviewPlayer.cpp
     Source/file/FileAnalyzer.cpp
     Source/file/FileForensics.cpp
     Source/file/FileReport.cpp

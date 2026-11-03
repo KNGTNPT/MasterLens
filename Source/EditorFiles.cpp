@@ -32,6 +32,13 @@ bool MasterLensAudioProcessorEditor::isInterestedInFileDrag (const juce::StringA
     return false;
 }
 
+void MasterLensAudioProcessorEditor::setExportResult (bool ok)
+{
+    footerStatusText = ok ? T ("导出完成", "Export complete") : T ("导出失败：请检查权限和磁盘空间", "Export failed: check permissions and disk space");
+    footerStatusColour = ok ? ml::theme::good : ml::theme::bad;
+    repaint();
+}
+
 void MasterLensAudioProcessorEditor::filesDropped (const juce::StringArray& files, int, int)
 {
     startFileAnalysis (files);
@@ -47,8 +54,9 @@ void MasterLensAudioProcessorEditor::chooseFiles()
     fileChooser->launchAsync (juce::FileBrowserComponent::openMode
                                   | juce::FileBrowserComponent::canSelectFiles
                                   | juce::FileBrowserComponent::canSelectMultipleItems,
-                              [this] (const juce::FileChooser& fc)
+                              [this, lifetime = juce::Component::SafePointer<MasterLensAudioProcessorEditor> (this)] (const juce::FileChooser& fc)
                               {
+                                  if (lifetime == nullptr) return;
                                   juce::StringArray paths;
 
                                   for (const auto& f : fc.getResults())
@@ -68,8 +76,9 @@ void MasterLensAudioProcessorEditor::chooseFolder()
 
     fileChooser->launchAsync (juce::FileBrowserComponent::openMode
                                   | juce::FileBrowserComponent::canSelectDirectories,
-                              [this] (const juce::FileChooser& fc)
+                              [this, lifetime = juce::Component::SafePointer<MasterLensAudioProcessorEditor> (this)] (const juce::FileChooser& fc)
                               {
+                                  if (lifetime == nullptr) return;
                                   const auto folder = fc.getResult();
 
                                   if (folder.isDirectory())
@@ -133,6 +142,9 @@ void MasterLensAudioProcessorEditor::pollFileAnalysis()
 
     for (auto& result : incoming)
     {
+        const auto reviews = processor.albumSession.snapshot().reviewedEvidence;
+        for (auto& finding : result.forensic.findings)
+            finding.reviewed = reviews.contains (result.forensic.evidenceKey (finding));
         if (result.ok)
         {
             addFileResultToAlbum (result);
@@ -161,10 +173,10 @@ void MasterLensAudioProcessorEditor::pollFileAnalysis()
         updateRail();
         detail.invalidateDisplays();
 
-        const auto gate = ml::album::Session::evaluate (ml::album::Session::get().snapshot());
-        footerStatusText = gate.blocked ? T ("文件已入专辑 · 门禁阻断", "Files added · gate blocked")
+        const auto gate = ml::album::Session::evaluate (processor.albumSession.snapshot());
+        footerStatusText = ! gate.passed() ? T ("文件已入专辑 · 门禁未通过", "Files added · gate not passed")
                                         : T ("文件已入专辑 · 门禁通过", "Files added · gate pass");
-        footerStatusColour = gate.blocked ? ml::theme::bad : ml::theme::good;
+        footerStatusColour = gate.passed() ? ml::theme::good : ml::theme::bad;
         repaint();
     }
 }
@@ -174,7 +186,7 @@ void MasterLensAudioProcessorEditor::addFileResultToAlbum (const ml::FileAnalysi
     if (! result.ok)
         return;
 
-    auto& session = ml::album::Session::get();
+    auto& session = processor.albumSession;
 
     if (detail.getAlbumName().isEmpty() && pendingAlbumName.isNotEmpty())
     {
@@ -252,8 +264,9 @@ void MasterLensAudioProcessorEditor::exportFileTable()
 
     fileChooser->launchAsync (juce::FileBrowserComponent::saveMode
                                   | juce::FileBrowserComponent::warnAboutOverwriting,
-                              [this] (const juce::FileChooser& fc)
+                              [this, lifetime = juce::Component::SafePointer<MasterLensAudioProcessorEditor> (this)] (const juce::FileChooser& fc)
                               {
+                                  if (lifetime == nullptr) return;
                                   const auto& exportResults = detail.getFileResults();
                                   auto file = fc.getResult();
 
@@ -284,8 +297,8 @@ void MasterLensAudioProcessorEditor::exportFileTable()
                                       files.add (ml::fileResultToVar (r, target, processor.getCeilingDb(), &deliverySpec));
                                   root->setProperty ("files", files);
                                   root->setProperty ("deliverySpec", deliverySpec.toVar());
-                                  if (file.replaceWithText (ml::fileResultsCsv (exportResults, target, processor.getCeilingDb()))
-                                      && jsonFile.replaceWithText (juce::JSON::toString (juce::var (root), true)))
+                                  if (ml::writeTextAtomic (file, ml::fileResultsCsv (exportResults, target, processor.getCeilingDb()))
+                                      && ml::writeTextAtomic (jsonFile, juce::JSON::toString (juce::var (root), true)))
                                   {
                                       footerStatusText = T ("CSV + JSON 已导出 · ", "CSV + JSON exported · ")
                                                          + file.getFileName();

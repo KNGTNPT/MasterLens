@@ -1,4 +1,5 @@
 #include "FileForensics.h"
+#include "../Version.h"
 #include "../dsp/SpectrumAnalyzer.h"
 #include <algorithm>
 #include <cmath>
@@ -128,10 +129,19 @@ FileForensics FileForensicsScanner::finish()
     return result;
 }
 
+juce::String FileForensics::evidenceKey (const FileFinding& f) const
+{
+    if (sha256.length() != 64) return {};
+    return sha256 + "|" + kVersion + "|" + f.code + "|" + juce::String (f.startSample)
+        + "|" + juce::String (f.lengthSamples) + "|" + juce::String (f.channel);
+}
+
 juce::var FileForensics::toVar (double sr) const
 {
     auto* o = new juce::DynamicObject();
     o->setProperty ("schemaVersion", 1);
+    o->setProperty ("analysisVersion", kVersion);
+    o->setProperty ("reviewBinding", "sha256+analysisVersion+event");
     o->setProperty ("measured", measured);
     o->setProperty ("sha256", sha256);
     o->setProperty ("activeThresholdDbfs", -80.0);
@@ -169,6 +179,7 @@ juce::var FileForensics::toVar (double sr) const
     for (const auto& f : findings)
     {
         auto* e = new juce::DynamicObject();
+        e->setProperty ("evidenceId", evidenceKey (f));
         e->setProperty ("code", f.code);
         e->setProperty ("severity", f.severity);
         e->setProperty ("startSample", f.startSample);

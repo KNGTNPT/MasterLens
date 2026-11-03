@@ -22,7 +22,7 @@ void ReferencePlayer::load (const juce::StringArray& files, double sampleRate)
     pendingPath.clear();
 
     for (const auto& f : files)
-        if (juce::File (f).existsAsFile())
+        if (f.isNotEmpty())
         {
             pendingPath = f;
             break;
@@ -68,26 +68,25 @@ juce::String ReferencePlayer::getFileName() const
 }
 
 bool ReferencePlayer::render (juce::AudioBuffer<float>& output, double hostSeconds,
-                              bool hostPlaying, float extraGainDb)
+                              bool hostPlaying, float extraGainDb, float inputGainDb)
 {
-    if (! enabled.load (std::memory_order_acquire))
-        return false;
-
-    output.clear();
+    const bool on = enabled.load (std::memory_order_acquire);
+    if (! on && audioMix <= 0.0f) return false;
 
     const auto d = data.acquire();
 
-    if (! d || ! hostPlaying || output.getNumSamples() <= 0)
-        return true;
+    if (! d || output.getNumSamples() <= 0)
+    { audioMix = 0; liveMix.store (0); return false; }
 
     const auto& src = d->audio;
     const int sourceChannels = src.getNumChannels();
 
-    if (sourceChannels <= 0 || d->length <= 1)
-        return true;
+    if (sourceChannels <= 0 || d->length <= 1) return false;
 
     const double ratio = d->sourceRate / juce::jmax (1.0, targetRate.load (std::memory_order_relaxed));
-    double pos = (hostSeconds + offsetSeconds.load (std::memory_order_relaxed)) * d->sourceRate;
+    double pos = hostPlaying ? (hostSeconds + offsetSeconds.load (std::memory_order_relaxed)) * d->sourceRate : audioPosition;
+    const float inputGain = juce::Decibels::decibelsToGain (inputGainDb);
+    const float step = (float) (1.0 / (0.005 * juce::jmax (1.0, targetRate.load())));
     const float gain = juce::Decibels::decibelsToGain (extraGainDb, -60.0f);
     const auto length = (int) d->length;
 
@@ -114,26 +113,27 @@ bool ReferencePlayer::render (juce::AudioBuffer<float>& output, double hostSecon
     {
         const auto index = (juce::int64) std::floor (pos);
 
-        if (index < 0 || index >= d->length)
-        {
-            pos += ratio;
-            continue;
-        }
-
-        const float l = sampleCubic (0, pos);
-        const float r = sourceChannels > 1 ? sampleCubic (1, pos) : l;
+        const bool inRange = index >= 0 && index < d->length;
+        const float target = on && ready.load() && hostPlaying && inRange ? juce::jlimit (0.0f, 1.0f, (float) ((d->length-pos) / (ratio / step))) : 0.0f;
+        audioMix += juce::jlimit (-step, step, target - audioMix);
+        const float inputL = output.getSample (0, i) * inputGain;
+        const float inputR = output.getNumChannels() > 1 ? output.getSample (1, i) * inputGain : inputL;
+        const float l = inRange ? sampleCubic (0, pos) : 0.0f;
+        const float r = inRange && sourceChannels > 1 ? sampleCubic (1, pos) : l;
 
         if (output.getNumChannels() == 1)
-            output.setSample (0, i, 0.5f * (l + r) * gain);
+            output.setSample (0, i, inputL * (1.0f-audioMix) + 0.5f * (l+r) * gain * audioMix);
         else
         {
-            output.setSample (0, i, l * gain);
-            output.setSample (1, i, r * gain);
+            output.setSample (0, i, inputL * (1.0f-audioMix) + l * gain * audioMix);
+            output.setSample (1, i, inputR * (1.0f-audioMix) + r * gain * audioMix);
         }
 
         pos += ratio;
     }
 
+    audioPosition = pos; liveMix.store (audioMix);
+    if (pos >= (double) d->length && audioMix <= 0) enabled.store (false);
     for (int ch = 2; ch < output.getNumChannels(); ++ch)
         output.clear (ch, 0, output.getNumSamples());
 
@@ -151,7 +151,12 @@ void ReferencePlayer::run()
         handled = serial;
         juce::String path;
         { const juce::SpinLock::ScopedLockType sl (lock); path = pendingPath; }
-        if (path.isEmpty()) { data.publish ({}); continue; }
+        if (path.isEmpty())
+        {
+            for (int i = 0; i < 50 && liveMix.load() > 0 && request.load() == serial; ++i) wait (2);
+            if (request.load() == serial) data.publish ({});
+            continue;
+        }
         juce::AudioFormatManager formats;
         formats.registerBasicFormats();
         const juce::File file (path);
@@ -161,8 +166,10 @@ void ReferencePlayer::run()
             const juce::SpinLock::ScopedLockType sl (lock);
             if (request.load() == serial) { status = "failed"; ready.store (false); busy.store (false); }
         };
-        if (! reader || reader->lengthInSamples <= 1 || reader->numChannels > 2
-            || reader->lengthInSamples > (juce::int64) (reader->sampleRate * 3600.0))
+        if (! reader || ! std::isfinite (reader->sampleRate) || reader->sampleRate < 1000 || reader->sampleRate > 768000
+            || reader->numChannels < 1 || reader->lengthInSamples <= 1 || reader->numChannels > 2
+            || reader->lengthInSamples > (juce::int64) (reader->sampleRate * 3600.0)
+            || reader->lengthInSamples > 512LL * 1024 * 1024 / (4 * juce::jmax (1, (int) reader->numChannels)))
         { fail(); continue; }
         auto loaded = std::make_unique<Data>();
         loaded->sourceRate = reader->sampleRate;
@@ -178,10 +185,14 @@ void ReferencePlayer::run()
             if (! reader->read (&loaded->audio, offset, count, offset, true, true)) { ok = false; break; }
             juce::AudioBuffer<float> view (loaded->audio.getArrayOfWritePointers(),
                 loaded->audio.getNumChannels(), offset, count);
+            for (int ch = 0; ch < view.getNumChannels(); ++ch)
+                for (int i = 0; i < count; ++i) if (! std::isfinite (view.getSample (ch, i))) ok = false;
+            if (! ok) break;
             measure.process (view, measured, count);
         }
         if (! ok) { if (request.load() == serial) fail(); continue; }
         measure.finish (measured);
+        for (int i = 0; i < 50 && liveMix.load() > 0 && request.load() == serial; ++i) wait (2);
         const juce::SpinLock::ScopedLockType sl (lock);
         if (request.load() != serial || threadShouldExit()) continue;
         const auto length = loaded->length;

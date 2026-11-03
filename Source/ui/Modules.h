@@ -247,6 +247,7 @@ public:
     std::function<void()> onExportFileTable;
     std::function<void (const juce::String&, double)> onPreviewFile;
     std::function<void (const juce::String&)> onRevealFile;
+    std::function<void (const juce::String&, bool)> onReviewEvidence;
 
     void setFileResults (std::vector<FileAnalysisResult> results, bool busy,
                          int done, int total, const juce::String& status);

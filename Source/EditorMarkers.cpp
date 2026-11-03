@@ -96,7 +96,7 @@ void MasterLensAudioProcessorEditor::exportMarkers()
                    + ",\"" + text + "\"");
     }
 
-    file.replaceWithText (lines.joinIntoString ("\n"));
+    if (! ml::writeTextAtomic (file, lines.joinIntoString ("\n"))) { setExportResult (false); return; }
 
     footerStatusText = T ("标记已导出 ", "Markers exported ") + file.getFileName();
     footerStatusColour = ml::theme::good;
@@ -111,8 +111,9 @@ void MasterLensAudioProcessorEditor::importMarkers()
 
     fileChooser->launchAsync (juce::FileBrowserComponent::openMode
                                   | juce::FileBrowserComponent::canSelectFiles,
-                              [this] (const juce::FileChooser& fc)
+                              [this, lifetime = juce::Component::SafePointer<MasterLensAudioProcessorEditor> (this)] (const juce::FileChooser& fc)
                               {
+                                  if (lifetime == nullptr) return;
                                   const auto file = fc.getResult();
 
                                   if (file == juce::File {})

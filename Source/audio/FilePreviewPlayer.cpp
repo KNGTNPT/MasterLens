@@ -12,7 +12,8 @@ FilePreviewPlayer::FilePreviewPlayer()
 FilePreviewPlayer::~FilePreviewPlayer()
 {
     signalThreadShouldExit();
-    stopThread (4000);
+    notify();
+    stopThread (-1);
 }
 
 void FilePreviewPlayer::prepare (double targetSampleRate)
@@ -24,33 +25,27 @@ void FilePreviewPlayer::prepare (double targetSampleRate)
 void FilePreviewPlayer::start (const juce::File& file, double startSeconds,
                                double endSeconds, bool shouldLoop)
 {
-    stopThread (4000);
-
     {
         const juce::SpinLock::ScopedLockType sl (lock);
-        data.reset();
-        pendingFile = file;
-        pendingStart = juce::jmax (0.0, startSeconds);
+        request.fetch_add (1);
+        pendingFile = file; pendingStart = juce::jmax (0.0, startSeconds);
         pendingEnd = juce::jmax (pendingStart + 0.05, endSeconds);
+        loop.store (shouldLoop); ready.store (false); active.store (true); busy.store (true);
         status = "loading";
     }
 
-    loop.store (shouldLoop, std::memory_order_relaxed);
-    ready.store (false, std::memory_order_release);
-    active.store (true, std::memory_order_release);
-    busy.store (true, std::memory_order_release);
-    startThread();
+    if (! isThreadRunning()) startThread();
+    notify();
 }
 
 void FilePreviewPlayer::stop()
 {
     active.store (false, std::memory_order_release);
     ready.store (false, std::memory_order_release);
-    signalThreadShouldExit();
-
+    request.fetch_add (1);
     const juce::SpinLock::ScopedLockType sl (lock);
-    data.reset();
-    status = "idle";
+    pendingFile = juce::File(); status = "idle";
+    notify();
 }
 
 juce::String FilePreviewPlayer::getStatus() const
@@ -61,70 +56,55 @@ juce::String FilePreviewPlayer::getStatus() const
 
 void FilePreviewPlayer::run()
 {
-    juce::File file;
-    double startSeconds = 0.0, endSeconds = 0.0;
-
+    unsigned handled = 0;
+    while (! threadShouldExit())
     {
+        data.collect();
+        const auto serial = request.load();
+        if (serial == handled) { wait (25); continue; }
+        handled = serial;
+        juce::File file; double from = 0, to = 0;
+        {
+            const juce::SpinLock::ScopedLockType sl (lock);
+            if (! active.load()) { data.publish ({}); busy.store (false); continue; }
+            file = pendingFile; from = pendingStart; to = pendingEnd;
+        }
+        const auto fail = [&] (const char* text)
+        {
+            const juce::SpinLock::ScopedLockType sl (lock);
+            if (request.load() == serial)
+            { status = text; active.store (false); ready.store (false); busy.store (false); }
+        };
+        juce::AudioFormatManager formats; formats.registerBasicFormats();
+        std::unique_ptr<juce::AudioFormatReader> reader (formats.createReaderFor (file));
+        if (! reader || reader->lengthInSamples <= 1 || reader->numChannels < 1 || reader->numChannels > 2
+            || ! std::isfinite(reader->sampleRate) || reader->sampleRate < 1000 || reader->sampleRate > 768000)
+        { fail ("failed"); continue; }
+        const auto first = (juce::int64) juce::jlimit (0.0, (double) reader->lengthInSamples - 1, from * reader->sampleRate);
+        const auto last = (juce::int64) juce::jlimit ((double) first+1, (double) reader->lengthInSamples, to * reader->sampleRate);
+        const auto length = (int) juce::jmin ((juce::int64) (reader->sampleRate*12), last-first);
+        if (length <= 1) { fail ("empty"); continue; }
+        auto loaded = std::make_unique<Data>();
+        loaded->sourceRate = reader->sampleRate; loaded->startSample = first;
+        loaded->length = length; loaded->generation = serial;
+        loaded->audio.setSize ((int) reader->numChannels, length);
+        bool ok = true;
+        for (int offset = 0; offset < length; offset += 4096)
+        {
+            if (threadShouldExit() || request.load() != serial) { ok = false; break; }
+            const int n = juce::jmin (4096, length-offset);
+            if (! reader->read (&loaded->audio, offset, n, first+offset, true, true)) { ok = false; break; }
+            for (int ch = 0; ch < loaded->audio.getNumChannels(); ++ch)
+                for (int i = 0; i < n; ++i) if (! std::isfinite(loaded->audio.getSample(ch,offset+i))) ok = false;
+            if (! ok) break;
+        }
+        if (! ok) { fail ("decode failed"); continue; }
         const juce::SpinLock::ScopedLockType sl (lock);
-        file = pendingFile;
-        startSeconds = pendingStart;
-        endSeconds = pendingEnd;
+        if (request.load() != serial || ! active.load() || threadShouldExit()) continue;
+        data.publish (std::move (loaded)); status = "playing";
+        ready.store (true); busy.store (false);
     }
-
-    juce::AudioFormatManager formats;
-    formats.registerBasicFormats();
-    std::unique_ptr<juce::AudioFormatReader> reader (formats.createReaderFor (file));
-
-    if (reader == nullptr || reader->lengthInSamples <= 0)
-    {
-        const juce::SpinLock::ScopedLockType sl (lock);
-        status = "failed";
-        active.store (false, std::memory_order_release);
-        busy.store (false, std::memory_order_release);
-        return;
-    }
-
-    const int channels = juce::jlimit (1, 2, (int) reader->numChannels);
-    const double sourceRate = reader->sampleRate > 0.0 ? reader->sampleRate : targetRate;
-    const auto first = (juce::int64) juce::jlimit (0.0, (double) reader->lengthInSamples - 1.0,
-                                                   startSeconds * sourceRate);
-    const auto last = (juce::int64) juce::jlimit ((double) first + 1.0,
-                                                  (double) reader->lengthInSamples,
-                                                  endSeconds * sourceRate);
-    const auto length = juce::jmin ((juce::int64) (sourceRate * 12.0), last - first);
-
-    if (length <= 1)
-    {
-        const juce::SpinLock::ScopedLockType sl (lock);
-        status = "empty";
-        active.store (false, std::memory_order_release);
-        busy.store (false, std::memory_order_release);
-        return;
-    }
-
-    auto loaded = std::make_shared<Data>();
-    loaded->sourceRate = sourceRate;
-    loaded->startSample = first;
-    loaded->length = length;
-    loaded->audio.setSize (channels, (int) length);
-    loaded->audio.clear();
-    reader->read (&loaded->audio, 0, (int) length, first, true, true);
-
-    if (threadShouldExit())
-    {
-        busy.store (false, std::memory_order_release);
-        return;
-    }
-
-    {
-        const juce::SpinLock::ScopedLockType sl (lock);
-        data = std::move (loaded);
-        status = "playing";
-    }
-
-    readPosition = 0.0;
-    ready.store (true, std::memory_order_release);
-    busy.store (false, std::memory_order_release);
+    data.publish ({});
 }
 
 bool FilePreviewPlayer::render (juce::AudioBuffer<float>& output)
@@ -134,21 +114,18 @@ bool FilePreviewPlayer::render (juce::AudioBuffer<float>& output)
 
     output.clear();
 
-    std::shared_ptr<const Data> d;
-    {
-        const juce::SpinLock::ScopedLockType sl (lock);
-        d = data;
-    }
+    const auto d = data.acquire();
 
-    if (d == nullptr || ! ready.load (std::memory_order_acquire) || d->length <= 1)
+    if (! d || ! ready.load (std::memory_order_acquire) || d->length <= 1)
         return true;
 
-    const double ratio = d->sourceRate / juce::jmax (1.0, targetRate);
+    if (audioGeneration != d->generation) { audioGeneration = d->generation; readPosition = 0.0; }
+    const double ratio = d->sourceRate / juce::jmax (1.0, targetRate.load());
     const int outChannels = output.getNumChannels();
 
     for (int i = 0; i < output.getNumSamples(); ++i)
     {
-        if (readPosition >= (double) d->length - 1.0)
+        if (readPosition >= (double) d->length)
         {
             if (loop.load (std::memory_order_relaxed))
                 readPosition = 0.0;
@@ -170,11 +147,11 @@ bool FilePreviewPlayer::render (juce::AudioBuffer<float>& output)
                             : l;
 
         if (outChannels == 1)
-            output.setSample (0, i, juce::jlimit (-1.0f, 1.0f, 0.5f * (l + r)));
+            output.setSample (0, i, 0.5f * (l + r));
         else
         {
-            output.setSample (0, i, juce::jlimit (-1.0f, 1.0f, l));
-            output.setSample (1, i, juce::jlimit (-1.0f, 1.0f, r));
+            output.setSample (0, i, l);
+            output.setSample (1, i, r);
         }
 
         readPosition += ratio;

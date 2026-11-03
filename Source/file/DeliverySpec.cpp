@@ -1,7 +1,42 @@
 #include "DeliverySpec.h"
+#include <cmath>
 
 namespace ml
 {
+bool DeliverySpec::validate (juce::String& error) const
+{
+    if (! std::isfinite (targetLufs) || targetLufs < -70.0f || targetLufs > 0.0f
+        || ! std::isfinite (ceilingDbtp) || ceilingDbtp < -24.0f || ceilingDbtp > 0.0f
+        || ! std::isfinite (loudnessToleranceLu) || loudnessToleranceLu < 0.0f || loudnessToleranceLu > 24.0f
+        || (sampleRate != 0 && (sampleRate < 8000 || sampleRate > 384000))
+        || (bitDepth != 0 && bitDepth != 8 && bitDepth != 16 && bitDepth != 24 && bitDepth != 32)
+        || channels < 0 || channels > 2)
+    { error = "invalid delivery spec type/range"; return false; }
+    return true;
+}
+
+bool DeliverySpec::parse (const juce::var& value, DeliverySpec& result, juce::String& error)
+{
+    auto* object = value.getDynamicObject();
+    if (! object) { error = "spec must be a JSON object"; return false; }
+    for (const auto* key : { "targetLufs", "ceilingDbtp", "loudnessToleranceLu", "sampleRate", "bitDepth", "channels" })
+        if (object->hasProperty (key))
+        {
+            const auto v = object->getProperty (key);
+            if (! (v.isInt() || v.isInt64() || v.isDouble()))
+            { error = juce::String ("numeric field required: ") + key; return false; }
+            if (! std::isfinite ((double) v) || std::abs ((double) v) > 1000000.0)
+            { error = "nonfinite or excessive delivery field"; return false; }
+            if ((juce::String (key) == "sampleRate" || juce::String (key) == "bitDepth" || juce::String (key) == "channels")
+                && (double) v != std::floor ((double) v))
+            { error = "integer delivery field required"; return false; }
+        }
+    if (object->hasProperty ("namingPattern") && ! object->getProperty ("namingPattern").isString())
+    { error = "namingPattern must be text"; return false; }
+    result = fromVar (value);
+    return result.validate (error);
+}
+
 juce::var DeliverySpec::toVar() const
 {
     auto* o = new juce::DynamicObject();
@@ -21,13 +56,13 @@ DeliverySpec DeliverySpec::fromVar (const juce::var& value)
     DeliverySpec s;
     if (auto* o = value.getDynamicObject())
     {
-        s.enabled = (bool) o->getProperty ("enabled");
-        s.targetLufs = (float) (double) o->getProperty ("targetLufs");
-        s.ceilingDbtp = (float) (double) o->getProperty ("ceilingDbtp");
-        s.loudnessToleranceLu = (float) (double) o->getProperty ("loudnessToleranceLu");
-        s.sampleRate = (int) o->getProperty ("sampleRate");
-        s.bitDepth = (int) o->getProperty ("bitDepth");
-        s.channels = (int) o->getProperty ("channels");
+        if (o->hasProperty ("enabled")) s.enabled = (bool) o->getProperty ("enabled");
+        if (o->hasProperty ("targetLufs")) s.targetLufs = (float) (double) o->getProperty ("targetLufs");
+        if (o->hasProperty ("ceilingDbtp")) s.ceilingDbtp = (float) (double) o->getProperty ("ceilingDbtp");
+        if (o->hasProperty ("loudnessToleranceLu")) s.loudnessToleranceLu = (float) (double) o->getProperty ("loudnessToleranceLu");
+        if (o->hasProperty ("sampleRate")) s.sampleRate = (int) o->getProperty ("sampleRate");
+        if (o->hasProperty ("bitDepth")) s.bitDepth = (int) o->getProperty ("bitDepth");
+        if (o->hasProperty ("channels")) s.channels = (int) o->getProperty ("channels");
         s.namingPattern = o->getProperty ("namingPattern").toString();
     }
     return s;
@@ -47,8 +82,9 @@ juce::var SpecCheck::toVar() const
 SpecCheck evaluateSpec (const FileAnalysisResult& r, const DeliverySpec& s)
 {
     SpecCheck c;
-    if (! s.enabled || ! r.ok)
-        return c;
+    if (! s.enabled) return c;
+    if (! r.ok || r.stats.integrated <= -70.0f)
+    { c.ok = false; c.failures.add ("no valid measurable programme"); return c; }
 
     const auto fail = [&c] (const juce::String& text)
     {

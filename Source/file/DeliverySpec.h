@@ -18,6 +18,8 @@ struct DeliverySpec
     int channels = 0;
     juce::String namingPattern;
 
+    bool validate (juce::String& error) const;
+    static bool parse (const juce::var&, DeliverySpec&, juce::String& error);
     juce::var toVar() const;
     static DeliverySpec fromVar (const juce::var&);
 };

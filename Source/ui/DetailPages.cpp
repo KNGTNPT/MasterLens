@@ -120,7 +120,7 @@ void DetailArea::paint (juce::Graphics& g)
         case PageId::album:
             meta = state.album.albumName + ml::sep() + "rev " + juce::String (state.album.revision)
                  + ml::sep() + juce::String ((int) state.album.tracks.size()) + T (" 首", " tracks")
-                 + ml::sep() + (state.albumGate.blocked ? T ("阻断", "BLOCK") : T ("放行", "PASS"));
+                 + ml::sep() + (! state.albumGate.passed() ? T ("未通过", "NOT PASSED") : T ("放行", "PASS"));
             break;
 
         case PageId::diagnostics:

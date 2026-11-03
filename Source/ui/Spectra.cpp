@@ -65,10 +65,10 @@ void SpectrumDisplay::drawGrid (juce::Graphics& g)
     {
         const float y = yForDb (db);
 
-        g.setColour (db == 0.0f ? theme::border : theme::borderSoft);
+        g.setColour (theme::dark ? (db == 0.0f ? theme::border : theme::borderSoft) : juce::Colour (0xff455153));
         g.drawHorizontalLine (juce::roundToInt (y), plot.getX(), plot.getRight());
 
-        g.setColour (theme::textFaint);
+        g.setColour (theme::dark ? theme::textFaint : juce::Colour (0xffa7b3ae));
         g.drawText (juce::String ((int) db),
                     juce::Rectangle<float> (0.0f, y - 6.0f, leftPad - 8.0f, 12.0f),
                     juce::Justification::centredRight);
@@ -81,10 +81,10 @@ void SpectrumDisplay::drawGrid (juce::Graphics& g)
         const float x = plot.getX() + plot.getWidth()
                         * (float) (std::log (f / 20.0) / std::log (20000.0 / 20.0));
 
-        g.setColour (theme::borderSoft);
+        g.setColour (theme::dark ? theme::borderSoft : juce::Colour (0xff455153));
         g.drawVerticalLine (juce::roundToInt (x), plot.getY(), plot.getBottom());
 
-        g.setColour (theme::textFaint);
+        g.setColour (theme::dark ? theme::textFaint : juce::Colour (0xffa7b3ae));
         const auto label = f >= 1000.0 ? juce::String (f / 1000.0, 0) + "k" : juce::String (f, 0);
         auto labelRect = juce::Rectangle<float> (x - 18.0f, plot.getBottom() + 4.0f, 36.0f, 12.0f);
         labelRect.setX (juce::jlimit (plot.getX(), plot.getRight() - labelRect.getWidth(), labelRect.getX()));
@@ -92,7 +92,7 @@ void SpectrumDisplay::drawGrid (juce::Graphics& g)
     }
 
     g.setFont (getLabelFont());
-    g.setColour (theme::textFaint);
+    g.setColour (theme::dark ? theme::textFaint : juce::Colour (0xffa7b3ae));
     g.drawText ("dBFS", juce::Rectangle<float> (0.0f, plot.getY() - 14.0f, leftPad, 12.0f),
                 juce::Justification::centredRight);
 }
@@ -114,7 +114,7 @@ void SpectrumDisplay::ensureBackground()
 
     juce::Graphics bg (background);
     bg.addTransform (juce::AffineTransform::scale (scale));
-    bg.fillAll (theme::card);
+    bg.fillAll ((theme::dark ? theme::card : juce::Colour (0xff283133)));
     drawGrid (bg);
     fillGradient.point1 = { 56.0f, 32.0f };
     fillGradient.point2 = { 56.0f, (float) h - 48.0f };
@@ -129,7 +129,7 @@ void SpectrumDisplay::paint (juce::Graphics& g)
 {
     if (backgroundDirty || background.isNull() || cachedThemeRevision != theme::revision())
     {
-        g.fillAll (theme::card);
+        g.fillAll ((theme::dark ? theme::card : juce::Colour (0xff283133)));
         return;
     }
 
@@ -232,12 +232,12 @@ void SpectrumDisplay::paint (juce::Graphics& g)
                                                   juce::PathStrokeType::rounded));
 
     // The live measurement is drawn last, so the hold trace cannot dim it.
-    g.setColour (juce::Colours::lightgrey.withAlpha (0.7f));
+    g.setColour (juce::Colours::lightgrey.withAlpha (0.92f));
     g.strokePath (curvePath, juce::PathStrokeType (1.8f, juce::PathStrokeType::curved,
                                                    juce::PathStrokeType::rounded));
 
     g.setFont (getValueFont());
-    g.setColour (theme::textDim);
+    g.setColour (theme::dark ? theme::textDim : juce::Colour (0xffb2bcb8));
     g.drawText (peakLabel,
                 plot.withHeight (14.0f).translated (0.0f, -15.0f),
                 juce::Justification::centredRight);

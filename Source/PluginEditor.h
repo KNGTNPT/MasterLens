@@ -1,4 +1,5 @@
 #pragma once
+#include "ui/ExportUtils.h"
 
 #include <juce_audio_processors/juce_audio_processors.h>
 #include <map>
@@ -137,6 +138,7 @@ private:
     void setPage (int index);
     void toggleTheme();
     void applyTheme();
+    void setExportResult (bool ok);
     void updateUiFrame();
     void setUiScale (float scale, bool store);
     float computeInitialUiScale() const;

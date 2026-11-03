@@ -453,6 +453,7 @@ bool DetailArea::handleFileMouseDown (const juce::MouseEvent& e)
                 if (e.x >= fileFindingRows[(size_t) i].getRight() - 28)
                 {
                     findings[(size_t) i].reviewed = ! findings[(size_t) i].reviewed;
+                    if (onReviewEvidence) onReviewEvidence (fileResults[(size_t) fileSelected].forensic.evidenceKey (findings[(size_t) i]), findings[(size_t) i].reviewed);
                     repaint();
                     return true;
                 }

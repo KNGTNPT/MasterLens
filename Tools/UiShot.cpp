@@ -211,7 +211,7 @@ public:
 
             if (commandLine.containsIgnoreCase ("albumproof"))
                 juce::File ("/tmp/masterlens_ui_proof.json")
-                    .replaceWithText (ml::album::Session::get().exportProofJson());
+                    .replaceWithText (processor->albumSession.exportProofJson());
         }
 
         if (aboutShot)

@@ -4,6 +4,9 @@ on:
   push:
     branches: ["quality/2.3.2"]
     paths: [".github/workflows/measurement-quality.yml", "Tests/validate_measurements.py", "Tools/MeasureProbe.h", "Source/dsp/AnalysisEngine.*"]
+concurrency:
+  group: measurement-${{ github.ref }}
+  cancel-in-progress: true
 permissions:
   contents: read
 jobs:
@@ -21,11 +24,7 @@ jobs:
           cmake -S . -B build-quality -DCMAKE_BUILD_TYPE=Release
           cmake --build build-quality --target MasterLensDspTest -j 4
       - name: Fetch EBU material for internal R&D only
-        run: |
-          mkdir -p .tools/ebu
-          curl --fail --location --retry 3 https://tech.ebu.ch/files/live/sites/tech/files/shared/testmaterial/ebu-loudness-test-setv05.zip -o .tools/ebu.zip
-          sha256sum .tools/ebu.zip > ebu-archive-sha256.txt
-          unzip -q .tools/ebu.zip -d .tools/ebu
+        run: python3 Tests/fetch_ebu.py .tools/ebu
       - name: Compare dynamic, random-buffer and standard material
         run: python3 Tests/validate_measurements.py build-quality/MasterLensDspTest_artefacts/Release/MasterLensDspTest --ebu-dir .tools/ebu --output measurement-2.3.2.json
       - uses: actions/upload-artifact@v7

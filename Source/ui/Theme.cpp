@@ -302,7 +302,7 @@ void MasterLensLookAndFeel::timerCallback()
             const float target = button->isDown() ? 1.0f : 0.0f;
             if (std::abs (motion.depth - target) < 0.001f && std::abs (motion.velocity) < 0.001f) continue;
             // Small damped rebound, entirely inside the existing hit area.
-            motion.velocity = (motion.velocity + (target - motion.depth) * 0.22f) * 0.65f;
+            motion.velocity = (motion.velocity + (target - motion.depth) * 0.24f) * 0.60f;
             motion.depth += motion.velocity;
             button->repaint();
         }
@@ -440,7 +440,7 @@ void MasterLensLookAndFeel::drawButtonBackground (juce::Graphics& g, juce::Butto
     for (const auto& motion : buttonMotions)
         if (motion.button.getComponent() == &button) { depth = motion.depth; break; }
     auto bounds = button.getLocalBounds().toFloat().reduced (0.5f)
-        .reduced (juce::jmax (0.0f, depth) * 0.5f).translated (0.0f, depth * 1.2f);
+        .reduced (juce::jmax (0.0f, depth) * 0.5f).translated (0.0f, depth * 2.0f);
     auto base = button.findColour (juce::TextButton::buttonColourId);
     if (button.getToggleState()) base = base.brighter (0.07f);
     if (down) base = base.darker (0.18f);
@@ -452,6 +452,13 @@ void MasterLensLookAndFeel::drawButtonBackground (juce::Graphics& g, juce::Butto
     {
         g.setColour (juce::Colours::white.withAlpha (0.08f));
         g.fillRoundedRectangle (bounds, tokens::radiusControl);
+    }
+    // The release ripple stays clipped to the button and never moves the hit area.
+    const float pulse = juce::jlimit (0.0f, 1.0f, std::abs (depth));
+    if (pulse > 0.01f)
+    {
+        g.setColour (theme::accent.withAlpha (pulse * 0.22f));
+        g.drawRoundedRectangle (bounds.reduced (2.0f + (1.0f - pulse) * 5.0f), tokens::radiusControl, 1.0f);
     }
     // A top-left glint and lower contact shade explain the press depth.
     g.setColour (juce::Colours::white.withAlpha (0.06f + 0.04f * juce::jmax (0.0f, depth)));

@@ -11,6 +11,7 @@ namespace ml
 template <class T> class RealtimeAsset
 {
 public:
+    static_assert (std::atomic<const T*>::is_always_lock_free, "audio asset pointer must be lock-free");
     struct Read
     {
         RealtimeAsset& owner;

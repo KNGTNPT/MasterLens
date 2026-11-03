@@ -334,9 +334,7 @@ void MasterLensAudioProcessorEditor::updateUiFrame()
         {
             const auto file = juce::File::getSpecialLocation (juce::File::userDesktopDirectory)
                                   .getChildFile ("MasterLens-Album-Proof-auto.json");
-            file.replaceWithText (ml::album::Session::get().exportProofJson());
-            footerStatusText = T ("已生成交付证明（桌面）", "Proof saved to Desktop");
-            footerStatusColour = ml::theme::good;
+            setExportResult (ml::writeTextAtomic (file, processor.albumSession.exportProofJson()));
         }
         else if (command == 4)
             exportMarkers();

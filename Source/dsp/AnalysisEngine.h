@@ -30,6 +30,7 @@ inline double lufsToEnergy (double lufs) noexcept
 */
 struct Stats
 {
+    std::atomic<int> invalidSamples { 0 };
     std::atomic<float> integrated   { kSilentDb };
     std::atomic<float> momentary    { kSilentDb };
     std::atomic<float> shortTerm    { kSilentDb };
@@ -140,6 +141,7 @@ private:
 
 struct StatsSnapshot
 {
+    int invalidSamples = 0;
     float integrated   = kSilentDb;
     float momentary    = kSilentDb;
     float shortTerm    = kSilentDb;
@@ -195,6 +197,7 @@ struct StatsSnapshot
 inline StatsSnapshot snapshot (const Stats& s) noexcept
 {
     StatsSnapshot r;
+    r.invalidSamples = s.invalidSamples.load();
     r.integrated   = s.integrated.load();
     r.momentary    = s.momentary.load();
     r.shortTerm    = s.shortTerm.load();
@@ -248,6 +251,7 @@ inline StatsSnapshot snapshot (const Stats& s) noexcept
 
 inline void resetStats (Stats& s) noexcept
 {
+    s.invalidSamples = 0;
     s.integrated = kSilentDb;  s.momentary = kSilentDb;  s.shortTerm = kSilentDb;
     s.maxMomentary = kSilentDb; s.maxShortTerm = kSilentDb; s.lra = 0.0f;
     s.truePeakDb = kSilentDb;  s.samplePeakDb = kSilentDb;

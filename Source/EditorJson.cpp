@@ -10,6 +10,8 @@ juce::String MasterLensAudioProcessorEditor::buildReportJson() const
 {
     auto* root = new juce::DynamicObject();
 
+    root->setProperty ("measurementValid", stats.invalidSamples == 0);
+    root->setProperty ("invalidSamples", stats.invalidSamples);
     root->setProperty ("product", "MasterLens");
     root->setProperty ("version", ml::kVersion);
     root->setProperty ("developer", juce::String::fromUTF8 (ml::kDeveloper));
@@ -67,6 +69,8 @@ juce::String MasterLensAudioProcessorEditor::buildReportJson() const
     album->setProperty ("name", albumSnap.albumName);
     album->setProperty ("revision", albumSnap.revision);
     album->setProperty ("tracks", (int) albumSnap.tracks.size());
+    album->setProperty ("passed", albumGate.passed());
+    album->setProperty ("incomplete", albumGate.incomplete);
     album->setProperty ("blocked", albumGate.blocked);
     album->setProperty ("incomplete", albumGate.incomplete);
     album->setProperty ("blockers", albumGate.blockers);

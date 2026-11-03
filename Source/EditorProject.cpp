@@ -49,22 +49,23 @@ void MasterLensAudioProcessorEditor::saveProjectAs()
 
     fileChooser->launchAsync (juce::FileBrowserComponent::saveMode
                                   | juce::FileBrowserComponent::warnAboutOverwriting,
-                              [this] (const juce::FileChooser& fc)
+                              [this, lifetime = juce::Component::SafePointer<MasterLensAudioProcessorEditor> (this)] (const juce::FileChooser& fc)
                               {
+                                  if (lifetime == nullptr) return;
                                   auto file = fc.getResult();
                                   if (file == juce::File())
                                       return;
                                   file = file.withFileExtension ("json");
-                                  const auto gate = ml::album::Session::evaluate (ml::album::Session::get().snapshot());
-                                  const auto version = "v" + juce::String (ml::album::Session::get().snapshot().revision)
-                                                       + (gate.blocked ? "-blocked" : "-pass");
-                                  if (ml::album::Session::get().saveProject (file, version))
+                                  const auto gate = ml::album::Session::evaluate (processor.albumSession.snapshot());
+                                  const auto version = "v" + juce::String (processor.albumSession.snapshot().revision)
+                                                       + (gate.blocked ? "-blocked" : (gate.incomplete ? "-incomplete" : "-pass"));
+                                  if (processor.albumSession.saveProject (file, version))
                                   {
                                       const auto parsed = juce::JSON::parse (file.loadFileAsString());
                                       if (auto* root = parsed.getDynamicObject())
                                       {
                                           root->setProperty ("deliverySpec", deliverySpec.toVar());
-                                          file.replaceWithText (juce::JSON::toString (juce::var (root), true));
+                                          if (! ml::writeTextAtomic (file, juce::JSON::toString (juce::var (root), true))) { setExportResult (false); return; }
                                       }
                                       footerStatusText = T ("项目已保存 · ", "Project saved · ") + file.getFileName();
                                       footerStatusColour = ml::theme::good;
@@ -86,11 +87,12 @@ void MasterLensAudioProcessorEditor::openProject()
 
     fileChooser->launchAsync (juce::FileBrowserComponent::openMode
                                   | juce::FileBrowserComponent::canSelectFiles,
-                              [this] (const juce::FileChooser& fc)
+                              [this, lifetime = juce::Component::SafePointer<MasterLensAudioProcessorEditor> (this)] (const juce::FileChooser& fc)
                               {
+                                  if (lifetime == nullptr) return;
                                   const auto file = fc.getResult();
                                   if (file == juce::File()
-                                      || ! ml::album::Session::get().loadProject (file))
+                                      || ! processor.albumSession.loadProject (file))
                                   {
                                       footerStatusText = T ("项目读取失败", "Could not open project");
                                       footerStatusColour = ml::theme::bad;
@@ -130,8 +132,9 @@ void MasterLensAudioProcessorEditor::toggleFolderWatch()
 
     fileChooser->launchAsync (juce::FileBrowserComponent::openMode
                                   | juce::FileBrowserComponent::canSelectDirectories,
-                              [this] (const juce::FileChooser& fc)
+                              [this, lifetime = juce::Component::SafePointer<MasterLensAudioProcessorEditor> (this)] (const juce::FileChooser& fc)
                               {
+                                  if (lifetime == nullptr) return;
                                   const auto folder = fc.getResult();
                                   if (! folder.isDirectory())
                                       return;
@@ -196,8 +199,9 @@ void MasterLensAudioProcessorEditor::loadDeliverySpec()
 
     fileChooser->launchAsync (juce::FileBrowserComponent::openMode
                                   | juce::FileBrowserComponent::canSelectFiles,
-                              [this] (const juce::FileChooser& fc)
+                              [this, lifetime = juce::Component::SafePointer<MasterLensAudioProcessorEditor> (this)] (const juce::FileChooser& fc)
                               {
+                                  if (lifetime == nullptr) return;
                                   const auto file = fc.getResult();
                                   if (file == juce::File())
                                       return;
@@ -205,7 +209,10 @@ void MasterLensAudioProcessorEditor::loadDeliverySpec()
                                   const auto parsed = juce::JSON::parse (file.loadFileAsString());
                                   if (auto* root = parsed.getDynamicObject())
                                   {
-                                      deliverySpec = ml::DeliverySpec::fromVar (parsed);
+                                      ml::DeliverySpec candidate; juce::String error;
+                                      if (! ml::DeliverySpec::parse (parsed, candidate, error))
+                                      { footerStatusText = error; footerStatusColour = ml::theme::bad; repaint(); return; }
+                                      deliverySpec = candidate;
                                       deliverySpec.enabled = true;
                                       detail.setDeliverySpec (deliverySpec);
                                       detail.invalidateDisplays();
@@ -225,8 +232,9 @@ void MasterLensAudioProcessorEditor::exportDeliverySpecTemplate()
 
     fileChooser->launchAsync (juce::FileBrowserComponent::saveMode
                                   | juce::FileBrowserComponent::warnAboutOverwriting,
-                              [this] (const juce::FileChooser& fc)
+                              [this, lifetime = juce::Component::SafePointer<MasterLensAudioProcessorEditor> (this)] (const juce::FileChooser& fc)
                               {
+                                  if (lifetime == nullptr) return;
                                   auto file = fc.getResult();
                                   if (file == juce::File())
                                       return;
@@ -241,7 +249,7 @@ void MasterLensAudioProcessorEditor::exportDeliverySpecTemplate()
                                   root->setProperty ("bitDepth", deliverySpec.bitDepth);
                                   root->setProperty ("channels", deliverySpec.channels);
                                   root->setProperty ("namingPattern", deliverySpec.namingPattern);
-                                  file.replaceWithText (juce::JSON::toString (juce::var (root), true));
+                                  if (! ml::writeTextAtomic (file, juce::JSON::toString (juce::var (root), true))) { setExportResult (false); return; }
                                   footerStatusText = T ("规格模板已导出", "Spec template exported");
                                   footerStatusColour = ml::theme::good;
                                   repaint();

@@ -356,6 +356,10 @@ FileAnalysisResult FileAnalyzer::analyseFile (const juce::File& file)
         return result;
     }
 
+    CancellableSource finalSource (file, [this] { return threadShouldExit(); });
+    const auto finalHash = juce::SHA256 (finalSource).toHexString();
+    if (threadShouldExit() || finalHash != sourceHash)
+    { result.error = "source changed during analysis"; return result; }
     result.ok = true;
     return result;
 }

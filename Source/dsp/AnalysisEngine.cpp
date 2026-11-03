@@ -77,7 +77,7 @@ void TruePeakDetector::reset() noexcept
 //==============================================================================
 void AnalysisEngine::prepare (double sampleRate, int numChannels)
 {
-    fs = sampleRate > 0.0 ? sampleRate : 48000.0;
+    fs = std::isfinite (sampleRate) && sampleRate >= 1000 && sampleRate <= 768000 ? sampleRate : 48000.0;
     channels = juce::jlimit (1, 2, numChannels);
 
     for (auto& tp : truePeak)
@@ -654,7 +654,7 @@ void AnalysisEngine::finishPartialBlock (Stats& stats)
 
     ++partialCounter;
 
-    if (windowS >= 30 && (partialCounter % 10) == 0 && sDb > histMinDb)
+    if (windowS >= 30 && sDb > histMinDb)
     {
         shortHist[toBin (sDb)].fetch_add (1);
         shortHistCount.fetch_add (1);

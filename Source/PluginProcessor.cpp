@@ -62,41 +62,10 @@ juce::AudioProcessorValueTreeState::ParameterLayout MasterLensAudioProcessor::cr
 }
 
 //==============================================================================
-void MasterLensAudioProcessor::resetHostCoverage() noexcept
+void MasterLensAudioProcessor::resetHostCoverage() noexcept { coverageTracker.reset(); }
+void MasterLensAudioProcessor::markHostCoverage (double start, double end) noexcept
 {
-    for (auto& word : hostCoverage)
-        word.store (0, std::memory_order_relaxed);
-
-    coveredBuckets.store (0, std::memory_order_relaxed);
-}
-
-void MasterLensAudioProcessor::markHostCoverage (double startSeconds, double endSeconds) noexcept
-{
-    if (! std::isfinite (startSeconds) || ! std::isfinite (endSeconds) || endSeconds <= startSeconds)
-        return;
-
-    const int first = juce::jlimit (0, coverageBucketCount - 1,
-                                    (int) std::floor (startSeconds / coverageBucketSeconds));
-    const int last = juce::jlimit (0, coverageBucketCount - 1,
-                                   (int) std::floor ((endSeconds - 1.0e-9) / coverageBucketSeconds));
-
-    for (int bucket = first; bucket <= last; ++bucket)
-    {
-        auto& word = hostCoverage[(size_t) (bucket / 64)];
-        const auto mask = (std::uint64_t) 1 << (bucket % 64);
-        auto old = word.load (std::memory_order_relaxed);
-
-        while ((old & mask) == 0)
-        {
-            if (word.compare_exchange_weak (old, old | mask,
-                                            std::memory_order_relaxed,
-                                            std::memory_order_relaxed))
-            {
-                coveredBuckets.fetch_add (1, std::memory_order_relaxed);
-                break;
-            }
-        }
-    }
+    coverageTracker.add (start, end);
 }
 
 void MasterLensAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
@@ -110,6 +79,7 @@ void MasterLensAudioProcessor::prepareToPlay (double sampleRate, int samplesPerB
     engine.prepare (currentSampleRate, juce::jmax (1, getTotalNumInputChannels()));
     auditionEngine.prepare (currentSampleRate, 2);
     filePreviewPlayer.prepare (currentSampleRate);
+    referencePlayer.prepare (currentSampleRate);
     ml::resetStats (stats);
     spectrumRing.reset();
     resetHostCoverage();
@@ -151,7 +121,7 @@ void MasterLensAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, j
         {
             playing = pos->getIsPlaying();
 
-            if (auto t = pos->getTimeInSeconds())
+            if (auto t = pos->getTimeInSeconds(); t && std::isfinite (*t))
             {
                 hostPosition = *t;
                 hostValid = true;
@@ -218,13 +188,13 @@ void MasterLensAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, j
         spectrumRing.writeBlock (buffer.getReadPointer (0), numSamples);
     }
 
+    if (hostValid) engine.setTimeOrigin (hostPosition - stats.elapsed.load());
     engine.process (buffer, stats, numSamples);
     auditionEngine.process (buffer);
 
     // File QC evidence preview is an explicit, user-triggered output override.
     // Measurements above still see the untouched bus.
-    if (filePreviewPlayer.render (buffer))
-        return;
+    const bool previewOutput = filePreviewPlayer.render (buffer);
 
     const double knownLength = trackLengthSeconds.load (std::memory_order_relaxed);
     stats.hostLength = knownLength;
@@ -235,15 +205,12 @@ void MasterLensAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, j
     if (hostValid && playing)
         markHostCoverage (hostPosition, hostPosition + (double) numSamples / currentSampleRate);
 
-    if (knownLength > 0.01)
-    {
-        const double coveredSeconds = hostValid
-            ? (double) coveredBuckets.load (std::memory_order_relaxed) * coverageBucketSeconds
-            : stats.elapsed.load();
-        stats.coveragePct = (float) juce::jlimit (0.0, 100.0, 100.0 * coveredSeconds / knownLength);
-    }
-    else
-        stats.coveragePct = 100.0f;
+    const double covered = hostValid ? coverageTracker.seconds (knownLength) : -1.0;
+    float coverage = covered >= 0.0 ? (float) (100.0 * covered / knownLength) : -1.0f;
+    if (covered >= 0.0 && covered < knownLength - 1.0e-9)
+        coverage = std::nextafter (juce::jmin (100.0f, coverage), 0.0f);
+    stats.coveragePct = coverage;
+    if (previewOutput) { outputSpectrumFifo.pushMainOutput (buffer); return; }
 
     // Optional loudness-matched monitor. It is deliberately off by default and
     // only changes the output when the user explicitly engages it; analysis has
@@ -266,7 +233,7 @@ void MasterLensAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, j
         referenceTrimDb = juce::jlimit (-24.0f, 12.0f,
                                        matchTarget - referencePlayer.getLoudness());
 
-    if (! referencePlayer.render (buffer, hostValid ? hostPosition : 0.0, playing, referenceTrimDb))
+    if (! referencePlayer.render (buffer, hostValid ? hostPosition : 0.0, playing, referenceTrimDb, inputTrimDb))
         if (std::abs (inputTrimDb) > 0.001f)
             buffer.applyGain (juce::Decibels::decibelsToGain (inputTrimDb));
 
@@ -314,7 +281,7 @@ void MasterLensAudioProcessor::getStateInformation (juce::MemoryBlock& destData)
     // The shared album.json stays the cross-instance "last used" cache. The
     // active album is also embedded in the project state so reopening a session
     // restores its own track list and gate result.
-    apvts.state.setProperty ("albumState", ml::album::Session::get().serializeState(), nullptr);
+    apvts.state.setProperty ("albumState", albumSession.serializeState(), nullptr);
 
     if (auto xml = apvts.copyState().createXml())
         copyXmlToBinary (*xml, destData);
@@ -331,7 +298,7 @@ void MasterLensAudioProcessor::setStateInformation (const void* data, int sizeIn
         const auto albumState = apvts.state.getProperty ("albumState").toString();
 
         if (albumState.isNotEmpty())
-            ml::album::Session::get().restoreState (albumState);
+            albumSession.restoreState (albumState);
     }
 }
 
