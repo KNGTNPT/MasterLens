@@ -1,0 +1,229 @@
+{
+  "version": "2.3.2",
+  "platform": "Darwin",
+  "architecture": "arm64",
+  "rendererSha256": "7933b074b9cf38f194484d070bd2980c1b9408b917f5ba5dfe940ffed2e795a5",
+  "images": [
+    {
+      "path": "docs/light-2.3.2.png",
+      "sha256": "9525b98f95e22daed3c2462b968f35266f3601ce63dbca787f53012cb35e360a",
+      "width": 2240,
+      "height": 1400,
+      "arguments": [
+        "page0",
+        "light",
+        "size1120",
+        "out=232"
+      ]
+    },
+    {
+      "path": "docs/screenshot-2.3.2.png",
+      "sha256": "e126a1da2517170a48c358736279355b5c8633b4050e08373ee5fa3c48d22d9c",
+      "width": 2240,
+      "height": 1400,
+      "arguments": [
+        "page0",
+        "size1120",
+        "out=232"
+      ]
+    },
+    {
+      "path": "docs/spectrum-2.3.2.png",
+      "sha256": "3dea6044bf4fec8a9b31ae2cfde91e0157321d7147837cff78ce3a148b9aa354",
+      "width": 2240,
+      "height": 1400,
+      "arguments": [
+        "page2",
+        "size1120",
+        "out=232"
+      ]
+    },
+    {
+      "path": "docs/spectrum-light-2.3.2.png",
+      "sha256": "d955e8744525df10644e9e84e57dcd54631fd01b7cdd1dae418e758ccf8e7178",
+      "width": 2240,
+      "height": 1400,
+      "arguments": [
+        "page2",
+        "light",
+        "size1120",
+        "out=232"
+      ]
+    },
+    {
+      "path": "docs/stereo-2.3.2.png",
+      "sha256": "5a67d6facf3f029b5ea2b7b4a001675b2b2fa0b75f15ce9b015c009f645e1a58",
+      "width": 2240,
+      "height": 1400,
+      "arguments": [
+        "page3",
+        "size1120",
+        "out=232"
+      ]
+    },
+    {
+      "path": "docs/peak-2.3.2.png",
+      "sha256": "05b50401677cd9b4acded9f2074b304104a6c1d1ba53f252fb206e0b9b1f23f1",
+      "width": 2240,
+      "height": 1400,
+      "arguments": [
+        "page1",
+        "size1120",
+        "out=232"
+      ]
+    },
+    {
+      "path": "docs/delivery-2.3.2.png",
+      "sha256": "c5ab46e047411ee0a88bd9bcedb2cdd7889d60404430c7a24088abd6aaf8338c",
+      "width": 2240,
+      "height": 1400,
+      "arguments": [
+        "page4",
+        "size1120",
+        "out=232"
+      ]
+    },
+    {
+      "path": "docs/checks-2.3.2.png",
+      "sha256": "5a7d37cad3ade58513afb7bd7d7cc1b1650662aef42dd8bfdbb1c51881f1adc6",
+      "width": 2240,
+      "height": 1400,
+      "arguments": [
+        "page7",
+        "size1120",
+        "out=232"
+      ]
+    },
+    {
+      "path": "docs/signal-2.3.2.png",
+      "sha256": "04ee5c90d9419e74867e7a41ff327067eadaea14124ea9a6179f3d425434f983",
+      "width": 2240,
+      "height": 1400,
+      "arguments": [
+        "page6",
+        "size1120",
+        "out=232"
+      ]
+    },
+    {
+      "path": "docs/target-2.3.2.png",
+      "sha256": "fde3e61cddd13ebd601d6599f687b2e589e77ebc1c0556dbeb974d679d78e079",
+      "width": 2240,
+      "height": 1400,
+      "arguments": [
+        "page9",
+        "size1120",
+        "out=232"
+      ]
+    },
+    {
+      "path": "docs/timeline-2.3.2.png",
+      "sha256": "88769352a7f7456d994c7a29d3237ea752054d351b69ed0c771c935d4ed6ac76",
+      "width": 2240,
+      "height": 1400,
+      "arguments": [
+        "page8",
+        "size1120",
+        "out=232"
+      ]
+    },
+    {
+      "path": "docs/english-2.3.2.png",
+      "sha256": "0991c0d73b3d18449815ab7f8f756ae7eb955a632404b861e9ea731007434da1",
+      "width": 2240,
+      "height": 1400,
+      "arguments": [
+        "page0",
+        "en",
+        "size1120",
+        "out=232"
+      ]
+    },
+    {
+      "path": "docs/settings-2.3.2.png",
+      "sha256": "3ebcaff5a011a88357d82126040482113bb216216d704a3ee972c46656f5d94e",
+      "width": 2240,
+      "height": 1400,
+      "arguments": [
+        "page0",
+        "settings",
+        "size1120",
+        "out=232"
+      ]
+    },
+    {
+      "path": "docs/about-2.3.2.png",
+      "sha256": "09ec0fa3b931b1518eb755f67769d8e66933a6c9d47f94535fff01b5a2f776e6",
+      "width": 2240,
+      "height": 1400,
+      "arguments": [
+        "page0",
+        "about",
+        "size1120",
+        "out=232"
+      ]
+    },
+    {
+      "path": "docs/album-2.3.2.png",
+      "sha256": "00868d3d0b2c89e2d5e3b6f590a3b4afd4518ef16a74cee321e5c2d2f511e4f7",
+      "width": 2240,
+      "height": 1400,
+      "arguments": [
+        "page5",
+        "albumcap",
+        "size1120",
+        "out=232album"
+      ]
+    },
+    {
+      "path": "docs/fileqc-2.3.2.png",
+      "sha256": "317fba1ca07920b356b5918651259745681899198a24f1ad873f63ebd5c9a0b1",
+      "width": 2240,
+      "height": 1400,
+      "arguments": [
+        "page10",
+        "fileqc",
+        "size1120",
+        "out=232files"
+      ]
+    },
+    {
+      "path": "docs/file-mono-2.3.2.png",
+      "sha256": "d686bfb77452b3206cf8cbca8adba2b5725e672244f6e43c2764eacc64e20957",
+      "width": 2240,
+      "height": 1400,
+      "arguments": [
+        "page10",
+        "fileqc",
+        "fileview1",
+        "size1120",
+        "out=232mono"
+      ]
+    },
+    {
+      "path": "docs/file-gain-2.3.2.png",
+      "sha256": "75cd012abc844fc9599607efb2de44369b3170f31fb0f320a9f66ceb7529b533",
+      "width": 2240,
+      "height": 1400,
+      "arguments": [
+        "page10",
+        "fileqc",
+        "fileview2",
+        "size1120",
+        "out=232gain"
+      ]
+    },
+    {
+      "path": "docs/waterfall-2.3.2.png",
+      "sha256": "1bafc20de0a66d9244fae105eca709e05d29973f81b85ad5fe222fe402b052b9",
+      "width": 2240,
+      "height": 1400,
+      "arguments": [
+        "page2",
+        "spectrumview1",
+        "size1120",
+        "out=232waterfall"
+      ]
+    }
+  ]
+}

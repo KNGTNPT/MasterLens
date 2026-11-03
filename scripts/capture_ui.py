@@ -18,6 +18,7 @@ SHOTS = [
     ('light', ['page0', 'light'], 'ui_shot_page0_light_232.png'),
     ('screenshot', ['page0'], 'ui_shot_page0_232.png'),
     ('spectrum', ['page2'], 'ui_shot_page2_232.png'),
+    ('spectrum-light', ['page2', 'light'], 'ui_shot_page2_light_232.png'),
     ('stereo', ['page3'], 'ui_shot_page3_232.png'),
     ('peak', ['page1'], 'ui_shot_page1_232.png'),
     ('delivery', ['page4'], 'ui_shot_page4_232.png'),

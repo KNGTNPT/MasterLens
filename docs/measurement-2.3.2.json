@@ -1,0 +1,3069 @@
+{
+  "version": "2.3.2",
+  "probeSha256": "4e7e274b6877aafbf21af997af20d857f6af4f5258a8c7eb419150b97e175ca0",
+  "scriptSha256": "12ae62e5dfd5edd9710bb81193f830cf6b61d7227e699c625d00a168a560a4a9",
+  "ebuArchiveSha512": "60d022fdac47ad0be2688411be9daecbff85da994d6fa4921bba6cffab841b081d8b15d9ce284ad2253efb686463450a84a0d19cb0bad7a934546cc52dd73771",
+  "reference": "FFmpeg ebur128 (independent of MasterLens)",
+  "ffmpegVersion": "ffmpeg version 9.0.2 Copyright (c) 2000-2026 the FFmpeg developers",
+  "standardCredit": "\u00a9 EBU",
+  "rows": [
+    {
+      "file": "calibration-32000.wav",
+      "kind": "generated-boundary",
+      "sha256": "fc5dc67f1270cf8e6a5dbb7a936ec1ad23c776009b66235a51b51b3340a067d1",
+      "masterlens": {
+        "I": -23.0,
+        "M": -22.98656463623047,
+        "S": -22.98822784423828,
+        "LRA": 0.0,
+        "TP": -23.000110626220703,
+        "duration": 9.317,
+        "peakTime": 0.200000002980232
+      },
+      "ffmpeg": {
+        "I": -23.0,
+        "LRA": 0.0,
+        "TP": -22.999228,
+        "M": -23.0,
+        "S": -23.0
+      },
+      "error": {
+        "I": 0.0,
+        "M": 0.013435,
+        "S": 0.011772,
+        "LRA": 0.0,
+        "TP": -0.000883
+      },
+      "nominal": {},
+      "randomBufferMaxError": 0
+    },
+    {
+      "file": "dynamic-32000.wav",
+      "kind": "generated-boundary",
+      "sha256": "a539ea472bcb9bf84ac28dd7589f3617a7ce056313d39af175f68c148dbe16fe",
+      "masterlens": {
+        "I": -22.0769100189209,
+        "M": -18.28547477722168,
+        "S": -19.84385871887207,
+        "LRA": 11.600000381469727,
+        "TP": -15.915745735168457,
+        "duration": 12.317,
+        "peakTime": 8.300000190734863
+      },
+      "ffmpeg": {
+        "I": -22.1,
+        "LRA": 11.6,
+        "TP": -15.9,
+        "M": -18.3,
+        "S": -19.8
+      },
+      "error": {
+        "I": 0.02309,
+        "M": 0.014525,
+        "S": -0.043859,
+        "LRA": 0.0,
+        "TP": -0.015746
+      },
+      "nominal": {},
+      "randomBufferMaxError": 0
+    },
+    {
+      "file": "tail-32000.wav",
+      "kind": "generated-boundary",
+      "sha256": "b3abec5dc600f0ae22def30e67b201479c38d833a0c6ccb663aa969cd0394c0e",
+      "masterlens": {
+        "I": -26.0,
+        "M": -26.008882522583008,
+        "S": -100.0,
+        "LRA": 0.0,
+        "TP": -0.445974349975586,
+        "duration": 0.45128125,
+        "peakTime": 0.451281249523163
+      },
+      "ffmpeg": {
+        "I": -26.0,
+        "LRA": 0.0,
+        "TP": -0.445974,
+        "M": -26.0,
+        "S": -120.7
+      },
+      "error": {
+        "I": 0.0,
+        "M": -0.008883,
+        "LRA": 0.0,
+        "TP": -0.0
+      },
+      "nominal": {},
+      "randomBufferMaxError": 0
+    },
+    {
+      "file": "near-nyquist-32000.wav",
+      "kind": "generated-boundary",
+      "sha256": "e57fcd7cc07d35ae3b1e692b4a2db139d4a757b11af6b876f6f1ea2338ebd6de",
+      "masterlens": {
+        "I": -1.099998950958252,
+        "M": -1.063817858695984,
+        "S": -1.063817858695984,
+        "LRA": 0.0,
+        "TP": -4.459889888763428,
+        "duration": 4.191,
+        "peakTime": 0.100000001490116
+      },
+      "ffmpeg": {
+        "I": -1.1,
+        "LRA": 0.0,
+        "TP": -4.45989,
+        "M": -1.1,
+        "S": -1.1
+      },
+      "error": {
+        "I": 1e-06,
+        "M": 0.036182,
+        "S": 0.036182,
+        "LRA": 0.0,
+        "TP": 0.0
+      },
+      "nominal": {},
+      "randomBufferMaxError": 0
+    },
+    {
+      "file": "silence-32000.wav",
+      "kind": "generated-boundary",
+      "sha256": "7a6094ba259559f9b8b67554e5f14e9e922734c721b7c3ef3ef48cc1b359137d",
+      "masterlens": {
+        "I": -100.0,
+        "M": -100.0,
+        "S": -100.0,
+        "LRA": 0.0,
+        "TP": -100.0,
+        "duration": 3.315,
+        "peakTime": 0.0
+      },
+      "ffmpeg": {
+        "I": -70.0,
+        "LRA": 0.0,
+        "TP": -100.0,
+        "M": -120.7,
+        "S": -120.7
+      },
+      "error": {
+        "LRA": 0.0
+      },
+      "nominal": {},
+      "randomBufferMaxError": 0
+    },
+    {
+      "file": "calibration-44100.wav",
+      "kind": "generated-boundary",
+      "sha256": "27e4df25fce202688be9ee16b25fb4f113df1f0d96cae6a452800d8404130c58",
+      "masterlens": {
+        "I": -23.0,
+        "M": -22.99822998046875,
+        "S": -22.999881744384766,
+        "LRA": 0.0,
+        "TP": -23.000085830688477,
+        "duration": 9.316984126984128,
+        "peakTime": 0.200000002980232
+      },
+      "ffmpeg": {
+        "I": -23.0,
+        "LRA": 0.0,
+        "TP": -23.0,
+        "M": -23.0,
+        "S": -23.0
+      },
+      "error": {
+        "I": 0.0,
+        "M": 0.00177,
+        "S": 0.000118,
+        "LRA": 0.0,
+        "TP": -8.6e-05
+      },
+      "nominal": {},
+      "randomBufferMaxError": 0
+    },
+    {
+      "file": "dynamic-44100.wav",
+      "kind": "generated-boundary",
+      "sha256": "f9970df268f85415b6d1d13a7510fc878a35aa69dbbc672851aa2d464e14b8a0",
+      "masterlens": {
+        "I": -22.0806884765625,
+        "M": -18.30477523803711,
+        "S": -19.86313247680664,
+        "LRA": 11.600000381469727,
+        "TP": -15.915745735168457,
+        "duration": 12.316984126984128,
+        "peakTime": 8.300000190734863
+      },
+      "ffmpeg": {
+        "I": -22.1,
+        "LRA": 11.6,
+        "TP": -15.9,
+        "M": -18.3,
+        "S": -19.9
+      },
+      "error": {
+        "I": 0.019312,
+        "M": -0.004775,
+        "S": 0.036868,
+        "LRA": 0.0,
+        "TP": -0.015746
+      },
+      "nominal": {},
+      "randomBufferMaxError": 0
+    },
+    {
+      "file": "tail-44100.wav",
+      "kind": "generated-boundary",
+      "sha256": "8c848249c6bb77f6f64bf94f7219abc91981d5063295e2972a7ea4b1e0669fcc",
+      "masterlens": {
+        "I": -26.0,
+        "M": -26.020498275756836,
+        "S": -100.0,
+        "LRA": 0.0,
+        "TP": -0.445974349975586,
+        "duration": 0.451292517006803,
+        "peakTime": 0.451292514801025
+      },
+      "ffmpeg": {
+        "I": -26.0,
+        "LRA": 0.0,
+        "TP": -0.445974,
+        "M": -26.0,
+        "S": -120.7
+      },
+      "error": {
+        "I": 0.0,
+        "M": -0.020498,
+        "LRA": 0.0,
+        "TP": -0.0
+      },
+      "nominal": {},
+      "randomBufferMaxError": 0
+    },
+    {
+      "file": "near-nyquist-44100.wav",
+      "kind": "generated-boundary",
+      "sha256": "481e460d3fc02c54a590abdf7ec2bf0131292b1045e93de36c91cf968e6c1cf6",
+      "masterlens": {
+        "I": -1.102601289749146,
+        "M": -1.081591606140137,
+        "S": -1.081591606140137,
+        "LRA": 0.0,
+        "TP": -4.459889888763428,
+        "duration": 4.190997732426304,
+        "peakTime": 0.100000001490116
+      },
+      "ffmpeg": {
+        "I": -1.1,
+        "LRA": 0.0,
+        "TP": -4.4,
+        "M": -1.1,
+        "S": -1.1
+      },
+      "error": {
+        "I": -0.002601,
+        "M": 0.018408,
+        "S": 0.018408,
+        "LRA": 0.0,
+        "TP": -0.05989
+      },
+      "nominal": {},
+      "randomBufferMaxError": 0
+    },
+    {
+      "file": "silence-44100.wav",
+      "kind": "generated-boundary",
+      "sha256": "989de01ca725df6fd79ace98fe8343e6b40b5fdeb0d4d284972558d95fb444e7",
+      "masterlens": {
+        "I": -100.0,
+        "M": -100.0,
+        "S": -100.0,
+        "LRA": 0.0,
+        "TP": -100.0,
+        "duration": 3.314988662131519,
+        "peakTime": 0.0
+      },
+      "ffmpeg": {
+        "I": -70.0,
+        "LRA": 0.0,
+        "TP": -100.0,
+        "M": -120.7,
+        "S": -120.7
+      },
+      "error": {
+        "LRA": 0.0
+      },
+      "nominal": {},
+      "randomBufferMaxError": 0
+    },
+    {
+      "file": "calibration-48000.wav",
+      "kind": "generated-boundary",
+      "sha256": "d9c42b82ebaa776ad0243136b85d5893e329ba5046f7ccb1abcac1ca24e0ed5c",
+      "masterlens": {
+        "I": -23.0,
+        "M": -23.00098419189453,
+        "S": -23.002639770507812,
+        "LRA": 0.0,
+        "TP": -23.000076293945312,
+        "duration": 9.317,
+        "peakTime": 0.200000002980232
+      },
+      "ffmpeg": {
+        "I": -23.0,
+        "LRA": 0.0,
+        "TP": -22.999955,
+        "M": -23.0,
+        "S": -23.0
+      },
+      "error": {
+        "I": 0.0,
+        "M": -0.000984,
+        "S": -0.00264,
+        "LRA": 0.0,
+        "TP": -0.000121
+      },
+      "nominal": {},
+      "randomBufferMaxError": 0
+    },
+    {
+      "file": "dynamic-48000.wav",
+      "kind": "generated-boundary",
+      "sha256": "7301704521d8264509494713ce3ae07425b1c20fc5eb0e697d043bca6254ed6b",
+      "masterlens": {
+        "I": -22.0806884765625,
+        "M": -18.308868408203125,
+        "S": -19.86721420288086,
+        "LRA": 11.600000381469727,
+        "TP": -15.915745735168457,
+        "duration": 12.317,
+        "peakTime": 8.300000190734863
+      },
+      "ffmpeg": {
+        "I": -22.1,
+        "LRA": 11.6,
+        "TP": -15.9,
+        "M": -18.3,
+        "S": -19.9
+      },
+      "error": {
+        "I": 0.019312,
+        "M": -0.008868,
+        "S": 0.032786,
+        "LRA": 0.0,
+        "TP": -0.015746
+      },
+      "nominal": {},
+      "randomBufferMaxError": 0
+    },
+    {
+      "file": "tail-48000.wav",
+      "kind": "generated-boundary",
+      "sha256": "6f945fb3e9b98d4e29f4952fa6b686cc2d5a203a189ef57c70f3f7d8005c33b6",
+      "masterlens": {
+        "I": -26.0,
+        "M": -26.023252487182617,
+        "S": -100.0,
+        "LRA": 0.0,
+        "TP": -0.445974349975586,
+        "duration": 0.451291666666667,
+        "peakTime": 0.451291680335999
+      },
+      "ffmpeg": {
+        "I": -26.0,
+        "LRA": 0.0,
+        "TP": -0.445974,
+        "M": -26.0,
+        "S": -120.7
+      },
+      "error": {
+        "I": 0.0,
+        "M": -0.023252,
+        "LRA": 0.0,
+        "TP": -0.0
+      },
+      "nominal": {},
+      "randomBufferMaxError": 0
+    },
+    {
+      "file": "near-nyquist-48000.wav",
+      "kind": "generated-boundary",
+      "sha256": "d1114909ca4ec47fae03d236c766e660ee1e670bcc6df441e87d6b53ee34b201",
+      "masterlens": {
+        "I": -1.102601289749146,
+        "M": -1.085413217544556,
+        "S": -1.085413217544556,
+        "LRA": 0.0,
+        "TP": -4.459889888763428,
+        "duration": 4.191,
+        "peakTime": 0.100000001490116
+      },
+      "ffmpeg": {
+        "I": -1.1,
+        "LRA": 0.0,
+        "TP": -4.45989,
+        "M": -1.1,
+        "S": -1.1
+      },
+      "error": {
+        "I": -0.002601,
+        "M": 0.014587,
+        "S": 0.014587,
+        "LRA": 0.0,
+        "TP": 0.0
+      },
+      "nominal": {},
+      "randomBufferMaxError": 0
+    },
+    {
+      "file": "silence-48000.wav",
+      "kind": "generated-boundary",
+      "sha256": "fe124b3e141bcfd017d69fdca255f57bfa81ced65c05e75db279f1cee6c069a6",
+      "masterlens": {
+        "I": -100.0,
+        "M": -100.0,
+        "S": -100.0,
+        "LRA": 0.0,
+        "TP": -100.0,
+        "duration": 3.315,
+        "peakTime": 0.0
+      },
+      "ffmpeg": {
+        "I": -70.0,
+        "LRA": 0.0,
+        "TP": -100.0,
+        "M": -120.7,
+        "S": -120.7
+      },
+      "error": {
+        "LRA": 0.0
+      },
+      "nominal": {},
+      "randomBufferMaxError": 0
+    },
+    {
+      "file": "calibration-96000.wav",
+      "kind": "generated-boundary",
+      "sha256": "0bd41e43214abc3a2d08e02a3d78938fda104b3e1d5dfd97ab5e231e1f9e0155",
+      "masterlens": {
+        "I": -23.0,
+        "M": -23.018308639526367,
+        "S": -23.019960403442383,
+        "LRA": 0.0,
+        "TP": -23.000553131103516,
+        "duration": 9.317,
+        "peakTime": 0.200000002980232
+      },
+      "ffmpeg": {
+        "I": -23.0,
+        "LRA": 0.0,
+        "TP": -23.0,
+        "M": -23.0,
+        "S": -23.0
+      },
+      "error": {
+        "I": 0.0,
+        "M": -0.018309,
+        "S": -0.01996,
+        "LRA": 0.0,
+        "TP": -0.000553
+      },
+      "nominal": {},
+      "randomBufferMaxError": 0
+    },
+    {
+      "file": "dynamic-96000.wav",
+      "kind": "generated-boundary",
+      "sha256": "98091882c2dbc091ed46d8405f2a6c73233af5cd1ae0c37c692b063ec04e124d",
+      "masterlens": {
+        "I": -22.082366943359375,
+        "M": -18.33160400390625,
+        "S": -19.88990592956543,
+        "LRA": 11.5,
+        "TP": -15.915745735168457,
+        "duration": 12.317,
+        "peakTime": 8.100000381469727
+      },
+      "ffmpeg": {
+        "I": -22.1,
+        "LRA": 11.6,
+        "TP": -15.9,
+        "M": -18.3,
+        "S": -19.9
+      },
+      "error": {
+        "I": 0.017633,
+        "M": -0.031604,
+        "S": 0.010094,
+        "LRA": -0.1,
+        "TP": -0.015746
+      },
+      "nominal": {},
+      "randomBufferMaxError": 0
+    },
+    {
+      "file": "tail-96000.wav",
+      "kind": "generated-boundary",
+      "sha256": "f4e7b6d7ef18729bd157e9ce36a230cf3fe300c3263d8cbefbc9298fc6af7849",
+      "masterlens": {
+        "I": -26.0,
+        "M": -26.04050064086914,
+        "S": -100.0,
+        "LRA": 0.0,
+        "TP": -0.445974349975586,
+        "duration": 0.451291666666667,
+        "peakTime": 0.451291680335999
+      },
+      "ffmpeg": {
+        "I": -26.0,
+        "LRA": 0.0,
+        "TP": -0.445974,
+        "M": -26.0,
+        "S": -120.7
+      },
+      "error": {
+        "I": 0.0,
+        "M": -0.040501,
+        "LRA": 0.0,
+        "TP": -0.0
+      },
+      "nominal": {},
+      "randomBufferMaxError": 0
+    },
+    {
+      "file": "near-nyquist-96000.wav",
+      "kind": "generated-boundary",
+      "sha256": "b6ddde5c1e9394b7b13f4c3f4de1dd7990e20eb78f8ea2c99f37db3c9b6364d8",
+      "masterlens": {
+        "I": -1.102601289749146,
+        "M": -1.107036948204041,
+        "S": -1.107036948204041,
+        "LRA": 0.0,
+        "TP": -4.459889888763428,
+        "duration": 4.191,
+        "peakTime": 0.100000001490116
+      },
+      "ffmpeg": {
+        "I": -1.1,
+        "LRA": 0.0,
+        "TP": -4.45989,
+        "M": -1.1,
+        "S": -1.1
+      },
+      "error": {
+        "I": -0.002601,
+        "M": -0.007037,
+        "S": -0.007037,
+        "LRA": 0.0,
+        "TP": 0.0
+      },
+      "nominal": {},
+      "randomBufferMaxError": 0
+    },
+    {
+      "file": "silence-96000.wav",
+      "kind": "generated-boundary",
+      "sha256": "49e4cb9b2c585e1c2dfd5da8f80805c9f7825576ade27ec258d7c31d40a1bd20",
+      "masterlens": {
+        "I": -100.0,
+        "M": -100.0,
+        "S": -100.0,
+        "LRA": 0.0,
+        "TP": -100.0,
+        "duration": 3.315,
+        "peakTime": 0.0
+      },
+      "ffmpeg": {
+        "I": -70.0,
+        "LRA": 0.0,
+        "TP": -100.0,
+        "M": -120.7,
+        "S": -120.7
+      },
+      "error": {
+        "LRA": 0.0
+      },
+      "nominal": {},
+      "randomBufferMaxError": 0
+    },
+    {
+      "file": "calibration-192000.wav",
+      "kind": "generated-boundary",
+      "sha256": "1f99382f42d52c5fd38146f844754444f1625bfa73159a9df3b7492d92449338",
+      "masterlens": {
+        "I": -23.0,
+        "M": -23.028057098388672,
+        "S": -23.029708862304688,
+        "LRA": 0.0,
+        "TP": -23.000898361206055,
+        "duration": 9.317,
+        "peakTime": 0.100000001490116
+      },
+      "ffmpeg": {
+        "I": -23.0,
+        "LRA": 0.0,
+        "TP": -23.0,
+        "M": -23.0,
+        "S": -23.0
+      },
+      "error": {
+        "I": 0.0,
+        "M": -0.028057,
+        "S": -0.029709,
+        "LRA": 0.0,
+        "TP": -0.000898
+      },
+      "nominal": {},
+      "randomBufferMaxError": 0
+    },
+    {
+      "file": "dynamic-192000.wav",
+      "kind": "generated-boundary",
+      "sha256": "b891f19ad83a7ff10179bc99e8dc8b1f1ec0590c66f25b34ad83f8d57e658956",
+      "masterlens": {
+        "I": -22.141359329223633,
+        "M": -18.342716217041016,
+        "S": -19.900991439819336,
+        "LRA": 11.5,
+        "TP": -15.9153470993042,
+        "duration": 12.317,
+        "peakTime": 8.399999618530273
+      },
+      "ffmpeg": {
+        "I": -22.1,
+        "LRA": 11.6,
+        "TP": -15.9,
+        "M": -18.3,
+        "S": -19.9
+      },
+      "error": {
+        "I": -0.041359,
+        "M": -0.042716,
+        "S": -0.000991,
+        "LRA": -0.1,
+        "TP": -0.015347
+      },
+      "nominal": {},
+      "randomBufferMaxError": 0
+    },
+    {
+      "file": "tail-192000.wav",
+      "kind": "generated-boundary",
+      "sha256": "930d567347b71707f2bec6b69d871b2c38a11cd5515d1db3d1a6242cb7ed97a5",
+      "masterlens": {
+        "I": -26.099998474121094,
+        "M": -26.050212860107422,
+        "S": -100.0,
+        "LRA": 0.0,
+        "TP": -0.445974349975586,
+        "duration": 0.451296875,
+        "peakTime": 0.451296865940094
+      },
+      "ffmpeg": {
+        "I": -26.1,
+        "LRA": 0.0,
+        "TP": -0.4,
+        "M": -26.1,
+        "S": -120.7
+      },
+      "error": {
+        "I": 2e-06,
+        "M": 0.049787,
+        "LRA": 0.0,
+        "TP": -0.045974
+      },
+      "nominal": {},
+      "randomBufferMaxError": 0
+    },
+    {
+      "file": "near-nyquist-192000.wav",
+      "kind": "generated-boundary",
+      "sha256": "d7462971f045767e0896310f1ab9e45d523205101205f85f41c61f07605644fe",
+      "masterlens": {
+        "I": -1.102601289749146,
+        "M": -1.117859244346619,
+        "S": -1.117859244346619,
+        "LRA": 0.0,
+        "TP": -4.459889888763428,
+        "duration": 4.191,
+        "peakTime": 0.100000001490116
+      },
+      "ffmpeg": {
+        "I": -1.1,
+        "LRA": 0.0,
+        "TP": -4.45989,
+        "M": -1.1,
+        "S": -1.1
+      },
+      "error": {
+        "I": -0.002601,
+        "M": -0.017859,
+        "S": -0.017859,
+        "LRA": 0.0,
+        "TP": 0.0
+      },
+      "nominal": {},
+      "randomBufferMaxError": 0
+    },
+    {
+      "file": "silence-192000.wav",
+      "kind": "generated-boundary",
+      "sha256": "4ad3c0bffc3a8fbf452729b732d2d48d5b49e0dbbaf8e06075d05c5f155d6da8",
+      "masterlens": {
+        "I": -100.0,
+        "M": -100.0,
+        "S": -100.0,
+        "LRA": 0.0,
+        "TP": -100.0,
+        "duration": 3.315,
+        "peakTime": 0.0
+      },
+      "ffmpeg": {
+        "I": -70.0,
+        "LRA": 0.0,
+        "TP": -100.0,
+        "M": -120.7,
+        "S": -120.7
+      },
+      "error": {
+        "LRA": 0.0
+      },
+      "nominal": {},
+      "randomBufferMaxError": 0
+    },
+    {
+      "file": "seq-3341-1-16bit.wav",
+      "kind": "EBU-standard-material",
+      "sha256": "50dff94bf941756cae2b3e1a67931a28e1605a876be1b7f3707f2ffcf485955c",
+      "masterlens": {
+        "I": -23.0,
+        "M": -22.953514099121094,
+        "S": -22.95353889465332,
+        "LRA": 0.0,
+        "TP": -22.93582534790039,
+        "duration": 20.0,
+        "peakTime": 12.5
+      },
+      "ffmpeg": {
+        "I": -23.0,
+        "LRA": 0.0,
+        "TP": -22.9,
+        "M": -23.0,
+        "S": -23.0
+      },
+      "error": {
+        "I": 0.0,
+        "M": 0.046486,
+        "S": 0.046461,
+        "LRA": 0.0,
+        "TP": -0.035825
+      },
+      "nominal": {
+        "I": {
+          "expected": -23.0,
+          "error": 0.0,
+          "toleranceBelow": 0.1,
+          "toleranceAbove": 0.1
+        }
+      },
+      "randomBufferMaxError": 0
+    },
+    {
+      "file": "seq-3341-10-1-24bit.wav",
+      "kind": "EBU-standard-material",
+      "sha256": "d8c3596d1351450229e00afc81299bc128fcb7ccd4eb6e6cc4b7963af0644103",
+      "masterlens": {
+        "I": -23.221094131469727,
+        "M": -22.993289947509766,
+        "S": -22.99333953857422,
+        "LRA": 1.5,
+        "TP": -23.0,
+        "duration": 4.0,
+        "peakTime": 0.100000001490116
+      },
+      "ffmpeg": {
+        "I": -23.2,
+        "LRA": 1.6,
+        "TP": -23.0,
+        "M": -23.0,
+        "S": -23.0
+      },
+      "error": {
+        "I": -0.021094,
+        "M": 0.00671,
+        "S": 0.00666,
+        "LRA": -0.1,
+        "TP": 0.0
+      },
+      "nominal": {
+        "S": {
+          "expected": -23.0,
+          "error": 0.00666,
+          "toleranceBelow": 0.1,
+          "toleranceAbove": 0.1
+        }
+      },
+      "randomBufferMaxError": 0
+    },
+    {
+      "file": "seq-3341-10-10-24bit.wav",
+      "kind": "EBU-standard-material",
+      "sha256": "0f39a821b9d0275b799154b7466810861065084274f3344b79f8c873c0281fb6",
+      "masterlens": {
+        "I": -23.543764114379883,
+        "M": -22.993289947509766,
+        "S": -23.066259384155273,
+        "LRA": 2.0,
+        "TP": -23.0,
+        "duration": 5.35,
+        "peakTime": 1.399999976158142
+      },
+      "ffmpeg": {
+        "I": -23.5,
+        "LRA": 2.3,
+        "TP": -23.0,
+        "M": -23.0,
+        "S": -23.1
+      },
+      "error": {
+        "I": -0.043764,
+        "M": 0.00671,
+        "S": 0.033741,
+        "LRA": -0.3,
+        "TP": 0.0
+      },
+      "nominal": {
+        "S": {
+          "expected": -23.0,
+          "error": -0.066259,
+          "toleranceBelow": 0.1,
+          "toleranceAbove": 0.1
+        }
+      },
+      "randomBufferMaxError": 0
+    },
+    {
+      "file": "seq-3341-10-11-24bit.wav",
+      "kind": "EBU-standard-material",
+      "sha256": "7c15c7d6e40ccb57de573aaabcf168761eebf24b7f246cbd4fb7da64decc9776",
+      "masterlens": {
+        "I": -23.410755157470703,
+        "M": -22.993289947509766,
+        "S": -22.99333953857422,
+        "LRA": 2.400001525878906,
+        "TP": -23.0,
+        "duration": 5.5,
+        "peakTime": 1.600000023841858
+      },
+      "ffmpeg": {
+        "I": -23.4,
+        "LRA": 2.3,
+        "TP": -23.0,
+        "M": -23.0,
+        "S": -23.0
+      },
+      "error": {
+        "I": -0.010755,
+        "M": 0.00671,
+        "S": 0.00666,
+        "LRA": 0.100002,
+        "TP": 0.0
+      },
+      "nominal": {
+        "S": {
+          "expected": -23.0,
+          "error": 0.00666,
+          "toleranceBelow": 0.1,
+          "toleranceAbove": 0.1
+        }
+      },
+      "randomBufferMaxError": 0
+    },
+    {
+      "file": "seq-3341-10-12-24bit.wav",
+      "kind": "EBU-standard-material",
+      "sha256": "7911ad106257ddb428fe5eb4e98270fd64a82e574540bad70049b2cc24b0faeb",
+      "masterlens": {
+        "I": -23.543764114379883,
+        "M": -22.993289947509766,
+        "S": -23.066259384155273,
+        "LRA": 2.80000114440918,
+        "TP": -23.0,
+        "duration": 5.65,
+        "peakTime": 1.700000047683716
+      },
+      "ffmpeg": {
+        "I": -23.5,
+        "LRA": 2.8,
+        "TP": -23.0,
+        "M": -23.0,
+        "S": -23.1
+      },
+      "error": {
+        "I": -0.043764,
+        "M": 0.00671,
+        "S": 0.033741,
+        "LRA": 1e-06,
+        "TP": 0.0
+      },
+      "nominal": {
+        "S": {
+          "expected": -23.0,
+          "error": -0.066259,
+          "toleranceBelow": 0.1,
+          "toleranceAbove": 0.1
+        }
+      },
+      "randomBufferMaxError": 0
+    },
+    {
+      "file": "seq-3341-10-13-24bit.wav",
+      "kind": "EBU-standard-material",
+      "sha256": "2526684a09326f51a2bc69a0391084d05e7c76535182d8216abee3f7acb01d7e",
+      "masterlens": {
+        "I": -23.410755157470703,
+        "M": -22.993289947509766,
+        "S": -22.99333953857422,
+        "LRA": 3.200000762939453,
+        "TP": -23.0,
+        "duration": 5.8,
+        "peakTime": 1.899999976158142
+      },
+      "ffmpeg": {
+        "I": -23.4,
+        "LRA": 3.2,
+        "TP": -23.0,
+        "M": -23.0,
+        "S": -23.0
+      },
+      "error": {
+        "I": -0.010755,
+        "M": 0.00671,
+        "S": 0.00666,
+        "LRA": 1e-06,
+        "TP": 0.0
+      },
+      "nominal": {
+        "S": {
+          "expected": -23.0,
+          "error": 0.00666,
+          "toleranceBelow": 0.1,
+          "toleranceAbove": 0.1
+        }
+      },
+      "randomBufferMaxError": 0
+    },
+    {
+      "file": "seq-3341-10-14-24bit.wav",
+      "kind": "EBU-standard-material",
+      "sha256": "6285779d85b9565dca377cc10843a73b522f497bd93b82b570249b806fc5158a",
+      "masterlens": {
+        "I": -23.543764114379883,
+        "M": -22.993289947509766,
+        "S": -23.066259384155273,
+        "LRA": 3.700000762939453,
+        "TP": -23.0,
+        "duration": 5.95,
+        "peakTime": 2.0
+      },
+      "ffmpeg": {
+        "I": -23.5,
+        "LRA": 3.7,
+        "TP": -23.0,
+        "M": -23.0,
+        "S": -23.1
+      },
+      "error": {
+        "I": -0.043764,
+        "M": 0.00671,
+        "S": 0.033741,
+        "LRA": 1e-06,
+        "TP": 0.0
+      },
+      "nominal": {
+        "S": {
+          "expected": -23.0,
+          "error": -0.066259,
+          "toleranceBelow": 0.1,
+          "toleranceAbove": 0.1
+        }
+      },
+      "randomBufferMaxError": 0
+    },
+    {
+      "file": "seq-3341-10-15-24bit.wav",
+      "kind": "EBU-standard-material",
+      "sha256": "621d223f90471edf9487ad4fc3fb7906b2921203db1c6947c676d65d12fcef34",
+      "masterlens": {
+        "I": -23.410755157470703,
+        "M": -22.993289947509766,
+        "S": -22.99333953857422,
+        "LRA": 3.900001525878906,
+        "TP": -23.0,
+        "duration": 6.1,
+        "peakTime": 2.200000047683716
+      },
+      "ffmpeg": {
+        "I": -23.4,
+        "LRA": 4.2,
+        "TP": -23.0,
+        "M": -23.0,
+        "S": -23.0
+      },
+      "error": {
+        "I": -0.010755,
+        "M": 0.00671,
+        "S": 0.00666,
+        "LRA": -0.299998,
+        "TP": 0.0
+      },
+      "nominal": {
+        "S": {
+          "expected": -23.0,
+          "error": 0.00666,
+          "toleranceBelow": 0.1,
+          "toleranceAbove": 0.1
+        }
+      },
+      "randomBufferMaxError": 0
+    },
+    {
+      "file": "seq-3341-10-16-24bit.wav",
+      "kind": "EBU-standard-material",
+      "sha256": "7968f978f3de277c5c70c07fe50b7db87278ef6181c70ccda21928560c66e130",
+      "masterlens": {
+        "I": -23.543764114379883,
+        "M": -22.993289947509766,
+        "S": -23.066259384155273,
+        "LRA": 4.5,
+        "TP": -23.0,
+        "duration": 6.25,
+        "peakTime": 2.299999952316284
+      },
+      "ffmpeg": {
+        "I": -23.5,
+        "LRA": 4.8,
+        "TP": -23.0,
+        "M": -23.0,
+        "S": -23.1
+      },
+      "error": {
+        "I": -0.043764,
+        "M": 0.00671,
+        "S": 0.033741,
+        "LRA": -0.3,
+        "TP": 0.0
+      },
+      "nominal": {
+        "S": {
+          "expected": -23.0,
+          "error": -0.066259,
+          "toleranceBelow": 0.1,
+          "toleranceAbove": 0.1
+        }
+      },
+      "randomBufferMaxError": 0
+    },
+    {
+      "file": "seq-3341-10-17-24bit.wav",
+      "kind": "EBU-standard-material",
+      "sha256": "ee47b73e0a1ec9c6b5ebad0d6eb897f83e3b6e908e1e19b0220ef55c78895e18",
+      "masterlens": {
+        "I": -23.410755157470703,
+        "M": -22.993289947509766,
+        "S": -22.99333953857422,
+        "LRA": 5.100000381469727,
+        "TP": -23.0,
+        "duration": 6.4,
+        "peakTime": 2.5
+      },
+      "ffmpeg": {
+        "I": -23.4,
+        "LRA": 5.1,
+        "TP": -23.0,
+        "M": -23.0,
+        "S": -23.0
+      },
+      "error": {
+        "I": -0.010755,
+        "M": 0.00671,
+        "S": 0.00666,
+        "LRA": 0.0,
+        "TP": 0.0
+      },
+      "nominal": {
+        "S": {
+          "expected": -23.0,
+          "error": 0.00666,
+          "toleranceBelow": 0.1,
+          "toleranceAbove": 0.1
+        }
+      },
+      "randomBufferMaxError": 0
+    },
+    {
+      "file": "seq-3341-10-18-24bit.wav",
+      "kind": "EBU-standard-material",
+      "sha256": "36e7922bfe93e95973325d6da638bf79b25f82bd17bddc2edc6771e096751d5a",
+      "masterlens": {
+        "I": -23.543764114379883,
+        "M": -22.993289947509766,
+        "S": -23.066259384155273,
+        "LRA": 5.900001525878906,
+        "TP": -23.0,
+        "duration": 6.55,
+        "peakTime": 2.599999904632568
+      },
+      "ffmpeg": {
+        "I": -23.5,
+        "LRA": 5.8,
+        "TP": -23.0,
+        "M": -23.0,
+        "S": -23.1
+      },
+      "error": {
+        "I": -0.043764,
+        "M": 0.00671,
+        "S": 0.033741,
+        "LRA": 0.100002,
+        "TP": 0.0
+      },
+      "nominal": {
+        "S": {
+          "expected": -23.0,
+          "error": -0.066259,
+          "toleranceBelow": 0.1,
+          "toleranceAbove": 0.1
+        }
+      },
+      "randomBufferMaxError": 0
+    },
+    {
+      "file": "seq-3341-10-19-24bit.wav",
+      "kind": "EBU-standard-material",
+      "sha256": "0d9645639c17d6102e10bcb45b7b71e6cae9bfe58216cc4dfeda6462163ce524",
+      "masterlens": {
+        "I": -23.410755157470703,
+        "M": -22.993289947509766,
+        "S": -22.99333953857422,
+        "LRA": 6.900001525878906,
+        "TP": -23.0,
+        "duration": 6.7,
+        "peakTime": 2.799999952316284
+      },
+      "ffmpeg": {
+        "I": -23.4,
+        "LRA": 6.8,
+        "TP": -23.0,
+        "M": -23.0,
+        "S": -23.0
+      },
+      "error": {
+        "I": -0.010755,
+        "M": 0.00671,
+        "S": 0.00666,
+        "LRA": 0.100002,
+        "TP": 0.0
+      },
+      "nominal": {
+        "S": {
+          "expected": -23.0,
+          "error": 0.00666,
+          "toleranceBelow": 0.1,
+          "toleranceAbove": 0.1
+        }
+      },
+      "randomBufferMaxError": 0
+    },
+    {
+      "file": "seq-3341-10-2-24bit.wav",
+      "kind": "EBU-standard-material",
+      "sha256": "4e6a057ee75c1cd6ed4ed5d5b84b9e3d2c709c71eeef818ba6ccd76bafd4f959",
+      "masterlens": {
+        "I": -23.353092193603516,
+        "M": -22.993289947509766,
+        "S": -23.066259384155273,
+        "LRA": 1.30000114440918,
+        "TP": -23.0,
+        "duration": 4.15,
+        "peakTime": 0.200000002980232
+      },
+      "ffmpeg": {
+        "I": -23.4,
+        "LRA": 1.6,
+        "TP": -23.0,
+        "M": -23.0,
+        "S": -23.1
+      },
+      "error": {
+        "I": 0.046908,
+        "M": 0.00671,
+        "S": 0.033741,
+        "LRA": -0.299999,
+        "TP": 0.0
+      },
+      "nominal": {
+        "S": {
+          "expected": -23.0,
+          "error": -0.066259,
+          "toleranceBelow": 0.1,
+          "toleranceAbove": 0.1
+        }
+      },
+      "randomBufferMaxError": 0
+    },
+    {
+      "file": "seq-3341-10-20-24bit.wav",
+      "kind": "EBU-standard-material",
+      "sha256": "86b78fad8cfbf22a0b0ba9e69d9c8e24160395b89f5abc7ab6f26176afcbada7",
+      "masterlens": {
+        "I": -23.543764114379883,
+        "M": -22.993289947509766,
+        "S": -23.066259384155273,
+        "LRA": 8.100000381469727,
+        "TP": -23.0,
+        "duration": 6.85,
+        "peakTime": 2.900000095367432
+      },
+      "ffmpeg": {
+        "I": -23.5,
+        "LRA": 8.0,
+        "TP": -23.0,
+        "M": -23.0,
+        "S": -23.1
+      },
+      "error": {
+        "I": -0.043764,
+        "M": 0.00671,
+        "S": 0.033741,
+        "LRA": 0.1,
+        "TP": 0.0
+      },
+      "nominal": {
+        "S": {
+          "expected": -23.0,
+          "error": -0.066259,
+          "toleranceBelow": 0.1,
+          "toleranceAbove": 0.1
+        }
+      },
+      "randomBufferMaxError": 0
+    },
+    {
+      "file": "seq-3341-10-3-24bit.wav",
+      "kind": "EBU-standard-material",
+      "sha256": "64005281bb93a6dc25f52441a9bfad52cad9929d7db44dd5f0902a177acd4f06",
+      "masterlens": {
+        "I": -23.410755157470703,
+        "M": -22.993289947509766,
+        "S": -22.99333953857422,
+        "LRA": 1.5,
+        "TP": -23.0,
+        "duration": 4.3,
+        "peakTime": 0.400000005960464
+      },
+      "ffmpeg": {
+        "I": -23.4,
+        "LRA": 1.6,
+        "TP": -23.0,
+        "M": -23.0,
+        "S": -23.0
+      },
+      "error": {
+        "I": -0.010755,
+        "M": 0.00671,
+        "S": 0.00666,
+        "LRA": -0.1,
+        "TP": 0.0
+      },
+      "nominal": {
+        "S": {
+          "expected": -23.0,
+          "error": 0.00666,
+          "toleranceBelow": 0.1,
+          "toleranceAbove": 0.1
+        }
+      },
+      "randomBufferMaxError": 0
+    },
+    {
+      "file": "seq-3341-10-4-24bit.wav",
+      "kind": "EBU-standard-material",
+      "sha256": "1ddd72e2559dc5fd18b143cdb9037cb0c408af49ef1bff71cce2547356f9c426",
+      "masterlens": {
+        "I": -23.543764114379883,
+        "M": -22.993289947509766,
+        "S": -23.066259384155273,
+        "LRA": 1.30000114440918,
+        "TP": -23.0,
+        "duration": 4.45,
+        "peakTime": 0.5
+      },
+      "ffmpeg": {
+        "I": -23.5,
+        "LRA": 1.4,
+        "TP": -23.0,
+        "M": -23.0,
+        "S": -23.1
+      },
+      "error": {
+        "I": -0.043764,
+        "M": 0.00671,
+        "S": 0.033741,
+        "LRA": -0.099999,
+        "TP": 0.0
+      },
+      "nominal": {
+        "S": {
+          "expected": -23.0,
+          "error": -0.066259,
+          "toleranceBelow": 0.1,
+          "toleranceAbove": 0.1
+        }
+      },
+      "randomBufferMaxError": 0
+    },
+    {
+      "file": "seq-3341-10-5-24bit.wav",
+      "kind": "EBU-standard-material",
+      "sha256": "8fb38288204e70b75c01f3f79d12f636f8291cd96d8edc4b0f4d795b28aecce9",
+      "masterlens": {
+        "I": -23.410755157470703,
+        "M": -22.993289947509766,
+        "S": -22.99333953857422,
+        "LRA": 1.5,
+        "TP": -23.0,
+        "duration": 4.6,
+        "peakTime": 0.699999988079071
+      },
+      "ffmpeg": {
+        "I": -23.4,
+        "LRA": 1.4,
+        "TP": -23.0,
+        "M": -23.0,
+        "S": -23.0
+      },
+      "error": {
+        "I": -0.010755,
+        "M": 0.00671,
+        "S": 0.00666,
+        "LRA": 0.1,
+        "TP": 0.0
+      },
+      "nominal": {
+        "S": {
+          "expected": -23.0,
+          "error": 0.00666,
+          "toleranceBelow": 0.1,
+          "toleranceAbove": 0.1
+        }
+      },
+      "randomBufferMaxError": 0
+    },
+    {
+      "file": "seq-3341-10-6-24bit.wav",
+      "kind": "EBU-standard-material",
+      "sha256": "64bc54354117d947e09ca6aaa92e4eaa1978786dd14bcd41f300e4d875d13af5",
+      "masterlens": {
+        "I": -23.543764114379883,
+        "M": -22.993289947509766,
+        "S": -23.066259384155273,
+        "LRA": 1.30000114440918,
+        "TP": -23.0,
+        "duration": 4.75,
+        "peakTime": 0.800000011920929
+      },
+      "ffmpeg": {
+        "I": -23.5,
+        "LRA": 1.4,
+        "TP": -23.0,
+        "M": -23.0,
+        "S": -23.1
+      },
+      "error": {
+        "I": -0.043764,
+        "M": 0.00671,
+        "S": 0.033741,
+        "LRA": -0.099999,
+        "TP": 0.0
+      },
+      "nominal": {
+        "S": {
+          "expected": -23.0,
+          "error": -0.066259,
+          "toleranceBelow": 0.1,
+          "toleranceAbove": 0.1
+        }
+      },
+      "randomBufferMaxError": 0
+    },
+    {
+      "file": "seq-3341-10-7-24bit.wav",
+      "kind": "EBU-standard-material",
+      "sha256": "66db47cf0f6f94f98e0da60529a55ce3644a7932bde2cd19558ea02db1a6047b",
+      "masterlens": {
+        "I": -23.410755157470703,
+        "M": -22.993289947509766,
+        "S": -22.99333953857422,
+        "LRA": 1.400001525878906,
+        "TP": -23.0,
+        "duration": 4.9,
+        "peakTime": 1.0
+      },
+      "ffmpeg": {
+        "I": -23.4,
+        "LRA": 1.4,
+        "TP": -23.0,
+        "M": -23.0,
+        "S": -23.0
+      },
+      "error": {
+        "I": -0.010755,
+        "M": 0.00671,
+        "S": 0.00666,
+        "LRA": 2e-06,
+        "TP": 0.0
+      },
+      "nominal": {
+        "S": {
+          "expected": -23.0,
+          "error": 0.00666,
+          "toleranceBelow": 0.1,
+          "toleranceAbove": 0.1
+        }
+      },
+      "randomBufferMaxError": 0
+    },
+    {
+      "file": "seq-3341-10-8-24bit.wav",
+      "kind": "EBU-standard-material",
+      "sha256": "e40b68f80fbd312fdd81810dc7a73d642b7830307b5f97e3e0f0ba06b9ed3f5a",
+      "masterlens": {
+        "I": -23.543764114379883,
+        "M": -22.993289947509766,
+        "S": -23.066259384155273,
+        "LRA": 1.5,
+        "TP": -23.0,
+        "duration": 5.05,
+        "peakTime": 1.100000023841858
+      },
+      "ffmpeg": {
+        "I": -23.5,
+        "LRA": 1.6,
+        "TP": -23.0,
+        "M": -23.0,
+        "S": -23.1
+      },
+      "error": {
+        "I": -0.043764,
+        "M": 0.00671,
+        "S": 0.033741,
+        "LRA": -0.1,
+        "TP": 0.0
+      },
+      "nominal": {
+        "S": {
+          "expected": -23.0,
+          "error": -0.066259,
+          "toleranceBelow": 0.1,
+          "toleranceAbove": 0.1
+        }
+      },
+      "randomBufferMaxError": 0
+    },
+    {
+      "file": "seq-3341-10-9-24bit.wav",
+      "kind": "EBU-standard-material",
+      "sha256": "26aa8668443b8b5176b50ee2bff7ae830747053788da9a1d414956a2d8f7b763",
+      "masterlens": {
+        "I": -23.410755157470703,
+        "M": -22.993289947509766,
+        "S": -22.99333953857422,
+        "LRA": 1.700000762939453,
+        "TP": -23.0,
+        "duration": 5.2,
+        "peakTime": 1.299999952316284
+      },
+      "ffmpeg": {
+        "I": -23.4,
+        "LRA": 1.8,
+        "TP": -23.0,
+        "M": -23.0,
+        "S": -23.0
+      },
+      "error": {
+        "I": -0.010755,
+        "M": 0.00671,
+        "S": 0.00666,
+        "LRA": -0.099999,
+        "TP": 0.0
+      },
+      "nominal": {
+        "S": {
+          "expected": -23.0,
+          "error": 0.00666,
+          "toleranceBelow": 0.1,
+          "toleranceAbove": 0.1
+        }
+      },
+      "randomBufferMaxError": 0
+    },
+    {
+      "file": "seq-3341-11-24bit.wav",
+      "kind": "EBU-standard-material",
+      "sha256": "a3dedc4a23fd85111f234afc35ca73a9e94b440d0eafa6a78b66b5992b405a99",
+      "masterlens": {
+        "I": -24.826740264892578,
+        "M": -18.993288040161133,
+        "S": -19.06625747680664,
+        "LRA": 18.700000762939453,
+        "TP": -19.000003814697266,
+        "duration": 120.0,
+        "peakTime": 116.9000015258789
+      },
+      "ffmpeg": {
+        "I": -24.8,
+        "LRA": 18.6,
+        "TP": -19.0,
+        "M": -19.0,
+        "S": -19.1
+      },
+      "error": {
+        "I": -0.02674,
+        "M": 0.006712,
+        "S": 0.033743,
+        "LRA": 0.100001,
+        "TP": -4e-06
+      },
+      "nominal": {},
+      "randomBufferMaxError": 0
+    },
+    {
+      "file": "seq-3341-12-24bit.wav",
+      "kind": "EBU-standard-material",
+      "sha256": "d7fc88e31003553bb1329e84a8921217ae7c58045dfd620bc6b530d399a6933b",
+      "masterlens": {
+        "I": -23.0,
+        "M": -22.960437774658203,
+        "S": -22.734241485595703,
+        "LRA": 0.5,
+        "TP": -19.999998092651367,
+        "duration": 10.0,
+        "peakTime": 0.100000001490116
+      },
+      "ffmpeg": {
+        "I": -23.0,
+        "LRA": 0.5,
+        "TP": -19.999998,
+        "M": -23.0,
+        "S": -22.7
+      },
+      "error": {
+        "I": 0.0,
+        "M": 0.039562,
+        "S": -0.034241,
+        "LRA": 0.0,
+        "TP": -0.0
+      },
+      "nominal": {},
+      "randomBufferMaxError": 0
+    },
+    {
+      "file": "seq-3341-13-1-24bit.wav",
+      "kind": "EBU-standard-material",
+      "sha256": "45cf95c6cd973dab326fae608d98a3ebe2dc702ac80d281ee07e9da47c7d16e0",
+      "masterlens": {
+        "I": -25.022212982177734,
+        "M": -22.99359893798828,
+        "S": -100.0,
+        "LRA": 0.0,
+        "TP": -23.0,
+        "duration": 1.4,
+        "peakTime": 0.100000001490116
+      },
+      "ffmpeg": {
+        "I": -25.0,
+        "LRA": 0.0,
+        "TP": -23.0,
+        "M": -23.0,
+        "S": -120.7
+      },
+      "error": {
+        "I": -0.022213,
+        "M": 0.006401,
+        "LRA": 0.0,
+        "TP": 0.0
+      },
+      "nominal": {
+        "M": {
+          "expected": -23.0,
+          "error": 0.006401,
+          "toleranceBelow": 0.1,
+          "toleranceAbove": 0.1
+        }
+      },
+      "randomBufferMaxError": 0
+    },
+    {
+      "file": "seq-3341-13-10-24bit.wav.wav",
+      "kind": "EBU-standard-material",
+      "sha256": "1e12c05373595fb6b9674940b8d414a1106d09aa563ee27280b5c44156c6fd4c",
+      "masterlens": {
+        "I": -25.15499496459961,
+        "M": -22.99359893798828,
+        "S": -100.0,
+        "LRA": 0.0,
+        "TP": -23.0,
+        "duration": 1.58,
+        "peakTime": 0.200000002980232
+      },
+      "ffmpeg": {
+        "I": -25.2,
+        "LRA": 0.0,
+        "TP": -23.0,
+        "M": -23.2,
+        "S": -120.7
+      },
+      "error": {
+        "I": 0.045005,
+        "M": 0.206401,
+        "LRA": 0.0,
+        "TP": 0.0
+      },
+      "nominal": {
+        "M": {
+          "expected": -23.0,
+          "error": 0.006401,
+          "toleranceBelow": 0.1,
+          "toleranceAbove": 0.1
+        }
+      },
+      "randomBufferMaxError": 0
+    },
+    {
+      "file": "seq-3341-13-11-24bit.wav.wav",
+      "kind": "EBU-standard-material",
+      "sha256": "b242927ac1a7e03ea2ba91a1308f86e3a5e2a348097e9e99a19f90a56d8f036f",
+      "masterlens": {
+        "I": -25.017271041870117,
+        "M": -22.99359893798828,
+        "S": -100.0,
+        "LRA": 0.0,
+        "TP": -23.0,
+        "duration": 1.6,
+        "peakTime": 0.300000011920929
+      },
+      "ffmpeg": {
+        "I": -25.0,
+        "LRA": 0.0,
+        "TP": -23.0,
+        "M": -23.0,
+        "S": -120.7
+      },
+      "error": {
+        "I": -0.017271,
+        "M": 0.006401,
+        "LRA": 0.0,
+        "TP": 0.0
+      },
+      "nominal": {
+        "M": {
+          "expected": -23.0,
+          "error": 0.006401,
+          "toleranceBelow": 0.1,
+          "toleranceAbove": 0.1
+        }
+      },
+      "randomBufferMaxError": 0
+    },
+    {
+      "file": "seq-3341-13-12-24bit.wav.wav",
+      "kind": "EBU-standard-material",
+      "sha256": "2c1d07376e2bcb76ec526ee4f86e06ecfdfbe774d2e0ffee0cc40293a0d722e3",
+      "masterlens": {
+        "I": -25.034849166870117,
+        "M": -22.99359893798828,
+        "S": -100.0,
+        "LRA": 0.0,
+        "TP": -23.0,
+        "duration": 1.62,
+        "peakTime": 0.300000011920929
+      },
+      "ffmpeg": {
+        "I": -25.0,
+        "LRA": 0.0,
+        "TP": -23.0,
+        "M": -23.2,
+        "S": -120.7
+      },
+      "error": {
+        "I": -0.034849,
+        "M": 0.206401,
+        "LRA": 0.0,
+        "TP": 0.0
+      },
+      "nominal": {
+        "M": {
+          "expected": -23.0,
+          "error": 0.006401,
+          "toleranceBelow": 0.1,
+          "toleranceAbove": 0.1
+        }
+      },
+      "randomBufferMaxError": 0
+    },
+    {
+      "file": "seq-3341-13-13-24bit.wav.wav",
+      "kind": "EBU-standard-material",
+      "sha256": "4a843240403af6c13a234b060e44fa082802f23fe08c0ffd8d57459e64c3f501",
+      "masterlens": {
+        "I": -25.61281967163086,
+        "M": -22.99359893798828,
+        "S": -100.0,
+        "LRA": 0.0,
+        "TP": -23.0,
+        "duration": 1.64,
+        "peakTime": 0.300000011920929
+      },
+      "ffmpeg": {
+        "I": -25.6,
+        "LRA": 0.0,
+        "TP": -23.0,
+        "M": -23.5,
+        "S": -120.7
+      },
+      "error": {
+        "I": -0.01282,
+        "M": 0.506401,
+        "LRA": 0.0,
+        "TP": 0.0
+      },
+      "nominal": {
+        "M": {
+          "expected": -23.0,
+          "error": 0.006401,
+          "toleranceBelow": 0.1,
+          "toleranceAbove": 0.1
+        }
+      },
+      "randomBufferMaxError": 0
+    },
+    {
+      "file": "seq-3341-13-14-24bit.wav.wav",
+      "kind": "EBU-standard-material",
+      "sha256": "0c3fb63d647192a148572e09fe7bda321c4e6785b993d5315893061d67460cc0",
+      "masterlens": {
+        "I": -25.5550537109375,
+        "M": -22.99359893798828,
+        "S": -100.0,
+        "LRA": 0.0,
+        "TP": -23.0,
+        "duration": 1.66,
+        "peakTime": 0.300000011920929
+      },
+      "ffmpeg": {
+        "I": -25.5,
+        "LRA": 0.0,
+        "TP": -23.0,
+        "M": -23.5,
+        "S": -120.7
+      },
+      "error": {
+        "I": -0.055054,
+        "M": 0.506401,
+        "LRA": 0.0,
+        "TP": 0.0
+      },
+      "nominal": {
+        "M": {
+          "expected": -23.0,
+          "error": 0.006401,
+          "toleranceBelow": 0.1,
+          "toleranceAbove": 0.1
+        }
+      },
+      "randomBufferMaxError": 0
+    },
+    {
+      "file": "seq-3341-13-15-24bit.wav.wav",
+      "kind": "EBU-standard-material",
+      "sha256": "8bd777888183226957e367fc9fe2476f2d46fe5c58c43e9f938e90854dc779d4",
+      "masterlens": {
+        "I": -25.479501724243164,
+        "M": -22.99359893798828,
+        "S": -100.0,
+        "LRA": 0.0,
+        "TP": -23.0,
+        "duration": 1.68,
+        "peakTime": 0.300000011920929
+      },
+      "ffmpeg": {
+        "I": -25.5,
+        "LRA": 0.0,
+        "TP": -23.0,
+        "M": -23.2,
+        "S": -120.7
+      },
+      "error": {
+        "I": 0.020498,
+        "M": 0.206401,
+        "LRA": 0.0,
+        "TP": 0.0
+      },
+      "nominal": {
+        "M": {
+          "expected": -23.0,
+          "error": 0.006401,
+          "toleranceBelow": 0.1,
+          "toleranceAbove": 0.1
+        }
+      },
+      "randomBufferMaxError": 0
+    },
+    {
+      "file": "seq-3341-13-16-24bit.wav.wav",
+      "kind": "EBU-standard-material",
+      "sha256": "585ddee873c3b402b18b3750fb7418e9d855071c75c20e8d884ad4b55defd139",
+      "masterlens": {
+        "I": -25.406660079956055,
+        "M": -22.99359893798828,
+        "S": -100.0,
+        "LRA": 0.0,
+        "TP": -23.0,
+        "duration": 1.7,
+        "peakTime": 0.400000005960464
+      },
+      "ffmpeg": {
+        "I": -25.4,
+        "LRA": 0.0,
+        "TP": -23.0,
+        "M": -23.0,
+        "S": -120.7
+      },
+      "error": {
+        "I": -0.00666,
+        "M": 0.006401,
+        "LRA": 0.0,
+        "TP": 0.0
+      },
+      "nominal": {
+        "M": {
+          "expected": -23.0,
+          "error": 0.006401,
+          "toleranceBelow": 0.1,
+          "toleranceAbove": 0.1
+        }
+      },
+      "randomBufferMaxError": 0
+    },
+    {
+      "file": "seq-3341-13-17-24bit.wav.wav",
+      "kind": "EBU-standard-material",
+      "sha256": "23ad69f204fa8238a18e2daa5a0cc4710f9002ae3a89ede8a151d7813d7a7d8a",
+      "masterlens": {
+        "I": -26.004732131958008,
+        "M": -22.99359893798828,
+        "S": -100.0,
+        "LRA": 0.0,
+        "TP": -23.0,
+        "duration": 1.72,
+        "peakTime": 0.400000005960464
+      },
+      "ffmpeg": {
+        "I": -26.0,
+        "LRA": 0.0,
+        "TP": -23.0,
+        "M": -23.2,
+        "S": -120.7
+      },
+      "error": {
+        "I": -0.004732,
+        "M": 0.206401,
+        "LRA": 0.0,
+        "TP": 0.0
+      },
+      "nominal": {
+        "M": {
+          "expected": -23.0,
+          "error": 0.006401,
+          "toleranceBelow": 0.1,
+          "toleranceAbove": 0.1
+        }
+      },
+      "randomBufferMaxError": 0
+    },
+    {
+      "file": "seq-3341-13-18-24bit.wav.wav",
+      "kind": "EBU-standard-material",
+      "sha256": "1a19299a88d1a0e77dbdb8f8c1f5b02b3682ac85fc35b686d6743654eeed14a8",
+      "masterlens": {
+        "I": -26.02465057373047,
+        "M": -22.99359893798828,
+        "S": -100.0,
+        "LRA": 0.0,
+        "TP": -23.0,
+        "duration": 1.74,
+        "peakTime": 0.400000005960464
+      },
+      "ffmpeg": {
+        "I": -26.0,
+        "LRA": 0.0,
+        "TP": -23.0,
+        "M": -23.5,
+        "S": -120.7
+      },
+      "error": {
+        "I": -0.024651,
+        "M": 0.506401,
+        "LRA": 0.0,
+        "TP": 0.0
+      },
+      "nominal": {
+        "M": {
+          "expected": -23.0,
+          "error": 0.006401,
+          "toleranceBelow": 0.1,
+          "toleranceAbove": 0.1
+        }
+      },
+      "randomBufferMaxError": 0
+    },
+    {
+      "file": "seq-3341-13-19-24bit.wav.wav",
+      "kind": "EBU-standard-material",
+      "sha256": "7b9a57cce01dcc35b89de4091db4e35ac9cf8bceb35897c29961f0cc22ec803c",
+      "masterlens": {
+        "I": -26.02465057373047,
+        "M": -22.99359893798828,
+        "S": -100.0,
+        "LRA": 0.0,
+        "TP": -23.0,
+        "duration": 1.76,
+        "peakTime": 0.400000005960464
+      },
+      "ffmpeg": {
+        "I": -26.0,
+        "LRA": 0.0,
+        "TP": -23.0,
+        "M": -23.5,
+        "S": -120.7
+      },
+      "error": {
+        "I": -0.024651,
+        "M": 0.506401,
+        "LRA": 0.0,
+        "TP": 0.0
+      },
+      "nominal": {
+        "M": {
+          "expected": -23.0,
+          "error": 0.006401,
+          "toleranceBelow": 0.1,
+          "toleranceAbove": 0.1
+        }
+      },
+      "randomBufferMaxError": 0
+    },
+    {
+      "file": "seq-3341-13-2-24bit.wav",
+      "kind": "EBU-standard-material",
+      "sha256": "f29ee316201ba8c514fe57be5f4ca3440353a81d1974881836d72631470411a1",
+      "masterlens": {
+        "I": -24.869434356689453,
+        "M": -22.99359893798828,
+        "S": -100.0,
+        "LRA": 0.0,
+        "TP": -23.0,
+        "duration": 1.42,
+        "peakTime": 0.100000001490116
+      },
+      "ffmpeg": {
+        "I": -24.9,
+        "LRA": 0.0,
+        "TP": -23.0,
+        "M": -23.2,
+        "S": -120.7
+      },
+      "error": {
+        "I": 0.030566,
+        "M": 0.206401,
+        "LRA": 0.0,
+        "TP": 0.0
+      },
+      "nominal": {
+        "M": {
+          "expected": -23.0,
+          "error": 0.006401,
+          "toleranceBelow": 0.1,
+          "toleranceAbove": 0.1
+        }
+      },
+      "randomBufferMaxError": 0
+    },
+    {
+      "file": "seq-3341-13-20-24bit.wav.wav",
+      "kind": "EBU-standard-material",
+      "sha256": "c8b7f0dbe9e30a2fddb89a036b6fee88e94e7db73747da70193038576cbec577",
+      "masterlens": {
+        "I": -26.004732131958008,
+        "M": -22.99359893798828,
+        "S": -100.0,
+        "LRA": 0.0,
+        "TP": -23.0,
+        "duration": 1.78,
+        "peakTime": 0.400000005960464
+      },
+      "ffmpeg": {
+        "I": -26.0,
+        "LRA": 0.0,
+        "TP": -23.0,
+        "M": -23.2,
+        "S": -120.7
+      },
+      "error": {
+        "I": -0.004732,
+        "M": 0.206401,
+        "LRA": 0.0,
+        "TP": 0.0
+      },
+      "nominal": {
+        "M": {
+          "expected": -23.0,
+          "error": 0.006401,
+          "toleranceBelow": 0.1,
+          "toleranceAbove": 0.1
+        }
+      },
+      "randomBufferMaxError": 0
+    },
+    {
+      "file": "seq-3341-13-3-24bit.wav.wav",
+      "kind": "EBU-standard-material",
+      "sha256": "52e6688b361ae61ec2a2efa636884cbc592485fc539beacfad61e35794bbab64",
+      "masterlens": {
+        "I": -25.531034469604492,
+        "M": -22.99359893798828,
+        "S": -100.0,
+        "LRA": 0.0,
+        "TP": -23.0,
+        "duration": 1.44,
+        "peakTime": 0.100000001490116
+      },
+      "ffmpeg": {
+        "I": -25.5,
+        "LRA": 0.0,
+        "TP": -23.0,
+        "M": -23.5,
+        "S": -120.7
+      },
+      "error": {
+        "I": -0.031034,
+        "M": 0.506401,
+        "LRA": 0.0,
+        "TP": 0.0
+      },
+      "nominal": {
+        "M": {
+          "expected": -23.0,
+          "error": 0.006401,
+          "toleranceBelow": 0.1,
+          "toleranceAbove": 0.1
+        }
+      },
+      "randomBufferMaxError": 0
+    },
+    {
+      "file": "seq-3341-13-4-24bit.wav.wav",
+      "kind": "EBU-standard-material",
+      "sha256": "3e1d053545e49119752e013bfdfbf1f0ec22029db040ddd0bba688395788c55a",
+      "masterlens": {
+        "I": -25.309911727905273,
+        "M": -22.99359893798828,
+        "S": -100.0,
+        "LRA": 0.0,
+        "TP": -23.0,
+        "duration": 1.46,
+        "peakTime": 0.100000001490116
+      },
+      "ffmpeg": {
+        "I": -25.3,
+        "LRA": 0.0,
+        "TP": -23.0,
+        "M": -23.5,
+        "S": -120.7
+      },
+      "error": {
+        "I": -0.009912,
+        "M": 0.506401,
+        "LRA": 0.0,
+        "TP": 0.0
+      },
+      "nominal": {
+        "M": {
+          "expected": -23.0,
+          "error": 0.006401,
+          "toleranceBelow": 0.1,
+          "toleranceAbove": 0.1
+        }
+      },
+      "randomBufferMaxError": 0
+    },
+    {
+      "file": "seq-3341-13-5-24bit.wav.wav",
+      "kind": "EBU-standard-material",
+      "sha256": "fb5d316fd48510fab62bf395bbebd1874f52030ac00cb9639a9b93a3d18148e8",
+      "masterlens": {
+        "I": -25.07121467590332,
+        "M": -22.99359893798828,
+        "S": -100.0,
+        "LRA": 0.0,
+        "TP": -23.0,
+        "duration": 1.48,
+        "peakTime": 0.100000001490116
+      },
+      "ffmpeg": {
+        "I": -25.1,
+        "LRA": 0.0,
+        "TP": -23.0,
+        "M": -23.2,
+        "S": -120.7
+      },
+      "error": {
+        "I": 0.028785,
+        "M": 0.206401,
+        "LRA": 0.0,
+        "TP": 0.0
+      },
+      "nominal": {
+        "M": {
+          "expected": -23.0,
+          "error": 0.006401,
+          "toleranceBelow": 0.1,
+          "toleranceAbove": 0.1
+        }
+      },
+      "randomBufferMaxError": 0
+    },
+    {
+      "file": "seq-3341-13-6-24bit.wav.wav",
+      "kind": "EBU-standard-material",
+      "sha256": "820efc240c7a301e5f50c2a9a9f04003ecb5ec29ddda115192043835ac29f61e",
+      "masterlens": {
+        "I": -24.844844818115234,
+        "M": -22.99359893798828,
+        "S": -100.0,
+        "LRA": 0.0,
+        "TP": -23.0,
+        "duration": 1.5,
+        "peakTime": 0.200000002980232
+      },
+      "ffmpeg": {
+        "I": -24.9,
+        "LRA": 0.0,
+        "TP": -23.0,
+        "M": -23.0,
+        "S": -120.7
+      },
+      "error": {
+        "I": 0.055155,
+        "M": 0.006401,
+        "LRA": 0.0,
+        "TP": 0.0
+      },
+      "nominal": {
+        "M": {
+          "expected": -23.0,
+          "error": 0.006401,
+          "toleranceBelow": 0.1,
+          "toleranceAbove": 0.1
+        }
+      },
+      "randomBufferMaxError": 0
+    },
+    {
+      "file": "seq-3341-13-7-24bit.wav.wav",
+      "kind": "EBU-standard-material",
+      "sha256": "ddf6271cf0f73344a60f0a700bb438275b66193b497e6d0e7c83f4a72952dfa5",
+      "masterlens": {
+        "I": -24.792991638183594,
+        "M": -22.99359893798828,
+        "S": -100.0,
+        "LRA": 0.0,
+        "TP": -23.0,
+        "duration": 1.52,
+        "peakTime": 0.200000002980232
+      },
+      "ffmpeg": {
+        "I": -24.8,
+        "LRA": 0.0,
+        "TP": -23.0,
+        "M": -23.2,
+        "S": -120.7
+      },
+      "error": {
+        "I": 0.007008,
+        "M": 0.206401,
+        "LRA": 0.0,
+        "TP": 0.0
+      },
+      "nominal": {
+        "M": {
+          "expected": -23.0,
+          "error": 0.006401,
+          "toleranceBelow": 0.1,
+          "toleranceAbove": 0.1
+        }
+      },
+      "randomBufferMaxError": 0
+    },
+    {
+      "file": "seq-3341-13-8-24bit.wav.wav",
+      "kind": "EBU-standard-material",
+      "sha256": "faa7bcbbee1846341821cacc2a3b61348a4ebf759e448722a3f4228d97674df1",
+      "masterlens": {
+        "I": -25.419286727905273,
+        "M": -22.99359893798828,
+        "S": -100.0,
+        "LRA": 0.0,
+        "TP": -23.0,
+        "duration": 1.54,
+        "peakTime": 0.200000002980232
+      },
+      "ffmpeg": {
+        "I": -25.4,
+        "LRA": 0.0,
+        "TP": -23.0,
+        "M": -23.5,
+        "S": -120.7
+      },
+      "error": {
+        "I": -0.019287,
+        "M": 0.506401,
+        "LRA": 0.0,
+        "TP": 0.0
+      },
+      "nominal": {
+        "M": {
+          "expected": -23.0,
+          "error": 0.006401,
+          "toleranceBelow": 0.1,
+          "toleranceAbove": 0.1
+        }
+      },
+      "randomBufferMaxError": 0
+    },
+    {
+      "file": "seq-3341-13-9-24bit.wav.wav",
+      "kind": "EBU-standard-material",
+      "sha256": "a382f6884a0fae18ba39cb0774d6cd7774f62f193c75b47ecf4f009eafd2dede",
+      "masterlens": {
+        "I": -25.291399002075195,
+        "M": -22.99359893798828,
+        "S": -100.0,
+        "LRA": 0.0,
+        "TP": -23.0,
+        "duration": 1.56,
+        "peakTime": 0.200000002980232
+      },
+      "ffmpeg": {
+        "I": -25.3,
+        "LRA": 0.0,
+        "TP": -23.0,
+        "M": -23.5,
+        "S": -120.7
+      },
+      "error": {
+        "I": 0.008601,
+        "M": 0.506401,
+        "LRA": 0.0,
+        "TP": 0.0
+      },
+      "nominal": {
+        "M": {
+          "expected": -23.0,
+          "error": 0.006401,
+          "toleranceBelow": 0.1,
+          "toleranceAbove": 0.1
+        }
+      },
+      "randomBufferMaxError": 0
+    },
+    {
+      "file": "seq-3341-14-24bit.wav.wav",
+      "kind": "EBU-standard-material",
+      "sha256": "7d6a7c9c21590b3376d15f6f8f095083d8898af99daa10dcf520b4a4d56b0ac5",
+      "masterlens": {
+        "I": -27.350339889526367,
+        "M": -18.993595123291016,
+        "S": -23.080530166625977,
+        "LRA": 13.599998474121094,
+        "TP": -19.000003814697266,
+        "duration": 16.0,
+        "peakTime": 15.600000381469727
+      },
+      "ffmpeg": {
+        "I": -27.3,
+        "LRA": 13.8,
+        "TP": -19.0,
+        "M": -19.2,
+        "S": -23.1
+      },
+      "error": {
+        "I": -0.05034,
+        "M": 0.206405,
+        "S": 0.01947,
+        "LRA": -0.200002,
+        "TP": -4e-06
+      },
+      "nominal": {},
+      "randomBufferMaxError": 0
+    },
+    {
+      "file": "seq-3341-15-24bit.wav.wav",
+      "kind": "EBU-standard-material",
+      "sha256": "86f8a70eca1bc77623dd20a4acbadbc449711cd348615d852e3b0689827bea55",
+      "masterlens": {
+        "I": -2.650682687759399,
+        "M": -2.648600816726685,
+        "S": -2.648600816726685,
+        "LRA": 0.100000143051147,
+        "TP": -6.000265121459961,
+        "duration": 3.2,
+        "peakTime": 0.200000002980232
+      },
+      "ffmpeg": {
+        "I": -2.7,
+        "LRA": 20.1,
+        "TP": -6.0,
+        "M": -2.6,
+        "S": -2.6
+      },
+      "error": {
+        "I": 0.049317,
+        "M": -0.048601,
+        "S": -0.048601,
+        "LRA": -20.0,
+        "TP": -0.000265
+      },
+      "nominal": {
+        "TP": {
+          "expected": -6.0,
+          "error": -0.000265,
+          "toleranceBelow": 0.4,
+          "toleranceAbove": 0.2
+        }
+      },
+      "randomBufferMaxError": 0
+    },
+    {
+      "file": "seq-3341-16-24bit.wav.wav",
+      "kind": "EBU-standard-material",
+      "sha256": "9843c6fbc7c14d1bc5902ab23474851d766fd2ea92be5c45ab78ccd7e8a99ecd",
+      "masterlens": {
+        "I": -2.650682687759399,
+        "M": -2.648602485656738,
+        "S": -2.648602485656738,
+        "LRA": 0.100000143051147,
+        "TP": -6.168628215789795,
+        "duration": 3.2,
+        "peakTime": 3.200000047683716
+      },
+      "ffmpeg": {
+        "I": -2.7,
+        "LRA": 20.1,
+        "TP": -6.0,
+        "M": -2.6,
+        "S": -2.6
+      },
+      "error": {
+        "I": 0.049317,
+        "M": -0.048602,
+        "S": -0.048602,
+        "LRA": -20.0,
+        "TP": -0.168628
+      },
+      "nominal": {
+        "TP": {
+          "expected": -6.0,
+          "error": -0.168628,
+          "toleranceBelow": 0.4,
+          "toleranceAbove": 0.2
+        }
+      },
+      "randomBufferMaxError": 0
+    },
+    {
+      "file": "seq-3341-17-24bit.wav.wav",
+      "kind": "EBU-standard-material",
+      "sha256": "b4e7377b6c5c0c30bf68752f6d02f7b23909e40aed083a25902a550e0e1e2265",
+      "masterlens": {
+        "I": -2.744815587997437,
+        "M": -2.651853322982788,
+        "S": -2.651854276657104,
+        "LRA": 0.0,
+        "TP": -6.074752807617188,
+        "duration": 3.2,
+        "peakTime": 0.200000002980232
+      },
+      "ffmpeg": {
+        "I": -2.7,
+        "LRA": 20.1,
+        "TP": -6.0,
+        "M": -2.7,
+        "S": -2.7
+      },
+      "error": {
+        "I": -0.044816,
+        "M": 0.048147,
+        "S": 0.048146,
+        "LRA": -20.1,
+        "TP": -0.074753
+      },
+      "nominal": {
+        "TP": {
+          "expected": -6.0,
+          "error": -0.074753,
+          "toleranceBelow": 0.4,
+          "toleranceAbove": 0.2
+        }
+      },
+      "randomBufferMaxError": 0
+    },
+    {
+      "file": "seq-3341-18-24bit.wav.wav",
+      "kind": "EBU-standard-material",
+      "sha256": "d5fbe4854e93ef2a5a23260b522bdaa44bc739b69597bf751de919f11641d161",
+      "masterlens": {
+        "I": -2.750682592391968,
+        "M": -2.661742448806763,
+        "S": -2.661742448806763,
+        "LRA": 0.099999904632568,
+        "TP": -6.042093753814697,
+        "duration": 3.2,
+        "peakTime": 0.200000002980232
+      },
+      "ffmpeg": {
+        "I": -2.7,
+        "LRA": 20.1,
+        "TP": -6.0,
+        "M": -2.7,
+        "S": -2.7
+      },
+      "error": {
+        "I": -0.050683,
+        "M": 0.038258,
+        "S": 0.038258,
+        "LRA": -20.0,
+        "TP": -0.042094
+      },
+      "nominal": {
+        "TP": {
+          "expected": -6.0,
+          "error": -0.042094,
+          "toleranceBelow": 0.4,
+          "toleranceAbove": 0.2
+        }
+      },
+      "randomBufferMaxError": 0
+    },
+    {
+      "file": "seq-3341-19-24bit.wav.wav",
+      "kind": "EBU-standard-material",
+      "sha256": "31bda52dc66bb63aa0d04b2e5a1e6a4332296fa5635570469b2863d05a06d309",
+      "masterlens": {
+        "I": 6.34931755065918,
+        "M": 6.361381053924561,
+        "S": 6.361381053924561,
+        "LRA": 0.099999904632568,
+        "TP": 2.841354370117188,
+        "duration": 3.2,
+        "peakTime": 3.200000047683716
+      },
+      "ffmpeg": {
+        "I": 6.3,
+        "LRA": 20.1,
+        "TP": 3.009862,
+        "M": 6.4,
+        "S": 6.4
+      },
+      "error": {
+        "I": 0.049318,
+        "M": -0.038619,
+        "S": -0.038619,
+        "LRA": -20.0,
+        "TP": -0.168508
+      },
+      "nominal": {
+        "TP": {
+          "expected": 3.0,
+          "error": -0.158646,
+          "toleranceBelow": 0.4,
+          "toleranceAbove": 0.2
+        }
+      },
+      "randomBufferMaxError": 0
+    },
+    {
+      "file": "seq-3341-2-16bit.wav",
+      "kind": "EBU-standard-material",
+      "sha256": "7c9399188aed09980c76a67adc36b33f2d61c3e0c8457d83f7bf879122534ce3",
+      "masterlens": {
+        "I": -33.0,
+        "M": -32.95970153808594,
+        "S": -32.95982360839844,
+        "LRA": 0.0,
+        "TP": -32.74501037597656,
+        "duration": 20.0,
+        "peakTime": 10.800000190734863
+      },
+      "ffmpeg": {
+        "I": -33.0,
+        "LRA": 0.0,
+        "TP": -32.7,
+        "M": -33.0,
+        "S": -33.0
+      },
+      "error": {
+        "I": 0.0,
+        "M": 0.040298,
+        "S": 0.040176,
+        "LRA": 0.0,
+        "TP": -0.04501
+      },
+      "nominal": {
+        "I": {
+          "expected": -33.0,
+          "error": 0.0,
+          "toleranceBelow": 0.1,
+          "toleranceAbove": 0.1
+        }
+      },
+      "randomBufferMaxError": 0
+    },
+    {
+      "file": "seq-3341-20-24bit.wav.wav",
+      "kind": "EBU-standard-material",
+      "sha256": "a2df8791198781579a25e0437008ce9b1a48b13605a8b71886a360c4ceed16e4",
+      "masterlens": {
+        "I": -2.730740547180176,
+        "M": -2.649266481399536,
+        "S": -2.651510238647461,
+        "LRA": 0.0,
+        "TP": -0.130183130502701,
+        "duration": 3.200083333333333,
+        "peakTime": 1.600000023841858
+      },
+      "ffmpeg": {
+        "I": -2.7,
+        "LRA": 20.1,
+        "TP": -0.1,
+        "M": -2.6,
+        "S": -2.7
+      },
+      "error": {
+        "I": -0.030741,
+        "M": -0.049266,
+        "S": 0.04849,
+        "LRA": -20.1,
+        "TP": -0.030183
+      },
+      "nominal": {
+        "TP": {
+          "expected": 0.0,
+          "error": -0.130183,
+          "toleranceBelow": 0.4,
+          "toleranceAbove": 0.2
+        }
+      },
+      "randomBufferMaxError": 0
+    },
+    {
+      "file": "seq-3341-2011-8_seq-3342-6-24bit-v02.wav",
+      "kind": "EBU-standard-material",
+      "sha256": "13cb1c1ca8496c868a768bd1afc5e6a75841235000b68285e895bce62c2bdc6a",
+      "masterlens": {
+        "I": -22.9970760345459,
+        "M": -14.83194637298584,
+        "S": -17.956056594848633,
+        "LRA": 15.000001907348633,
+        "TP": -2.64099383354187,
+        "duration": 246.35733333333334,
+        "peakTime": 215.8000030517578
+      },
+      "ffmpeg": {
+        "I": -23.0,
+        "LRA": 15.0,
+        "TP": -2.6,
+        "M": -14.9,
+        "S": -18.0
+      },
+      "error": {
+        "I": 0.002924,
+        "M": 0.068054,
+        "S": 0.043943,
+        "LRA": 2e-06,
+        "TP": -0.040994
+      },
+      "nominal": {
+        "I": {
+          "expected": -23.0,
+          "error": 0.002924,
+          "toleranceBelow": 0.1,
+          "toleranceAbove": 0.1
+        },
+        "LRA": {
+          "expected": 15.0,
+          "error": 2e-06,
+          "toleranceBelow": 1,
+          "toleranceAbove": 1
+        }
+      },
+      "randomBufferMaxError": 0
+    },
+    {
+      "file": "seq-3341-21-24bit.wav.wav",
+      "kind": "EBU-standard-material",
+      "sha256": "fc508ae04cb6d1dbcb286d6cdffe8e81a87effa9ba7bb267c17a5807d5b273d3",
+      "masterlens": {
+        "I": -2.730740547180176,
+        "M": -2.649150848388672,
+        "S": -2.651494979858398,
+        "LRA": 0.0,
+        "TP": -0.100129254162312,
+        "duration": 3.200083333333333,
+        "peakTime": 1.600000023841858
+      },
+      "ffmpeg": {
+        "I": -2.7,
+        "LRA": 20.1,
+        "TP": -0.1,
+        "M": -2.6,
+        "S": -2.7
+      },
+      "error": {
+        "I": -0.030741,
+        "M": -0.049151,
+        "S": 0.048505,
+        "LRA": -20.1,
+        "TP": -0.000129
+      },
+      "nominal": {
+        "TP": {
+          "expected": 0.0,
+          "error": -0.100129,
+          "toleranceBelow": 0.4,
+          "toleranceAbove": 0.2
+        }
+      },
+      "randomBufferMaxError": 0
+    },
+    {
+      "file": "seq-3341-22-24bit.wav.wav",
+      "kind": "EBU-standard-material",
+      "sha256": "d238255454a091b49592b25355738e200f59868c0804be5427c901ed10b3a910",
+      "masterlens": {
+        "I": -2.730740547180176,
+        "M": -2.649042129516602,
+        "S": -2.651480436325073,
+        "LRA": 0.0,
+        "TP": -0.136914193630219,
+        "duration": 3.200083333333333,
+        "peakTime": 1.600000023841858
+      },
+      "ffmpeg": {
+        "I": -2.7,
+        "LRA": 20.1,
+        "TP": -0.1,
+        "M": -2.6,
+        "S": -2.7
+      },
+      "error": {
+        "I": -0.030741,
+        "M": -0.049042,
+        "S": 0.04852,
+        "LRA": -20.1,
+        "TP": -0.036914
+      },
+      "nominal": {
+        "TP": {
+          "expected": 0.0,
+          "error": -0.136914,
+          "toleranceBelow": 0.4,
+          "toleranceAbove": 0.2
+        }
+      },
+      "randomBufferMaxError": 0
+    },
+    {
+      "file": "seq-3341-23-24bit.wav.wav",
+      "kind": "EBU-standard-material",
+      "sha256": "c7243e22970b82e020b45241c92d210cbf47217ccc967f014787a5f6400fa8a3",
+      "masterlens": {
+        "I": -2.730740547180176,
+        "M": -2.648963928222656,
+        "S": -2.651470899581909,
+        "LRA": 0.0,
+        "TP": -0.100128725171089,
+        "duration": 3.200083333333333,
+        "peakTime": 1.600000023841858
+      },
+      "ffmpeg": {
+        "I": -2.7,
+        "LRA": 20.1,
+        "TP": -0.1,
+        "M": -2.6,
+        "S": -2.7
+      },
+      "error": {
+        "I": -0.030741,
+        "M": -0.048964,
+        "S": 0.048529,
+        "LRA": -20.1,
+        "TP": -0.000129
+      },
+      "nominal": {
+        "TP": {
+          "expected": 0.0,
+          "error": -0.100129,
+          "toleranceBelow": 0.4,
+          "toleranceAbove": 0.2
+        }
+      },
+      "randomBufferMaxError": 0
+    },
+    {
+      "file": "seq-3341-3-16bit-v02.wav",
+      "kind": "EBU-standard-material",
+      "sha256": "1fced6ac2397d4337257185908bd49bb18314f441a0daf0ef602f671254d9efb",
+      "masterlens": {
+        "I": -23.020620346069336,
+        "M": -22.993562698364258,
+        "S": -22.993568420410156,
+        "LRA": 13.0,
+        "TP": -22.999238967895508,
+        "duration": 80.0,
+        "peakTime": 10.100000381469727
+      },
+      "ffmpeg": {
+        "I": -23.0,
+        "LRA": 13.0,
+        "TP": -22.999239,
+        "M": -23.0,
+        "S": -23.0
+      },
+      "error": {
+        "I": -0.02062,
+        "M": 0.006437,
+        "S": 0.006432,
+        "LRA": 0.0,
+        "TP": 0.0
+      },
+      "nominal": {
+        "I": {
+          "expected": -23.0,
+          "error": -0.02062,
+          "toleranceBelow": 0.1,
+          "toleranceAbove": 0.1
+        }
+      },
+      "randomBufferMaxError": 0
+    },
+    {
+      "file": "seq-3341-4-16bit-v02.wav",
+      "kind": "EBU-standard-material",
+      "sha256": "514a6edd342d20c999d30062f0371d3f33ca86aa668ed3606484564db8dbdf93",
+      "masterlens": {
+        "I": -23.020620346069336,
+        "M": -22.993562698364258,
+        "S": -22.993568420410156,
+        "LRA": 13.0,
+        "TP": -22.999238967895508,
+        "duration": 100.0,
+        "peakTime": 20.100000381469727
+      },
+      "ffmpeg": {
+        "I": -23.0,
+        "LRA": 13.0,
+        "TP": -22.999239,
+        "M": -23.0,
+        "S": -23.0
+      },
+      "error": {
+        "I": -0.02062,
+        "M": 0.006437,
+        "S": 0.006432,
+        "LRA": 0.0,
+        "TP": 0.0
+      },
+      "nominal": {
+        "I": {
+          "expected": -23.0,
+          "error": -0.02062,
+          "toleranceBelow": 0.1,
+          "toleranceAbove": 0.1
+        }
+      },
+      "randomBufferMaxError": 0
+    },
+    {
+      "file": "seq-3341-5-16bit-v02.wav",
+      "kind": "EBU-standard-material",
+      "sha256": "7acd129ddebb1935980585742075ad4aa82abe1147f7ce8abd28346b49561e61",
+      "masterlens": {
+        "I": -22.985258102416992,
+        "M": -19.993196487426758,
+        "S": -19.993200302124023,
+        "LRA": 6.0,
+        "TP": -19.999469757080078,
+        "duration": 60.1,
+        "peakTime": 20.100000381469727
+      },
+      "ffmpeg": {
+        "I": -23.0,
+        "LRA": 6.0,
+        "TP": -19.99947,
+        "M": -20.0,
+        "S": -20.0
+      },
+      "error": {
+        "I": 0.014742,
+        "M": 0.006804,
+        "S": 0.0068,
+        "LRA": 0.0,
+        "TP": 0.0
+      },
+      "nominal": {
+        "I": {
+          "expected": -23.0,
+          "error": 0.014742,
+          "toleranceBelow": 0.1,
+          "toleranceAbove": 0.1
+        }
+      },
+      "randomBufferMaxError": 0
+    },
+    {
+      "file": "seq-3341-7_seq-3342-5-24bit.wav",
+      "kind": "EBU-standard-material",
+      "sha256": "dc48d551d72c8060a4f8ba9e09d247cbd5ba48e3ddebd9ce2f9af0b204fc1293",
+      "masterlens": {
+        "I": -22.983776092529297,
+        "M": -19.44279670715332,
+        "S": -21.01728057861328,
+        "LRA": 5.0,
+        "TP": -8.91324234008789,
+        "duration": 27.999958333333332,
+        "peakTime": 19.399999618530273
+      },
+      "ffmpeg": {
+        "I": -23.0,
+        "LRA": 5.0,
+        "TP": -8.9,
+        "M": -19.6,
+        "S": -21.0
+      },
+      "error": {
+        "I": 0.016224,
+        "M": 0.157203,
+        "S": -0.017281,
+        "LRA": 0.0,
+        "TP": -0.013242
+      },
+      "nominal": {
+        "I": {
+          "expected": -23.0,
+          "error": 0.016224,
+          "toleranceBelow": 0.1,
+          "toleranceAbove": 0.1
+        },
+        "LRA": {
+          "expected": 5.0,
+          "error": 0.0,
+          "toleranceBelow": 1,
+          "toleranceAbove": 1
+        }
+      },
+      "randomBufferMaxError": 0
+    },
+    {
+      "file": "seq-3341-9-24bit.wav",
+      "kind": "EBU-standard-material",
+      "sha256": "8157f3e794eac577b6007586fe47f51db8bfdc636729e6a773928c72791ef0f2",
+      "masterlens": {
+        "I": -22.997455596923828,
+        "M": -19.993288040161133,
+        "S": -22.98626708984375,
+        "LRA": 0.0,
+        "TP": -19.999998092651367,
+        "duration": 15.0,
+        "peakTime": 0.100000001490116
+      },
+      "ffmpeg": {
+        "I": -23.0,
+        "LRA": 0.0,
+        "TP": -19.999998,
+        "M": -20.0,
+        "S": -23.0
+      },
+      "error": {
+        "I": 0.002544,
+        "M": 0.006712,
+        "S": 0.013733,
+        "LRA": 0.0,
+        "TP": -0.0
+      },
+      "nominal": {},
+      "randomBufferMaxError": 0
+    },
+    {
+      "file": "seq-3342-1-16bit.wav",
+      "kind": "EBU-standard-material",
+      "sha256": "0b31a4813276699b5043e8fe7f93c6d7c4df3a7eacdd1a2436f0c3ee6b00e39b",
+      "masterlens": {
+        "I": -22.596384048461914,
+        "M": -19.99319076538086,
+        "S": -19.993200302124023,
+        "LRA": 10.0,
+        "TP": -19.999469757080078,
+        "duration": 40.0,
+        "peakTime": 0.100000001490116
+      },
+      "ffmpeg": {
+        "I": -22.6,
+        "LRA": 10.0,
+        "TP": -19.99947,
+        "M": -20.0,
+        "S": -20.0
+      },
+      "error": {
+        "I": 0.003616,
+        "M": 0.006809,
+        "S": 0.0068,
+        "LRA": 0.0,
+        "TP": 0.0
+      },
+      "nominal": {
+        "LRA": {
+          "expected": 10,
+          "error": 0.0,
+          "toleranceBelow": 1,
+          "toleranceAbove": 1
+        }
+      },
+      "randomBufferMaxError": 0
+    },
+    {
+      "file": "seq-3342-2-16bit.wav",
+      "kind": "EBU-standard-material",
+      "sha256": "e1b3c64e26ffe1c77b60072545ca41b45d0a2b599ec7e3333592f12000fdde0d",
+      "masterlens": {
+        "I": -16.816858291625977,
+        "M": -14.993823051452637,
+        "S": -14.993826866149902,
+        "LRA": 5.000000953674316,
+        "TP": -15.000097274780273,
+        "duration": 40.0,
+        "peakTime": 20.100000381469727
+      },
+      "ffmpeg": {
+        "I": -16.8,
+        "LRA": 5.0,
+        "TP": -15.0,
+        "M": -15.0,
+        "S": -15.0
+      },
+      "error": {
+        "I": -0.016858,
+        "M": 0.006177,
+        "S": 0.006173,
+        "LRA": 1e-06,
+        "TP": -9.7e-05
+      },
+      "nominal": {
+        "LRA": {
+          "expected": 5,
+          "error": 1e-06,
+          "toleranceBelow": 1,
+          "toleranceAbove": 1
+        }
+      },
+      "randomBufferMaxError": 0
+    },
+    {
+      "file": "seq-3342-3-16bit.wav",
+      "kind": "EBU-standard-material",
+      "sha256": "6e759ba7b061f28733a5a5081301f08df94c5447c28742c4f5fe85abe9aac677",
+      "masterlens": {
+        "I": -20.032325744628906,
+        "M": -19.993192672729492,
+        "S": -19.993200302124023,
+        "LRA": 20.0,
+        "TP": -19.999469757080078,
+        "duration": 40.0,
+        "peakTime": 20.100000381469727
+      },
+      "ffmpeg": {
+        "I": -20.0,
+        "LRA": 20.0,
+        "TP": -19.99947,
+        "M": -20.0,
+        "S": -20.0
+      },
+      "error": {
+        "I": -0.032326,
+        "M": 0.006807,
+        "S": 0.0068,
+        "LRA": 0.0,
+        "TP": 0.0
+      },
+      "nominal": {
+        "LRA": {
+          "expected": 20,
+          "error": 0.0,
+          "toleranceBelow": 1,
+          "toleranceAbove": 1
+        }
+      },
+      "randomBufferMaxError": 0
+    },
+    {
+      "file": "seq-3342-4-16bit.wav",
+      "kind": "EBU-standard-material",
+      "sha256": "6445a25325fb53fbbf03c0296bdb019962df9254468795b4c6fe46ab00bb4f2b",
+      "masterlens": {
+        "I": -24.498613357543945,
+        "M": -19.993192672729492,
+        "S": -19.993200302124023,
+        "LRA": 15.0,
+        "TP": -19.999469757080078,
+        "duration": 100.0,
+        "peakTime": 40.099998474121094
+      },
+      "ffmpeg": {
+        "I": -24.5,
+        "LRA": 15.0,
+        "TP": -19.99947,
+        "M": -20.0,
+        "S": -20.0
+      },
+      "error": {
+        "I": 0.001387,
+        "M": 0.006807,
+        "S": 0.0068,
+        "LRA": 0.0,
+        "TP": 0.0
+      },
+      "nominal": {
+        "LRA": {
+          "expected": 15,
+          "error": 0.0,
+          "toleranceBelow": 1,
+          "toleranceAbove": 1
+        }
+      },
+      "randomBufferMaxError": 0
+    }
+  ],
+  "failures": []
+}
