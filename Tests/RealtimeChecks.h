@@ -17,6 +17,14 @@ inline void reliabilityChecks()
     check("engine callback new",engineNews,0,0);check("engine callback delete",engineDeletes,0,0);
     check("nonfinite measurement flagged",ml::snapshot(invalidStats).invalidSamples,4,0);
     check("analysis preserves input NaN",std::isnan(invalidBlock.getSample(0,0)),1,0);
+    {
+        ml::AnalysisEngine burst;ml::Stats stats;ml::resetStats(stats);burst.prepare(48000,2);
+        juce::AudioBuffer<float> audio(2,48000);audio.clear();
+        for(int i=3600;i<22800;++i)for(int c=0;c<2;++c)
+            audio.setSample(c,i,std::pow(10.0f,-23.0f/20.0f)*std::sin(2.0*juce::MathConstants<double>::pi*997.0*i/48000.0));
+        burst.process(audio,stats,48000);burst.finish(stats);
+        check("offset burst M peak",ml::snapshot(stats).maxMomentary,-23,.1);
+    }
     ml::CoverageTracker coverage;
     coverage.add(.05,.10); coverage.add(0,.05);
     check("coverage fractional union",coverage.seconds(.1),.1,1e-9);

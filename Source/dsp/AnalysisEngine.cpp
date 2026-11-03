@@ -86,6 +86,8 @@ void AnalysisEngine::prepare (double sampleRate, int numChannels)
     sideTruePeakDetector.prepare (fs);
 
     partialLength = juce::jmax (16, (int) std::round (fs * 0.1));
+    momentaryEnergy.assign ((size_t) std::round (fs * 0.4), 0.0);
+    momentaryHop = juce::jmax (1, (int) std::round (fs * 0.01));
 
     // --- ITU-R BS.1770-4 K-weighting (libebur128 coefficient derivation) ------
     {
@@ -144,6 +146,8 @@ void AnalysisEngine::prepare (double sampleRate, int numChannels)
 
 void AnalysisEngine::reset()
 {
+    std::fill (momentaryEnergy.begin(), momentaryEnergy.end(), 0.0);
+    momentaryPosition = momentaryCount = 0; momentarySum = 0; momentaryHopCount = 0;
     for (int ch = 0; ch < 2; ++ch)
     {
         kShelf[ch].reset();
@@ -256,15 +260,35 @@ void AnalysisEngine::process (const juce::AudioBuffer<float>& buffer, Stats& sta
 
     for (int n = 0; n < numSamples; ++n)
     {
-        const float l = left[n];
-        const float r = right[n];
+        const bool validL = std::isfinite (left[n]);
+        const bool validR = ! isStereo || std::isfinite (right[n]);
+        if (! validL || ! validR) stats.invalidSamples.fetch_add ((! validL ? 1 : 0) + (! validR ? 1 : 0));
+        const float l = validL ? left[n] : 0.0f;
+        const float r = validR ? (isStereo ? right[n] : l) : 0.0f;
 
         // --- K-weighting (high shelf -> high pass) ---------------------------
         const float kl = kHighPass[0].process (kShelf[0].process (l));
         const float kr = isStereo ? kHighPass[1].process (kShelf[1].process (r)) : kl;
 
-        sumWeightedK += isStereo ? (double) kl * kl + (double) kr * kr
-                                 : (double) kl * kl;
+        const double weightedEnergy = isStereo ? (double) kl * kl + (double) kr * kr : (double) kl * kl;
+        sumWeightedK += weightedEnergy;
+        if (! momentaryEnergy.empty())
+        {
+            momentarySum += weightedEnergy - momentaryEnergy[momentaryPosition];
+            momentaryEnergy[momentaryPosition] = weightedEnergy;
+            momentaryPosition = (momentaryPosition + 1) % momentaryEnergy.size();
+            momentaryCount = juce::jmin (momentaryCount + 1, momentaryEnergy.size());
+            if (++momentaryHopCount >= momentaryHop)
+            {
+                momentaryHopCount = 0;
+                if (momentaryCount == momentaryEnergy.size())
+                {
+                    const float m = energyToLufs (juce::jmax (0.0, momentarySum) / (double) momentaryEnergy.size());
+                    stats.momentary = m;
+                    if (m > stats.maxMomentary.load()) stats.maxMomentary = m;
+                }
+            }
+        }
 
         const double weightedMid = 0.5 * ((double) kl + (double) kr);
         const double weightedSide = 0.5 * ((double) kl - (double) kr);

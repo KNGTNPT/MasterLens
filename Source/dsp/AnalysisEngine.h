@@ -371,7 +371,7 @@ public:
     /** Analyses a block in place. Audio is never modified. */
     void process (const juce::AudioBuffer<float>& buffer, Stats& stats, int numSamples);
 
-    /** Flushes the final partial 100 ms block after an offline file pass. */
+    /** Flushes delayed peak samples after an offline file pass; incomplete loudness gates are discarded. */
     void finish (Stats& stats);
 
     /** Copies the most recent short-term (3 s) loudness points, oldest first. */
@@ -408,6 +408,11 @@ private:
 
     TpEventRing tpEventRing;
 
+    // Allocated only in prepare; exact 400 ms energy window, 10 ms M refresh.
+    std::vector<double> momentaryEnergy;
+    size_t momentaryPosition = 0, momentaryCount = 0;
+    double momentarySum = 0;
+    int momentaryHop = 480, momentaryHopCount = 0;
     int partialLength = 4800;
     int partialSamples = 0;
 
