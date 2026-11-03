@@ -226,7 +226,7 @@ namespace
         InstrumentFonts()
         {
             // User-requested 130% brand geometry; measurement font roles stay unchanged.
-            masterWordmark.addLineOfText (value.withExtraKerningFactor (0.16f),
+            masterWordmark.addLineOfText (value.withExtraKerningFactor (0.208f),
                                          "MASTERLENS", 0.0f, 0.0f);
             const juce::Font byline { options (brandMono, 12.0f).withKerningFactor (0.12f) };
             brandBylineZh.addLineOfText (byline, juce::String ("BERRYSTUDIO / ")

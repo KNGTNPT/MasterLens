@@ -214,8 +214,10 @@ void ModuleRail::mouseDown (const juce::MouseEvent& e)
         {
             if (i != selected)
             {
-                selected = i;
-                repaint();
+                // Go through setSelected so the visual indicator animates from
+                // the previous page. Setting `selected` directly left
+                // `visualSelected` behind, so the underline did not follow.
+                setSelected (i);
 
                 if (onSelect != nullptr)
                     onSelect (i);

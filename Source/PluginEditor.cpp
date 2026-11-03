@@ -28,6 +28,7 @@ MasterLensAudioProcessorEditor::MasterLensAudioProcessorEditor (MasterLensAudioP
     addAndMakeVisible (readout);
     addAndMakeVisible (rail);
     addAndMakeVisible (detail);
+    detail.setFilePlaybackAvailable (processor.wrapperType == juce::AudioProcessor::wrapperType_Standalone);
 
     // 2.0.2: the separate timeline strip is retired; markers and the playhead
     // now live inside the history graph.
@@ -76,6 +77,7 @@ MasterLensAudioProcessorEditor::MasterLensAudioProcessorEditor (MasterLensAudioP
     detail.onApplyTargetPlan = [this] { applyTargetPlan(); };
     detail.onChooseFiles = [this] { chooseFiles(); };
     detail.onChooseFolder = [this] { chooseFolder(); };
+    detail.onPlayFile = [this] { toggleFilePlayback(); };
     detail.onAddFileResultsToAlbum = [this] { addFileResultsToAlbum(); };
     detail.onClearFileResults = [this] { clearFileResults(); };
     detail.onExportFileTable = [this] { exportFileTable(); };

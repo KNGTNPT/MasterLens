@@ -4,6 +4,20 @@
 
 namespace ml
 {
+void DetailArea::setFilePlaybackAvailable (bool available)
+{
+    filePlaybackAvailable = available;
+    filePlay.setVisible (available && page == PageId::files);
+}
+
+void DetailArea::setFilePlayActive (bool active)
+{
+    filePlay.setButtonText (ml::grid::controlText (active ? T ("停止播放", "Stop file")
+                                                          : T ("播放文件", "Play file")));
+    filePlay.setToggleState (active, juce::dontSendNotification);
+    repaint();
+}
+
 namespace
 {
 constexpr int kFileRowHeight = 32;

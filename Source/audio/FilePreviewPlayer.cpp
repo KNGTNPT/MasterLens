@@ -82,7 +82,9 @@ void FilePreviewPlayer::run()
         { fail ("failed"); continue; }
         const auto first = (juce::int64) juce::jlimit (0.0, (double) reader->lengthInSamples - 1, from * reader->sampleRate);
         const auto last = (juce::int64) juce::jlimit ((double) first+1, (double) reader->lengthInSamples, to * reader->sampleRate);
-        const auto length = (int) juce::jmin ((juce::int64) (reader->sampleRate*12), last-first);
+        // Evidence previews request four seconds; standalone transport requests
+        // the whole selected file. Keep a bounded cache for unusually long files.
+        const auto length = (int) juce::jmin ((juce::int64) (reader->sampleRate * 900.0), last-first);
         if (length <= 1) { fail ("empty"); continue; }
         auto loaded = std::make_unique<Data>();
         loaded->sourceRate = reader->sampleRate; loaded->startSample = first;

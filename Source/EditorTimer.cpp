@@ -45,6 +45,14 @@ void MasterLensAudioProcessorEditor::setPage (int index)
     else
         detail.setAlpha (1.0f);
 
+    if (changed && processor.isAuditionActive() && lastAuditionIndex >= 0)
+    {
+        footerStatusText = T ("正在实时试听：", "Live audition: ")
+                           + ml::signalAuditionLabel (lastAuditionIndex)
+                           + T ("  · Esc 停止", "  · Esc stops");
+        footerStatusColour = ml::theme::cyan;
+    }
+
     repaint();
 }
 
@@ -145,9 +153,26 @@ void MasterLensAudioProcessorEditor::updateUiFrame()
         pollFolderWatch();
 
     if ((frameCounter % 12) == 0)
+    {
         detail.setReferencePlaybackState (processor.referencePlayer.isEnabled()
                                               && processor.referencePlayer.isReady(),
                                           processor.referencePlayer.getStatus());
+
+        if (filePreviewPath.isNotEmpty())
+        {
+            const auto* selected = detail.selectedFile();
+
+            if (! processor.isFilePreviewActive() || selected == nullptr
+                || selected->path != filePreviewPath)
+            {
+                if (selected == nullptr || selected->path != filePreviewPath)
+                    processor.stopFilePreview();
+
+                filePreviewPath.clear();
+                detail.setFilePlayActive (false);
+            }
+        }
+    }
 
     {
         double rejectedStart = 0.0;
@@ -259,6 +284,10 @@ void MasterLensAudioProcessorEditor::updateUiFrame()
 
     ml::UiState us;
     us.stats = stats;
+    const int auditionIndex = processor.isAuditionActive() ? lastAuditionIndex : -1;
+    us.signalAuditionIndex = auditionIndex >= 0 ? auditionIndex : -1;
+    if (us.signalAuditionIndex >= 0)
+        us.liveAuditionLabel = ml::signalAuditionLabel (us.signalAuditionIndex);
     us.bandDevs = devs;
     us.ratios = bandRatios;
     us.resonances = resos;

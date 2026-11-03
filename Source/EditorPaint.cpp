@@ -23,14 +23,17 @@ void MasterLensAudioProcessorEditor::paint (juce::Graphics& g)
     const auto titleInk = wordmark.getBoundingBox (0, -1, true);
     const auto bylineInk = byline.getBoundingBox (0, -1, true);
     constexpr float brandScale = 1.15f;
-    constexpr float lineGap = 8.0f;
-    const float titleHeight = titleInk.getHeight() * brandScale;
+    // Wordmark is 15 % vertically compressed, with 30 % wider tracking, and
+    // 20 % less gap before the byline. The mark itself stays square.
+    constexpr float titleSquash = 0.85f;
+    constexpr float lineGap = 6.4f;
+    const float titleHeight = titleInk.getHeight() * brandScale * titleSquash;
     const float totalHeight = titleHeight + lineGap + bylineInk.getHeight();
     const float top = (float) headerArea.getCentreY() - totalHeight * 0.5f;
     g.setColour (ml::theme::textDim);
-    wordmark.draw (g, juce::AffineTransform::scale (brandScale).translated (
+    wordmark.draw (g, juce::AffineTransform::scale (brandScale, brandScale * titleSquash).translated (
         (float) brand.getX() - titleInk.getX() * brandScale,
-        top - titleInk.getY() * brandScale));
+        top - titleInk.getY() * brandScale * titleSquash));
     g.setColour (ml::theme::textFaint);
     byline.draw (g, juce::AffineTransform::translation (
         (float) brand.getX() - bylineInk.getX(),

@@ -1,4 +1,4 @@
-MasterLens 2.3.2 —— 每一个「通过」，都再认真一点喵
+MasterLens 2.3.3 —— 把播放、试听和导航接清楚喵
 by BerryStudio · 开发者 KNGTNPT 兰
 =====================================================================
 
@@ -6,6 +6,14 @@ by BerryStudio · 开发者 KNGTNPT 兰
 1. 运行「安装 Install.command」。首次运行未公证版本，可能需要右键 → 打开。
 2. VST3 / AU 复制到用户 Library/Audio/Plug-Ins；独立版放入 ~/Applications。
 3. 重启 DAW，在 BerryStudio 下搜索 MasterLens，并放到母带链最后。
+
+【2.3.3】
+独立版 File QC 选中已分析文件后可播放文件；播放结束或停止后恢复旁路。
+信号健康六卡实时试听会高亮当前卡；切页时页头显示 LIVE 和具体功能，Esc 停止。
+修复顶部横向标签栏下划线不跟随当前页面的问题。
+主页 MASTERLENS 字标垂直压缩 15%、字距 +30%、与 byline 留白 -20%。
+关于页直接渲染提供的原始 SVG，不重画、不识别内容、不改颜色。
+详见仓库 docs/performance-2.3.3.md。
 
 【2.3.2】
 补齐 EBU 标准素材、独立实现与随机缓冲区测量验证，详见仓库 docs/performance-2.3.2.md。

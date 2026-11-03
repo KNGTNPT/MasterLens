@@ -52,7 +52,7 @@ def main():
     if platform.system() == 'Darwin':
         renderer = build / 'MasterLensUiShot_artefacts/Release/MasterLensUiShot.app/Contents/MacOS/MasterLensUiShot'
     renderer = renderer.resolve(strict=True)
-    provenance = {'version': '2.3.2', 'platform': platform.system(),
+    provenance = {'version': '2.3.3', 'platform': platform.system(),
                   'architecture': platform.machine(), 'rendererSha256': digest(renderer), 'images': []}
     for name, flags, output in SHOTS:
         suffix = '232album' if name == 'album' else '232files' if name == 'fileqc' else '232mono' if name == 'file-mono' else '232gain' if name == 'file-gain' else '232waterfall' if name == 'waterfall' else '232'
@@ -61,7 +61,7 @@ def main():
         if not (args.reuse and capture.exists() and dimensions == (2240, 1400)
                 and capture.stat().st_mtime >= renderer.stat().st_mtime):
             subprocess.run([str(renderer), *flags, 'size1120', f'out={suffix}'], cwd=ROOT, check=True)
-        destination = ROOT / f'docs/{name}-2.3.2.png'
+        destination = ROOT / f'docs/{name}-2.3.3.png'
         shutil.copyfile(capture, destination)
         data = destination.read_bytes()
         assert data[:8] == b'\x89PNG\r\n\x1a\n'
@@ -70,7 +70,7 @@ def main():
                                      'sha256': digest(destination), 'width': width, 'height': height,
                                      'arguments': [*flags, 'size1120', f'out={suffix}']})
         print(destination.relative_to(ROOT), width, height, flush=True)
-    (ROOT / 'docs/screenshots-2.3.2.json').write_text(json.dumps(provenance, indent=2) + '\n')
+    (ROOT / 'docs/screenshots-2.3.3.json').write_text(json.dumps(provenance, indent=2) + '\n')
 
 
 if __name__ == '__main__':

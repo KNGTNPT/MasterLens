@@ -5,13 +5,44 @@
 **母带响度 / 文件 QC / 频谱 / 声场 / 专辑交付 / CLI**<br>
 by **BerryStudio** · developer **KNGTNPT 兰**<br>
 macOS / Windows · VST3 / AU / 独立版 · C++17 + JUCE 8<br>
-当前版本：**2.3.2**
+当前版本：**2.3.3**
 
 MasterLens 是放在母带链末尾的小检查员：这首歌有多响、峰值会不会顶过头、立体声合成单声道后会不会变薄、交出去之前还有哪里值得听一遍，它都帮你留意着。把它插在 Master / Stereo Out 的最后一级就好。
 
 默认零延迟、逐位旁路，也就是只看、不动你的声音。点试听、开等响监听或切参考 A/B 时，才会临时改变输出。辛苦做好的声音，会好好留在原地。
 
 歌该做成什么样，还是你的耳朵说了算。数字有点多也没关系，我们一项项看；它负责把容易漏掉的小细节摊开，陪你把交付前的最后一遍检查做完。
+
+## 2.3.3：把播放、试听和导航接清楚喵
+
+2.3.3 集中修交互里最容易让人误会的地方：独立版导入文件后能直接播放；点信号卡试听后，卡片会亮，切到别的页面也还知道自己在听什么；横向标签栏的下划线会跟着当前页面走。
+
+- **独立版文件播放**：File QC 选中已分析文件后，文件页出现「播放文件 / 停止播放」。它使用插件自己的输出播放文件，不依赖宿主播放头；停止或播放结束后恢复旁路。播放缓存上限为 900 秒，超长文件会截断。
+- **信号实时试听有状态**：点击信号健康六张卡会进入实时跟随试听，当前卡片显示青绿描边和左侧亮条；切到其它页面时，页头保留 `LIVE · 具体功能` 提示，底部也写明“正在实时试听：… · Esc 停止”。
+- **横向标签下划线跟随**：点击顶部页面标签时，下划线从旧页面滑到新页面，不再停在旧标签下面。
+- **页头字标**：`MASTERLENS` 字标垂直压缩 15%，字距增加 30%，字标与下方 byline 的留白减少 20%；图形标记保持原比例。
+- **关于页 SVG**：直接使用提供的原始 SVG 资源渲染，不重画、不追踪、不识别内容、不改颜色；资源字节原封不动进入包内。
+
+本版没有改动默认测量算法、旁路路径或现有项目格式。
+
+### 2.3.3 验证
+
+详细结果见 [2.3.3 验证记录](docs/performance-2.3.3.md)。
+
+- DSP / 可靠性断言：144 项通过。
+- CLI 集成检查：66 项通过。
+- UI 布局检查：35/35 通过。
+- 关于页 SVG 使用原始资源 SHA-256 `ce185364ec34c4e1bb8e79c36f0da9ae59017c9873d5dff62ba9e182f2c278ee`，没有做颜色替换。
+- macOS Universal AU / VST3 / Standalone / CLI 与 DMG 构建通过；`auval` 通过。
+- Windows ARM64 仍为交叉构建，未做该环境实机测试；macOS 仍为 ad-hoc 签名、未公证。
+
+![MasterLens 2.3.3 响度与动态](docs/screenshot-2.3.3.png)
+
+![MasterLens 2.3.3 信号健康](docs/signal-2.3.3.png)
+
+![MasterLens 2.3.3 文件 QC](docs/fileqc-2.3.3.png)
+
+![MasterLens 2.3.3 关于页原始 SVG](docs/about-2.3.3.png)
 
 ## 2.3.2：每一个「通过」，都再认真一点喵
 
@@ -100,7 +131,7 @@ Windows ARM64 安装包由交叉构建生成；**手头没有 Windows on ARM 设
 
 ### 先装好，再播一首
 
-[下载 2.3.2](https://github.com/KNGTNPT/MasterLens/releases/tag/v2.3.2)。macOS 打开 DMG，运行「安装 Install.command」；Windows 运行对应 x64 / ARM64 的 EXE，然后重启 DAW。
+[下载 2.3.3](https://github.com/KNGTNPT/MasterLens/releases/tag/v2.3.3)。macOS 打开 DMG，运行「安装 Install.command」；Windows 运行对应 x64 / ARM64 的 EXE，然后重启 DAW。
 
 把 MasterLens 插在母带链最后，先播 20–30 秒，跟它打个招呼。左侧的综合响度看整体有多响，真峰值看最高处有没有越线；LRA 看强弱变化的范围，PLR 看峰值与平均响度之间还留了多少空间。中央曲线会把变化过程画出来。
 
@@ -204,7 +235,7 @@ cmake --build build --config Release --target MasterLensUiShot -j 4
 
 无显示服务的 Linux 需要 Xvfb 和中文字体。同一个构建目录请串行执行 CMake / Ninja。
 
-本次本地验证包含 **115 项 DSP / 证据断言**、**41 项 CLI 集成检查**、默认旁路 / 零延迟检查、各页面布局、五档缩放及离屏性能。原生 macOS / Windows 安装包由 [GitHub Actions](https://github.com/KNGTNPT/MasterLens/actions) 构建；三个发布目标全部成功后才上传 Release，附带 `SHA256SUMS.txt`。离屏检查和构建不能代替真实 DAW 与音频硬件回归。
+本次本地验证包含 **144 项 DSP / 可靠性断言**、**66 项 CLI 集成检查**、默认旁路 / 零延迟检查、各页面布局、五档缩放及离屏性能。原生 macOS / Windows 安装包由 [GitHub Actions](https://github.com/KNGTNPT/MasterLens/actions) 构建；三个发布目标全部成功后才上传 Release，附带 `SHA256SUMS.txt`。离屏检查和构建不能代替真实 DAW 与音频硬件回归。
 
 ## 工程结构
 

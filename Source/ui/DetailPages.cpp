@@ -55,6 +55,18 @@ void DetailArea::paintPageHeader (juce::Graphics& g, const juce::String& meta)
         g.setColour (theme::textDim);
         g.setFont (getLabelFont());
         g.drawText (pageTitle (page).toUpperCase(), header, juce::Justification::centredLeft, false);
+
+        if (state.liveAuditionLabel.isNotEmpty())
+        {
+            auto badge = header.removeFromRight (juce::jmin (250, header.getWidth() / 2));
+            g.setColour (theme::accent.withAlpha (0.16f));
+            g.fillRoundedRectangle (badge.toFloat().reduced (0.0f, 4.0f), 9.0f);
+            g.setColour (theme::accent);
+            g.setFont (getLabelFont());
+            g.drawText (T ("实时试听 · ", "LIVE · ") + state.liveAuditionLabel,
+                        badge.reduced (8, 0), juce::Justification::centredRight, true);
+        }
+
         return;
     }
 
@@ -62,6 +74,19 @@ void DetailArea::paintPageHeader (juce::Graphics& g, const juce::String& meta)
     g.setFont (getLabelFont());
     g.drawText (pageTitle (page), header.removeFromLeft (juce::jmin (260, header.getWidth() / 2)),
                 juce::Justification::centredLeft);
+
+    if (state.liveAuditionLabel.isNotEmpty())
+    {
+        const auto badgeW = juce::jmin (250, juce::jmax (150, header.getWidth() / 2));
+        auto badge = header.removeFromRight (badgeW);
+
+        g.setColour (theme::accent.withAlpha (0.16f));
+        g.fillRoundedRectangle (badge.toFloat().reduced (0.0f, 4.0f), 9.0f);
+        g.setColour (theme::accent);
+        g.setFont (getLabelFont());
+        g.drawText (T ("实时试听 · ", "LIVE · ") + state.liveAuditionLabel,
+                    badge.reduced (8, 0), juce::Justification::centredRight, true);
+    }
 
     g.setColour (theme::textFaint);
     g.setFont (getValueFont());

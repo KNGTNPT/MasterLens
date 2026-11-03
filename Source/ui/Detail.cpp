@@ -93,11 +93,12 @@ DetailArea::DetailArea()
             onApplyTargetPlan();
     };
 
-    for (auto* b : { &fileChoose, &fileFolder, &fileAddAlbum, &fileClear })
+    for (auto* b : { &fileChoose, &fileFolder, &filePlay, &fileAddAlbum, &fileClear })
         addChildComponent (*b);
 
     fileChoose.onClick = [this] { if (onChooseFiles != nullptr) onChooseFiles(); };
     fileFolder.onClick = [this] { if (onChooseFolder != nullptr) onChooseFolder(); };
+    filePlay.onClick = [this] { if (onPlayFile != nullptr) onPlayFile(); };
     fileAddAlbum.onClick = [this] { if (onAddFileResultsToAlbum != nullptr) onAddFileResultsToAlbum(); };
     fileClear.onClick = [this] { if (onClearFileResults != nullptr) onClearFileResults(); };
     fileExport.onClick = [this] { if (onExportFileTable != nullptr) onExportFileTable(); };
@@ -212,6 +213,9 @@ void DetailArea::refreshTexts()
 
     fileChoose.setButtonText (ml::grid::controlText (T ("选择文件", "Choose files")));
     fileFolder.setButtonText (ml::grid::controlText (T ("选择文件夹", "Choose folder")));
+    filePlay.setButtonText (ml::grid::controlText (T ("播放文件", "Play file")));
+    filePlay.setTooltip (T ("独立版：播放当前选中文件；再次点击停止",
+                             "Standalone: play the selected file; click again to stop"));
     fileAddAlbum.setButtonText (ml::grid::controlText (T ("加入专辑", "Add to album")));
     fileExport.setButtonText (ml::grid::controlText (T ("导出 QC", "Export QC")));
     fileViewButtons[0].setButtonText (ml::grid::controlText (T ("样本证据", "Evidence")));
@@ -284,6 +288,7 @@ void DetailArea::hideAllChildren()
 
     fileChoose.setVisible (false);
     fileFolder.setVisible (false);
+    filePlay.setVisible (false);
     fileAddAlbum.setVisible (false);
     fileClear.setVisible (false);
     fileExport.setVisible (false);
@@ -750,9 +755,12 @@ void DetailArea::resized()
             fileFolder.setBounds (buttons.removeFromRight (96).withSizeKeepingCentre (96, 30));
             buttons.removeFromRight (8);
             fileChoose.setBounds (buttons.removeFromRight (96).withSizeKeepingCentre (96, 30));
+            buttons.removeFromRight (8);
+            filePlay.setBounds (buttons.removeFromRight (80).withSizeKeepingCentre (80, 30));
 
             fileChoose.setVisible (true);
             fileFolder.setVisible (true);
+            filePlay.setVisible (filePlaybackAvailable);
             fileAddAlbum.setVisible (true);
             fileClear.setVisible (true);
             fileExport.setVisible (true);

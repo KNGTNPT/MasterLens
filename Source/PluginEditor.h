@@ -119,6 +119,7 @@ private:
     void autoAlignReference();
     void chooseFiles();
     void chooseFolder();
+    void toggleFilePlayback();
     void startFileAnalysis (const juce::StringArray& paths);
     void pollFileAnalysis();
     void addFileResultToAlbum (const ml::FileAnalysisResult& result);
@@ -189,6 +190,7 @@ private:
     std::vector<ml::FileAnalysisResult> fileResults;
     juce::String fileAnalysisStatus;
     juce::String pendingAlbumName;
+    juce::String filePreviewPath;
     ml::DeliverySpec deliverySpec;
     juce::File watchedFolder;
     std::map<juce::String, std::pair<juce::int64, juce::int64>> watchedStamps;

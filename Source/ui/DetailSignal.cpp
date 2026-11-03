@@ -11,6 +11,7 @@ namespace
         juce::String unit;
         juce::String note;
         float risk = 0.0f;
+        bool active = false;
         std::array<std::pair<juce::String, juce::String>, 3> rows;
     };
 
@@ -24,10 +25,17 @@ namespace
         const auto r = area.toFloat().reduced (0.5f);
         const bool compact = area.getHeight() < 96;
 
-        g.setColour (theme::cardAlt);
+        g.setColour (c.active ? theme::accent.withAlpha (0.18f) : theme::cardAlt);
         g.fillRoundedRectangle (r, tokens::radiusCard);
-        g.setColour (theme::border);
-        g.drawRoundedRectangle (r, tokens::radiusCard, 1.0f);
+        g.setColour (c.active ? theme::accent : theme::border);
+        g.drawRoundedRectangle (r, tokens::radiusCard, c.active ? 1.5f : 1.0f);
+
+        if (c.active)
+        {
+            g.setColour (theme::accent);
+            g.fillRoundedRectangle ((float) area.getX() + 1.0f, (float) area.getY() + 12.0f,
+                                    3.0f, (float) area.getHeight() - 24.0f, 1.5f);
+        }
 
         auto inner = area.reduced (14, compact ? 8 : 11);
         auto titleRow = inner.removeFromTop (compact ? 16 : 18);
@@ -99,6 +107,16 @@ namespace
                                     * juce::jlimit (0.0f, 1.0f, c.risk / 100.0f)), 1.5f);
     }
 } // namespace
+
+juce::String signalAuditionLabel (int index)
+{
+    static const char* zh[] { "谐波 / 互调 2–12 kHz", "混叠 12–20 kHz", "超低 20–60 Hz",
+                              "全频瞬态", "单声道 60–250 Hz", "掩蔽 200–800 Hz" };
+    static const char* en[] { "harmonics / IMD 2-12 kHz", "aliasing 12-20 kHz", "sub 20-60 Hz",
+                              "full-band transient", "mono 60-250 Hz", "masking 200-800 Hz" };
+    index = juce::jlimit (0, 5, index);
+    return T (zh[index], en[index]);
+}
 
 //==============================================================================
 void DetailArea::paintSignal (juce::Graphics& g)
@@ -217,6 +235,13 @@ void DetailArea::paintSignal (juce::Graphics& g)
     c5.rows = {{ { T ("低中密度", "Low-mid"), dbText (d.maskingDb) },
                  { "LRA", fmt1 (s.lra) + " LU" },
                  { T ("低频侧向", "Low side"), fmt1 (s.lowSidePct) + "%" } }};
+
+    c0.active = state.signalAuditionIndex == 0;
+    c1.active = state.signalAuditionIndex == 1;
+    c2.active = state.signalAuditionIndex == 2;
+    c3.active = state.signalAuditionIndex == 3;
+    c4.active = state.signalAuditionIndex == 4;
+    c5.active = state.signalAuditionIndex == 5;
 
     paintCard (g, cell (0, 0), c0);
     paintCard (g, cell (1, 0), c1);

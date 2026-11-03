@@ -86,6 +86,42 @@ void MasterLensAudioProcessorEditor::chooseFolder()
                               });
 }
 
+void MasterLensAudioProcessorEditor::toggleFilePlayback()
+{
+    if (processor.wrapperType != juce::AudioProcessor::wrapperType_Standalone)
+        return;
+
+    const auto* selected = detail.selectedFile();
+
+    if (selected == nullptr || ! selected->ok)
+    {
+        footerStatusText = T ("先选择一个已分析的文件", "Select an analysed file first");
+        footerStatusColour = ml::theme::warn;
+        repaint();
+        return;
+    }
+
+    if (processor.isFilePreviewActive() && filePreviewPath == selected->path)
+    {
+        processor.stopFilePreview();
+        filePreviewPath.clear();
+        detail.setFilePlayActive (false);
+        footerStatusText = T ("文件播放已停止", "File playback stopped");
+        footerStatusColour = ml::theme::textDim;
+        repaint();
+        return;
+    }
+
+    processor.stopFilePreview();
+    filePreviewPath = selected->path;
+    const double duration = juce::jmax (1.0, selected->durationSeconds);
+    processor.startFilePreview (juce::File (selected->path), 0.0, duration, false);
+    detail.setFilePlayActive (true);
+    footerStatusText = T ("独立版播放 · ", "Standalone playback · ") + selected->fileName;
+    footerStatusColour = ml::theme::accent;
+    repaint();
+}
+
 void MasterLensAudioProcessorEditor::startFileAnalysis (const juce::StringArray& paths)
 {
     const auto expanded = ml::FileAnalyzer::expandPaths (paths);

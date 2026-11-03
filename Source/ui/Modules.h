@@ -98,6 +98,8 @@ struct UiState
     float target = -14.0f;
     float ceiling = -1.0f;
     bool hasReference = false;
+    int signalAuditionIndex = -1;
+    juce::String liveAuditionLabel;
     juce::String referenceStatus;
     const SpectrumAnalyzer* analyzer = nullptr;
 
@@ -108,6 +110,8 @@ struct UiState
 
 enum class PageId { loudness = 0, truePeak, spectrum, stereo, delivery, album, signal, diagnostics, timeline, target, files };
 constexpr int numPages = 11;
+
+juce::String signalAuditionLabel (int index);
 
 //==============================================================================
 /** Left hand module list: verdict header + one 40 px row per module. */
@@ -242,6 +246,7 @@ public:
 
     std::function<void()> onChooseFiles;
     std::function<void()> onChooseFolder;
+    std::function<void()> onPlayFile;
     std::function<void()> onAddFileResultsToAlbum;
     std::function<void()> onClearFileResults;
     std::function<void()> onExportFileTable;
@@ -254,6 +259,8 @@ public:
     void setSpectrumSplit (int height, int bandHeight) { spectrumSplit = height; spectrumBandHeight = bandHeight; resized(); }
     void setFileView (int view) { fileView = juce::jlimit (0, 2, view); resized(); repaint(); }
     void setDeliverySpec (const DeliverySpec& s) { spec = s; repaint(); }
+    void setFilePlaybackAvailable (bool available);
+    void setFilePlayActive (bool active);
     const std::vector<FileAnalysisResult>& getFileResults() const noexcept { return fileResults; }
     const FileAnalysisResult* selectedFile() const
     {
@@ -329,7 +336,8 @@ private:
     juce::Slider warSlider;
     juce::TextButton applyTarget;
 
-    juce::TextButton fileChoose, fileFolder, fileAddAlbum, fileClear, fileExport;
+    juce::TextButton fileChoose, fileFolder, filePlay, fileAddAlbum, fileClear, fileExport;
+    bool filePlaybackAvailable = false;
     std::array<juce::TextButton, 3> fileViewButtons;
     std::vector<FileAnalysisResult> fileResults;
     DeliverySpec spec;

@@ -88,9 +88,10 @@ static juce::Rectangle<int> aboutCardBounds (juce::Rectangle<int> area)
 
 AboutPanel::AboutPanel()
 {
-    studioDark = juce::Drawable::createFromImageData (MasterLensFonts::Berrystudio_svg, MasterLensFonts::Berrystudio_svgSize);
-    studioLight = juce::Drawable::createFromImageData (MasterLensFonts::Berrystudio_svg, MasterLensFonts::Berrystudio_svgSize);
-    if (studioLight) studioLight->replaceColour (juce::Colour (0xff969c98), juce::Colour (0xff26352e));
+    // Render the supplied vector asset exactly as authored. No colour remap,
+    // redraw, tracing or interpretation is applied here.
+    studioDrawable = juce::Drawable::createFromImageData (MasterLensFonts::Berrystudio_svg,
+                                                          MasterLensFonts::Berrystudio_svgSize);
     setOpaque (false);
 
     closeButton.setButtonText (ml::grid::controlText (T ("关闭", "Close")));
@@ -171,8 +172,8 @@ void AboutPanel::paint (juce::Graphics& g)
     g.setFont (getLabelFont());
     auto studioArea = inner.removeFromBottom (80).withTrimmedRight (112)
         .withSizeKeepingCentre (300, 56);
-    if (auto* studio = theme::dark ? studioDark.get() : studioLight.get())
-        studio->drawWithin (g, studioArea.toFloat(), juce::RectanglePlacement::centred, 1.0f);
+    if (studioDrawable != nullptr)
+        studioDrawable->drawWithin (g, studioArea.toFloat(), juce::RectanglePlacement::centred, 1.0f);
     inner.removeFromBottom (12);
     g.drawFittedText (T ("测量标准：ITU-R BS.1770-4 · EBU R128 · EBU Tech 3342\n"
                          "真峰值 4× 过采样插值 · 零延迟 · 不修改音频\n"
