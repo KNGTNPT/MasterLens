@@ -1,4 +1,4 @@
-MasterLens 2.4.0 —— 导入文件真正进入测量链路喵
+MasterLens 2.4.1 —— Windows 安装器回到正确目录喵
 by BerryStudio · 开发者 KNGTNPT 兰
 =====================================================================
 
@@ -6,6 +6,13 @@ by BerryStudio · 开发者 KNGTNPT 兰
 1. 运行「安装 Install.command」。首次运行未公证版本，可能需要右键 → 打开。
 2. VST3 / AU 复制到用户 Library/Audio/Plug-Ins；独立版放入 ~/Applications。
 3. 重启 DAW，在 BerryStudio 下搜索 MasterLens，并放到母带链最后。
+
+【2.4.1】
+Windows 安装器的小补丁：NSIS 的 Common Files 变量改为 $COMMONFILES64，VST3 回到
+C:\Program Files\Common Files\VST3；之前误写成不存在的 $COMMONPROGRAMFILES64，安装器只会 warning，
+不会把插件放进 DAW 能扫描到的位置。
+CI 现在用 -WX 编译安装器，遇到未知变量直接失败。音频、测量、界面和 macOS 包与 2.4.0 相同。
+Windows 2.4.0 用户请重新下载 2.4.1 安装包；装完重启 DAW。
 
 【2.4.0】
 独立版文件播放先进入响度 / TP / LRA / 频谱 / 声场 / 诊断分析，再输出；其它页面同步更新。

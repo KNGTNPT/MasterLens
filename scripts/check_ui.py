@@ -3,10 +3,12 @@
 import argparse
 import json
 import platform
+import re
 import subprocess
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+VERSION = re.search(r'kVersion\s*=\s*"([^"]+)"', (ROOT / 'Source/Version.h').read_text()).group(1)
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--build-dir', default='build')
 args = parser.parse_args()
@@ -35,12 +37,12 @@ cases += [
 ]
 results = []
 for i, flags in enumerate(cases):
-    command = [str(renderer), *flags, f'out=qa232_{i:02d}']
+    command = [str(renderer), *flags, f'out=qa{VERSION.replace(".", "")}_{i:02d}']
     result = subprocess.run(command, cwd=ROOT, capture_output=True, text=True)
     results.append({'arguments': command[1:], 'returncode': result.returncode,
                     'stdout': result.stdout, 'stderr': result.stderr})
     print(f'{i+1}/{len(cases)} exit={result.returncode}: {" ".join(flags)}', flush=True)
-report = ROOT / 'docs/layout-2.4.0.json'
+report = ROOT / f'docs/layout-{VERSION}.json'
 report.write_text(json.dumps({'platform': platform.system(), 'cases': results}, indent=2) + '\n')
 failures = [x for x in results if x['returncode'] != 0]
 for failure in failures:

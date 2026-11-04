@@ -1,6 +1,6 @@
 # MasterLens / BerryStudio 前端设计审美与主题规范
 
-> 版本：1.0 · 状态：团队参考（非约束） · 基线：MasterLens 2.4.0 · 维护者：BerryStudio<br>
+> 版本：1.0 · 状态：团队参考（非约束） · 基线：MasterLens 2.4.1 · 维护者：BerryStudio<br>
 > 适用：音频工具、桌面插件、数据密集型 Web 工具、内部仪表盘<br>
 > 目标：统一**审美方向与秩序感**，不要求其他项目复制 MasterLens 的像素尺寸、行高或字距。
 
@@ -59,7 +59,7 @@
 
 - 新项目先读本文件，建立方向和 token；
 - 进入 MasterLens 源码时，再读 `DESIGN.md` 和 [`docs/instrument-ui.md`](docs/instrument-ui.md)；
-- `DESIGN.md` 中旧版 11/13/20px 的字号表属于历史记录；**当前 2.4.0 实际使用 14/16/26px**。这里只记录当时实现，不把任何尺寸冻结为后续要求；后续以最新需求和源码为准。
+- `DESIGN.md` 中旧版 11/13/20px 的字号表属于历史记录；**当前 2.4.1 实际使用 14/16/26px**。这里只记录当时实现，不把任何尺寸冻结为后续要求；后续以最新需求和源码为准。
 
 ---
 
@@ -803,12 +803,12 @@ MasterLens 的参考值（100% 逻辑像素）：
 - 关于/设置弹窗：`Source/ui/About.cpp`、`Source/ui/Settings.cpp`
 - 项目设计宪法：[`DESIGN.md`](DESIGN.md)
 - 控件/布局验收：[`docs/instrument-ui.md`](docs/instrument-ui.md)
-- 2.4.0 实际截图：
-  - [`docs/screenshot-2.4.0.png`](docs/screenshot-2.4.0.png)
-  - [`docs/spectrum-2.4.0.png`](docs/spectrum-2.4.0.png)
-  - [`docs/stereo-2.4.0.png`](docs/stereo-2.4.0.png)
-  - [`docs/fileqc-2.4.0.png`](docs/fileqc-2.4.0.png)
-  - [`docs/about-2.4.0.png`](docs/about-2.4.0.png)
+- 2.4.1 实际截图：
+  - [`docs/screenshot-2.4.1.png`](docs/screenshot-2.4.1.png)
+  - [`docs/spectrum-2.4.1.png`](docs/spectrum-2.4.1.png)
+  - [`docs/stereo-2.4.1.png`](docs/stereo-2.4.1.png)
+  - [`docs/fileqc-2.4.1.png`](docs/fileqc-2.4.1.png)
+  - [`docs/about-2.4.1.png`](docs/about-2.4.1.png)
 
 ---
 

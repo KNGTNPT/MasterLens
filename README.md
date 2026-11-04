@@ -5,13 +5,42 @@
 **母带响度 / 文件 QC / 频谱 / 声场 / 专辑交付 / CLI**<br>
 by **BerryStudio** · developer **KNGTNPT 兰**<br>
 macOS / Windows · VST3 / AU / 独立版 · C++17 + JUCE 8<br>
-当前版本：**2.4.0**
+当前版本：**2.4.1**
 
 MasterLens 是放在母带链末尾的小检查员：这首歌有多响、峰值会不会顶过头、立体声合成单声道后会不会变薄、交出去之前还有哪里值得听一遍，它都帮你留意着。把它插在 Master / Stereo Out 的最后一级就好。
 
 默认零延迟、逐位旁路，也就是只看、不动你的声音。点试听、开等响监听或切参考 A/B 时，才会临时改变输出。辛苦做好的声音，会好好留在原地。
 
 歌该做成什么样，还是你的耳朵说了算。数字有点多也没关系，我们一项项看；它负责把容易漏掉的小细节摊开，陪你把交付前的最后一遍检查做完。
+
+## 2.4.1：Windows 安装器回到正确目录喵
+
+2.4.1 是一个只修 Windows 安装路径的小补丁。声音没有变，界面没有变，变的是 VST3 终于会被放到 DAW 真正会扫描的地方。
+
+Windows x64 装完找不到 MasterLens，根因在 NSIS 安装脚本：`$COMMONPROGRAMFILES64` 并不是有效变量，正确的名字是 `$COMMONFILES64`。NSIS 编译时只会给一个 warning 6000，安装器仍然能生成，但 VST3 的安装目录被解析错了。现在安装和卸载都走 `$COMMONFILES64\VST3\MasterLens.vst3`，也就是：
+
+```text
+C:\Program Files\Common Files\VST3\MasterLens.vst3
+```
+
+另外把 CI 的 `makensis` 加上了 `-WX`。以后再有类似的未知变量，安装包会直接构建失败，不会又悄悄产出一个“看起来装完了”的坏包。
+
+- **修复范围**：Windows x64 / ARM64 安装器的 Common Files 路径，以及卸载路径。
+- **没有改动**：DSP、旁路、文件 QC、界面布局、项目格式和 macOS 功能。
+- **升级方式**：Windows 2.4.0 用户重新下载 2.4.1 安装包，安装后重启 DAW。若旧安装器把 VST3 放到了别处，可以顺手清理那个错位目录。
+- **验证**：本地 `makensis -WX` 通过；Windows x64 CI 会执行静默安装和目录检查；DSP / CLI / UI 回归继续通过。详见 [2.4.1 验证记录](docs/performance-2.4.1.md)。
+
+![MasterLens 2.4.1 响度与动态](docs/screenshot-2.4.1.png)
+
+![MasterLens 2.4.1 信号健康](docs/signal-2.4.1.png)
+
+![MasterLens 2.4.1 频谱平衡](docs/spectrum-2.4.1.png)
+
+![MasterLens 2.4.1 声场与相位](docs/stereo-2.4.1.png)
+
+![MasterLens 2.4.1 文件 QC](docs/fileqc-2.4.1.png)
+
+![MasterLens 2.4.1 关于页原始 SVG](docs/about-2.4.1.png)
 
 ## 2.4.0：导入文件真正进入测量链路喵
 
@@ -163,7 +192,7 @@ Windows ARM64 安装包由交叉构建生成；**手头没有 Windows on ARM 设
 
 ### 先装好，再播一首
 
-[下载 2.4.0](https://github.com/KNGTNPT/MasterLens/releases/tag/v2.4.0)。macOS 打开 DMG，运行「安装 Install.command」；Windows 运行对应 x64 / ARM64 的 EXE，然后重启 DAW。
+[下载 2.4.1](https://github.com/KNGTNPT/MasterLens/releases/tag/v2.4.1)。macOS 打开 DMG，运行「安装 Install.command」；Windows 运行对应 x64 / ARM64 的 EXE，然后重启 DAW。
 
 把 MasterLens 插在母带链最后，先播 20–30 秒，跟它打个招呼。左侧的综合响度看整体有多响，真峰值看最高处有没有越线；LRA 看强弱变化的范围，PLR 看峰值与平均响度之间还留了多少空间。中央曲线会把变化过程画出来。
 

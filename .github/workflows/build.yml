@@ -14,7 +14,7 @@ concurrency:
 
 env:
   JUCE_TAG: "8.0.15"
-  APP_VERSION: "2.4.0"
+  APP_VERSION: "2.4.1"
 
 jobs:
   macos:
@@ -150,10 +150,26 @@ jobs:
         shell: pwsh
         run: |
           $out = Join-Path $PWD "MasterLens-${{ env.APP_VERSION }}-Windows-${{ matrix.arch }}.exe"
-          & "${env:ProgramFiles(x86)}\NSIS\makensis.exe" /V2 `
+          # -WX turns NSIS warning 6000 (unknown variable) into a build failure.
+          & "${env:ProgramFiles(x86)}\NSIS\makensis.exe" -WX /V2 `
             "/DVERSION=${{ env.APP_VERSION }}" "/DARCH=${{ matrix.arch }}" `
             "/DSTAGE=$env:STAGE_DIR" "/DOUTFILE=$out" "packaging/installer.nsi"
           if (!(Test-Path $out)) { throw "NSIS 未生成安装包" }
+
+      - name: Installer smoke test (native x64)
+        if: matrix.arch == 'x64'
+        shell: pwsh
+        run: |
+          $installer = Join-Path $PWD "MasterLens-${{ env.APP_VERSION }}-Windows-x64.exe"
+          $process = Start-Process -FilePath $installer -ArgumentList "/S" -Wait -PassThru
+          if ($process.ExitCode -ne 0) { throw "安装器退出码: $($process.ExitCode)" }
+
+          $vst3 = Join-Path $env:CommonProgramFiles "VST3\MasterLens.vst3\Contents\x86_64-win\MasterLens.vst3"
+          $standalone = Join-Path $env:ProgramFiles "MasterLens\MasterLens.exe"
+          if (!(Test-Path $vst3)) { throw "VST3 不在 Common Files: $vst3" }
+          if (!(Test-Path $standalone)) { throw "独立版不在 Program Files: $standalone" }
+          Write-Host "Installed VST3: $vst3"
+          Write-Host "Installed standalone: $standalone"
 
       - uses: actions/upload-artifact@v7
         with:
@@ -190,4 +206,4 @@ jobs:
           sha256sum *.dmg *.exe > SHA256SUMS.txt
           gh release create "$RELEASE_TAG" *.dmg *.exe SHA256SUMS.txt \
             --verify-tag --title "MasterLens ${APP_VERSION}" \
-            --notes-file ../docs/release-2.4.0.md
+            --notes-file ../docs/release-2.4.1.md

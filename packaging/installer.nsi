@@ -1,11 +1,11 @@
 ; MasterLens Windows installer (NSIS)
 ; 由 CI 调用：
-;   makensis /DVERSION=2.4.0 /DARCH=x64 /DSTAGE=<abs stage> /DOUTFILE=<abs out> packaging/installer.nsi
+;   makensis /DVERSION=2.4.1 /DARCH=x64 /DSTAGE=<abs stage> /DOUTFILE=<abs out> packaging/installer.nsi
 Unicode true
 !include "MUI2.nsh"
 
 !ifndef VERSION
-  !define VERSION "2.4.0"
+  !define VERSION "2.4.1"
 !endif
 !ifndef ARCH
   !define ARCH "x64"
@@ -34,7 +34,10 @@ RequestExecutionLevel admin
 !insertmacro MUI_LANGUAGE "SimpChinese"
 
 Section "MasterLens (VST3 + Standalone + CLI)"
-  SetOutPath "$COMMONPROGRAMFILES64\VST3\MasterLens.vst3"
+  ; NSIS exposes $COMMONFILES64 for C:\Program Files\Common Files.
+  ; $COMMONPROGRAMFILES64 does not exist and only produces warning 6000,
+  ; which sends the VST3 to the wrong directory on Windows x64.
+  SetOutPath "$COMMONFILES64\VST3\MasterLens.vst3"
   File /r "${STAGE}\MasterLens.vst3\*.*"
 
   SetOutPath "$INSTDIR"
@@ -48,7 +51,7 @@ Section "MasterLens (VST3 + Standalone + CLI)"
 SectionEnd
 
 Section "Uninstall"
-  RMDir /r "$COMMONPROGRAMFILES64\VST3\MasterLens.vst3"
+  RMDir /r "$COMMONFILES64\VST3\MasterLens.vst3"
   Delete "$INSTDIR\MasterLens.exe"
   Delete "$INSTDIR\MasterLensCli.exe"
   Delete "$INSTDIR\Uninstall.exe"
