@@ -33,7 +33,7 @@ warning 6000: unknown variable/constant "COMMONPROGRAMFILES64\VST3\MasterLens.vs
   `C:\Program Files\Common Files\VST3\MasterLens.vst3\Contents\x86_64-win\MasterLens.vst3`
   和 `C:\Program Files\MasterLens\MasterLens.exe` 是否存在。
 
-## 3. 本地验证
+## 3. 本地与 CI 验证
 
 环境：Apple Silicon macOS，JUCE 8.0.15，NSIS 3.13。
 
@@ -47,6 +47,11 @@ warning 6000: unknown variable/constant "COMMONPROGRAMFILES64\VST3\MasterLens.vs
 - CLI 集成检查：**66 项通过**。
 - UI 布局：**35/35 通过**。
 - 2.4.1 README 截图：6 张，2240×1400，记录在 `docs/screenshots-2.4.1.json`。
+- GitHub Actions run `41871284918`：macOS、Windows x64、Windows ARM64 三个构建任务全部 success。
+- Windows x64 安装冒烟测试通过：静默安装后找到
+  `C:\Program Files\Common Files\VST3\MasterLens.vst3\Contents\x86_64-win\MasterLens.vst3`
+  和 `C:\Program Files\MasterLens\MasterLens.exe`。
+- Windows ARM64 安装包构建通过；该 job 不做 native x64 冒烟测试。
 
 ## 4. 发行限制
 

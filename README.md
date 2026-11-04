@@ -28,7 +28,7 @@ C:\Program Files\Common Files\VST3\MasterLens.vst3
 - **修复范围**：Windows x64 / ARM64 安装器的 Common Files 路径，以及卸载路径。
 - **没有改动**：DSP、旁路、文件 QC、界面布局、项目格式和 macOS 功能。
 - **升级方式**：Windows 2.4.0 用户重新下载 2.4.1 安装包，安装后重启 DAW。若旧安装器把 VST3 放到了别处，可以顺手清理那个错位目录。
-- **验证**：本地 `makensis -WX` 通过；Windows x64 CI 会执行静默安装和目录检查；DSP / CLI / UI 回归继续通过。详见 [2.4.1 验证记录](docs/performance-2.4.1.md)。
+- **验证**：本地 `makensis -WX` 通过；Windows x64 CI 静默安装与目录检查通过；DSP / CLI / UI 回归继续通过。详见 [2.4.1 验证记录](docs/performance-2.4.1.md)。
 
 ![MasterLens 2.4.1 响度与动态](docs/screenshot-2.4.1.png)
 
