@@ -274,7 +274,7 @@ cmake --build build --config Release --target MasterLensUiShot -j 4
 - `Source/PluginProcessor.*`：音频回调、参数、宿主状态、参考与试听。
 - `Source/Editor*.cpp`：窗口布局、控制、调度和报告。
 - `Source/ui/`：自绘界面、图表、页面与诊断规则。
-- [`FRONTEND-DESIGN.md`](FRONTEND-DESIGN.md)：团队共享的前端审美、明暗主题 token、组件与 skill 取舍规范。
+- [`FRONTEND-DESIGN.md`](FRONTEND-DESIGN.md)：团队共享的前端审美、明暗主题 token、组件与 skill 取舍参考；不约束 MasterLens 后续前端改动。
 - `Source/dsp/`：响度、真峰值、频谱与信号分析。
 - `Source/audio/`、`Source/file/`、`Source/album/`：试听、文件 QC 与专辑门禁。
 - `Tests/DspTest.cpp`：测量、试听、参考、文件分析回归与 CPU 基准。
