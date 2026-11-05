@@ -64,12 +64,13 @@ namespace
         if (c.unit.isNotEmpty())
         {
             const auto font = getLabelFont();
-            const int w = juce::roundToInt (juce::GlyphArrangement::getStringWidth (font, c.unit)) + 4;
+            const int valueWidth = juce::roundToInt (
+                juce::GlyphArrangement::getStringWidth (getValueFont(), c.primary));
 
             g.setColour (theme::textFaint);
             g.setFont (font);
-            g.drawText (c.unit, valueRow.withTrimmedLeft (juce::jmax (0, valueRow.getWidth() - w - 2)),
-                        juce::Justification::centredRight, false);
+            g.drawText (c.unit, valueRow.withTrimmedLeft (valueWidth + 6).withTrimmedTop (6),
+                        juce::Justification::centredLeft, false);
         }
 
         g.setColour (theme::textFaint);
