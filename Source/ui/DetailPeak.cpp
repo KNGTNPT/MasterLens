@@ -24,17 +24,22 @@ void DetailArea::paintTruePeak (juce::Graphics& g)
 
     g.setColour (theme::textDim);
     g.setFont (getLabelFont());
-    g.drawText (T ("最大值 dBTP", "MAXIMUM dBTP"), left.removeFromTop (16),
+    g.drawText (T ("最大值", "MAXIMUM"), left.removeFromTop (16),
                 juce::Justification::centredLeft);
 
+    auto valueRow = left.removeFromTop (48);
+    const auto critical = getCriticalFont();
+    const auto valueText = valid ? num (s.truePeakDb) : noValue();
     g.setColour (colour);
-    g.setFont (getCriticalFont());
-    g.drawText (valid ? num (s.truePeakDb) : noValue(), left.removeFromTop (48),
-                juce::Justification::centredLeft);
+    g.setFont (critical);
+    g.drawText (valueText, valueRow, juce::Justification::centredLeft);
 
+    const auto valueWidth = juce::roundToInt (
+        juce::GlyphArrangement::getStringWidth (critical, valueText));
     g.setColour (theme::textFaint);
-    g.setFont (getValueFont());
-    g.drawText ("dBTP", left, juce::Justification::topLeft);
+    g.setFont (getLabelFont());
+    g.drawText ("dBTP", valueRow.withTrimmedLeft (valueWidth + 8).withTrimmedTop (18),
+                juce::Justification::centredLeft);
 
     const auto row = [&] (const juce::String& key, const juce::String& value)
     {

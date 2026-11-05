@@ -56,12 +56,16 @@ void LevelMeters::paintRow (juce::Graphics& g, juce::Rectangle<int> area, const 
     }
 
     auto readout = row.removeFromRight (96);
+    auto unitArea = readout.removeFromRight (32);
     const bool over = valueDb > 0.0f;
 
     g.setColour (theme::text);
     g.setFont (getValueFont());
-    g.drawText (valueDb <= -99.0f ? noValue() : num (valueDb) + " LUFS", readout,
+    g.drawText (valueDb <= -99.0f ? noValue() : num (valueDb), readout,
                 juce::Justification::centredRight);
+    g.setColour (theme::textFaint);
+    g.setFont (getLabelFont());
+    g.drawText ("LUFS", unitArea.withTrimmedTop (2), juce::Justification::centredRight);
 
     if (over)
     {

@@ -42,15 +42,22 @@ void DetailArea::paintTarget (juce::Graphics& g)
         g.drawFittedText (T (e.zh, e.en), inner.removeFromTop (tiny ? 16 : (compact ? 20 : 22)),
                           juce::Justification::centredLeft, 1);
 
+        auto currentRow = inner.removeFromTop (tiny ? 22 : (compact ? 30 : 38));
+        const auto valueText = hasSignal ? num (s.integrated) : noValue();
         g.setColour (hasSignal ? theme::good : theme::textFaint);
         g.setFont (getValueFont());
-        g.drawText (hasSignal ? num (s.integrated) : noValue(),
-                    inner.removeFromTop (tiny ? 22 : (compact ? 30 : 38)),
+        g.drawText (valueText, currentRow, juce::Justification::centredLeft, false);
+
+        const auto valueWidth = juce::roundToInt (
+            juce::GlyphArrangement::getStringWidth (getValueFont(), valueText));
+        g.setColour (theme::textFaint);
+        g.setFont (getLabelFont());
+        g.drawText ("LUFS", currentRow.withTrimmedLeft (valueWidth + 7).withTrimmedTop (4),
                     juce::Justification::centredLeft, false);
 
         g.setColour (theme::textFaint);
         g.setFont (getLabelFont());
-        g.drawText (hasSignal ? T ("当前综合响度 LUFS", "current integrated LUFS")
+        g.drawText (hasSignal ? T ("当前综合响度", "current integrated")
                               : T ("等待信号", "waiting for signal"),
                     inner.removeFromTop (tiny ? 10 : (compact ? 13 : 15)),
                     juce::Justification::centredLeft, false);

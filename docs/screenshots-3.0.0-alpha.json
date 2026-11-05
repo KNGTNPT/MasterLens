@@ -1,0 +1,78 @@
+{
+  "version": "3.0.0-alpha",
+  "platform": "Darwin",
+  "architecture": "arm64",
+  "renderer": "MasterLensUiShot 3.0.0-alpha",
+  "rendererSha256": "cff10c6ac1a150809e8d2703c95359e40e0d791b34b147d067fe1da4015d1a0c",
+  "images": [
+    {
+      "path": "docs/screenshot-3.0.0-alpha.png",
+      "sha256": "572f9095ebda7a83471f8109b6487631b348a7c2cbe6eb1ac47935e52da1ac96",
+      "width": 2240,
+      "height": 1400,
+      "arguments": [
+        "page0",
+        "size1120",
+        "out=screenshot300-alpha"
+      ]
+    },
+    {
+      "path": "docs/signal-3.0.0-alpha.png",
+      "sha256": "b9c9e6ab17ff8cec941212c4b9f1d37b0cc8de1a201e4778b19b3364440efa57",
+      "width": 2240,
+      "height": 1400,
+      "arguments": [
+        "page6",
+        "size1120",
+        "out=signal300-alpha"
+      ]
+    },
+    {
+      "path": "docs/spectrum-3.0.0-alpha.png",
+      "sha256": "7f48610fe0d4d708979437eb729512aec0ff64bd0646271d0b17ac49a0c7f565",
+      "width": 2240,
+      "height": 1400,
+      "arguments": [
+        "page2",
+        "size1120",
+        "out=spectrum300-alpha"
+      ]
+    },
+    {
+      "path": "docs/stereo-3.0.0-alpha.png",
+      "sha256": "ae0c159b0a7da0eb9ae958cc82b04e68d776a3682541f67723dcc18dc2cf8d90",
+      "width": 2240,
+      "height": 1400,
+      "arguments": [
+        "page3",
+        "size1120",
+        "out=stereo300-alpha"
+      ]
+    },
+    {
+      "path": "docs/fileqc-3.0.0-alpha.png",
+      "sha256": "d618a1169218070f53d9d32be4c0f4eb4c03bd8c0009f8c6509e0c076a839b54",
+      "width": 2240,
+      "height": 1400,
+      "arguments": [
+        "page10",
+        "fileqc",
+        "standalone",
+        "size1120",
+        "out=fileqc300-alpha"
+      ]
+    },
+    {
+      "path": "docs/about-3.0.0-alpha.png",
+      "sha256": "86b16497526d95899011b7ffb55ce3ba1fc8eeaa5fae2af9cf8989e354284ea6",
+      "width": 2240,
+      "height": 1400,
+      "arguments": [
+        "page0",
+        "about",
+        "size1120",
+        "out=about300-alpha"
+      ]
+    }
+  ]
+}

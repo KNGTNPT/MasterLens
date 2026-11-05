@@ -14,7 +14,7 @@ concurrency:
 
 env:
   JUCE_TAG: "8.0.15"
-  APP_VERSION: "2.5.0"
+  APP_VERSION: "3.0.0-alpha"
 
 jobs:
   macos:
@@ -204,6 +204,11 @@ jobs:
             test -s "$asset"
           done
           sha256sum *.dmg *.exe > SHA256SUMS.txt
+          PRERELEASE=""
+          case "$RELEASE_TAG" in
+            *-*) PRERELEASE="--prerelease" ;;
+          esac
           gh release create "$RELEASE_TAG" *.dmg *.exe SHA256SUMS.txt \
             --verify-tag --title "MasterLens ${APP_VERSION}" \
-            --notes-file ../docs/release-2.5.0.md
+            $PRERELEASE \
+            --notes-file ../docs/release-3.0.0-alpha.md

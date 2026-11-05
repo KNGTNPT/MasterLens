@@ -234,10 +234,7 @@ void HistoryGraph::paintPlot (juce::Graphics& g)
                     juce::Justification::centredRight);
     }
 
-    g.setFont (getLabelFont());
-    g.setColour (theme::textFaint);
-    g.drawText ("LUFS", juce::Rectangle<int> (plot.getRight() + 8, plot.getY() - 14, 50, 12),
-                juce::Justification::centredLeft);
+    // The unit lives with the current value; the curve itself stays clean.
 
     // ---- LRA allowance band (8 % fill) --------------------------------------
     if (bandLra > 0.05f)
@@ -357,11 +354,15 @@ void HistoryGraph::paintOverlay (juce::Graphics& g)
 
     if (latest > -99.0f)
     {
+        auto valueArea = plot.withHeight (20).withTrimmedTop (4).withTrimmedRight (4)
+                             .removeFromRight (92);
+        auto unitArea = valueArea.removeFromRight (34).withTrimmedLeft (6);
         g.setColour (theme::text);
         g.setFont (getValueFont());
-        g.drawText (num (latest),
-                    juce::Rectangle<int> (plot.getRight() + 6, plot.getY() + 4, 58, 20),
-                    juce::Justification::centredLeft);
+        g.drawText (num (latest), valueArea, juce::Justification::centredRight);
+        g.setColour (theme::textFaint);
+        g.setFont (getLabelFont());
+        g.drawText ("LUFS", unitArea, juce::Justification::centredLeft);
     }
 
     // ---- drag selection ------------------------------------------------------

@@ -193,11 +193,11 @@ void DetailArea::paintDelivery (juce::Graphics& g)
 
     const int rowH = juce::jlimit (21, 30, (table.getHeight() - 24) / numPlatforms);
     auto header = table.removeFromTop (24);
-    const int wPlatform = juce::roundToInt ((float) table.getWidth() * 0.26f);
-    const int wTarget   = juce::roundToInt ((float) table.getWidth() * 0.11f);
-    const int wGain     = juce::roundToInt ((float) table.getWidth() * 0.13f);
-    const int wPredicted = juce::roundToInt ((float) table.getWidth() * 0.18f);
-    const int wLimited  = juce::roundToInt ((float) table.getWidth() * 0.16f);
+    const int wPlatform = juce::roundToInt ((float) table.getWidth() * 0.22f);
+    const int wTarget   = juce::roundToInt ((float) table.getWidth() * 0.16f);
+    const int wGain     = juce::roundToInt ((float) table.getWidth() * 0.12f);
+    const int wPredicted = juce::roundToInt ((float) table.getWidth() * 0.17f);
+    const int wLimited  = juce::roundToInt ((float) table.getWidth() * 0.15f);
 
     g.setColour (theme::textFaint);
     g.setFont (getLabelFont());
@@ -244,7 +244,8 @@ void DetailArea::paintDelivery (juce::Graphics& g)
 
         g.setColour (theme::textDim);
         g.setFont (getValueFont());
-        g.drawText (num (p.targetLufs), r0.removeFromLeft (wTarget), juce::Justification::centredRight);
+        g.drawText (num (p.targetLufs) + " LUFS", r0.removeFromLeft (wTarget),
+                    juce::Justification::centredRight);
 
         g.setColour (theme::text);
         g.setFont (getValueFont());
@@ -252,11 +253,11 @@ void DetailArea::paintDelivery (juce::Graphics& g)
                     juce::Justification::centredRight);
 
         g.setColour (colour);
-        g.drawText (num (r.predictedTp), r0.removeFromLeft (wPredicted),
+        g.drawText (num (r.predictedTp) + " dBTP", r0.removeFromLeft (wPredicted),
                     juce::Justification::centredRight);
 
         g.setColour (r.limitedDb > 0.05f ? theme::bad : theme::textFaint);
-        g.drawText (r.limitedDb > 0.05f ? num (r.limitedDb) : noValue(),
+        g.drawText ((r.limitedDb > 0.05f ? num (r.limitedDb) : noValue()) + " LU",
                     r0.removeFromLeft (wLimited), juce::Justification::centredRight);
 
         g.setFont (getLabelFont());
