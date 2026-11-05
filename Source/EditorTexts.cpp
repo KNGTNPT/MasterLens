@@ -19,6 +19,7 @@ void MasterLensAudioProcessorEditor::updateTexts()
     themeButton.setButtonText (ml::grid::controlText (ml::theme::dark ? T ("深色", "Dark") : T ("浅色", "Light")));
     languageButton.setButtonText (ml::grid::controlText (en ? juce::String::fromUTF8 ("中文") : juce::String ("EN")));
     exportButton.setButtonText (ml::grid::controlText (T ("导出报告", "Export")));
+    snapshotCaption.setText (T ("读数快照", "SNAPSHOT"), juce::dontSendNotification);
 
     const float trim = processor.getMonitorTrimDb();
     monitorButton.setButtonText (ml::grid::controlText (processor.isMonitorMatch()

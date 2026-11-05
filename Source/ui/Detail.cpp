@@ -98,6 +98,8 @@ DetailArea::DetailArea()
 
     addChildComponent (fileProgress);
     addChildComponent (fileTime);
+    addChildComponent (fileInspectorToggle);
+    fileInspectorToggle.onClick = [this] { setFileInspectorCollapsed (! fileInspectorCollapsed); };
     fileProgress.setSliderStyle (juce::Slider::LinearHorizontal);
     fileProgress.setTextBoxStyle (juce::Slider::NoTextBox, false, 0, 0);
     fileProgress.setRange (0.0, 1.0, 0.01);
@@ -110,7 +112,7 @@ DetailArea::DetailArea()
     fileTime.setJustificationType (juce::Justification::centredRight);
     fileTime.setFont (getValueFont());
     fileTime.setColour (juce::Label::textColourId, theme::textFaint);
-    fileTime.setText ("00:00 / 00:00", juce::dontSendNotification);
+    fileTime.setText ("— / —", juce::dontSendNotification);
 
     fileChoose.onClick = [this] { if (onChooseFiles != nullptr) onChooseFiles(); };
     fileFolder.onClick = [this] { if (onChooseFolder != nullptr) onChooseFolder(); };
@@ -184,10 +186,10 @@ void DetailArea::refreshTexts()
 {
     refImport.setButtonText (ml::grid::controlText (T ("导入参考轨", "Import reference")));
     refClear.setButtonText (ml::grid::controlText (T ("清除", "Clear")));
-    refPlay.setButtonText (ml::grid::controlText (refPlaying ? T ("参考 A/B 开", "Ref A/B on")
-                                      : T ("参考 A/B", "Ref A/B")));
-    refPlay.setTooltip (T ("在插件内按宿主播放头播放参考轨；与等响监听一起构成 A/B",
-                            "Play the reference inside the plug-in at the host playhead; pair with loudness matching"));
+    refPlay.setButtonText (ml::grid::controlText (refPlaying ? T ("监听工程", "Monitor project")
+                                      : T ("监听参考", "Monitor reference")));
+    refPlay.setTooltip (T ("切换监听来源：工程总线 / 参考轨；旁边的 A/B 只保存读数快照",
+                            "Switch listening source: project bus / reference track; A/B only stores reading snapshots"));
     refAlign.setButtonText (ml::grid::controlText (T ("粗略对齐", "Auto align")));
     refAlign.setTooltip (T ("用最近 30 s 短时响度包络做粗略自动对齐；不是采样级同步",
                              "Coarse envelope alignment over the last 30 s; not sample-accurate"));
@@ -237,6 +239,8 @@ void DetailArea::refreshTexts()
     fileViewButtons[0].setButtonText (ml::grid::controlText (T ("样本证据", "Evidence")));
     fileViewButtons[1].setButtonText (ml::grid::controlText (T ("分频折叠", "Mono bands")));
     fileViewButtons[2].setButtonText (ml::grid::controlText (T ("增益预算", "Gain budget")));
+    fileInspectorToggle.setButtonText (ml::grid::controlText (
+        fileInspectorCollapsed ? T ("展开证据", "Expand") : T ("收起证据", "Collapse")));
     fileExport.setTooltip (T ("导出 CSV 摘要与完整 JSON 证据（时间、样本、源文件 SHA256）",
                               "Export CSV summary + full JSON evidence (time, samples, source SHA256)"));
     fileClear.setButtonText (ml::grid::controlText (T ("清空结果", "Clear results")));
@@ -307,6 +311,7 @@ void DetailArea::hideAllChildren()
     filePlay.setVisible (false);
     fileProgress.setVisible (false);
     fileTime.setVisible (false);
+    fileInspectorToggle.setVisible (false);
     fileAddAlbum.setVisible (false);
     fileClear.setVisible (false);
     fileExport.setVisible (false);
@@ -394,8 +399,8 @@ void DetailArea::setSpectrumView (int view)
 void DetailArea::setReferencePlaybackState (bool playing, const juce::String&)
 {
     refPlaying = playing;
-    refPlay.setButtonText (ml::grid::controlText (refPlaying ? T ("参考 A/B 开", "Ref A/B on")
-                                      : T ("参考 A/B", "Ref A/B")));
+    refPlay.setButtonText (ml::grid::controlText (refPlaying ? T ("监听工程", "Monitor project")
+                                      : T ("监听参考", "Monitor reference")));
     refPlay.setColour (juce::TextButton::buttonOnColourId,
                        refPlaying ? theme::accentSoft : theme::cardAlt);
     repaint();
@@ -427,7 +432,24 @@ void DetailArea::setFileResults (std::vector<FileAnalysisResult> results, bool b
     if (fileSelected >= (int) fileResults.size())
         fileSelected = -1;
     if (fileSelected < 0 && ! fileResults.empty()) fileSelected = 0;
+    if (layoutChanged) fileInspectorCollapsed = false;
     if (layoutChanged) resized();
+
+    if (filePlaybackAvailable)
+    {
+        if (const auto* selected = selectedFile())
+        {
+            if (fileTransportState != FileTransportState::playing)
+            {
+                setFileTransportState (FileTransportState::ready);
+                setFileProgress (0.0, selected->durationSeconds);
+            }
+        }
+        else
+            setFileTransportState (FileTransportState::unloaded);
+    }
+    else
+        setFileTransportState (FileTransportState::unavailable);
 
     repaint();
 }
@@ -799,9 +821,11 @@ void DetailArea::resized()
             {
                 auto& b = fileViewButtons[(size_t) i];
                 b.setBounds (tabs.removeFromLeft (104).reduced (2, 2));
-                b.setVisible (fileSelected >= 0 && ! fileResults.empty());
+                b.setVisible (fileSelected >= 0 && ! fileResults.empty() && ! fileInspectorCollapsed);
                 b.setToggleState (fileView == i, juce::dontSendNotification);
             }
+            fileInspectorToggle.setBounds (tabs.removeFromRight (84).reduced (2, 2));
+            fileInspectorToggle.setVisible (fileSelected >= 0 && ! fileResults.empty());
             break;
         }
 

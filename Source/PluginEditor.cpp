@@ -84,10 +84,11 @@ MasterLensAudioProcessorEditor::MasterLensAudioProcessorEditor (MasterLensAudioP
     detail.onExportFileTable = [this] { exportFileTable(); };
     detail.onPreviewFile = [this] (const juce::String& path, double seconds)
     {
-        processor.startFilePreview (juce::File (path), juce::jmax (0.0, seconds - 1.5),
+        const auto file = juce::File (path);
+        processor.startFilePreview (file, juce::jmax (0.0, seconds - 1.5),
                                     seconds + 2.5, true);
-        footerStatusText = T ("试听文件证据 · 双击再次定位，Esc 停止",
-                              "Previewing file evidence · double-click again, Esc stops");
+        footerStatusText = T ("问题片段 · ", "Evidence · ") + file.getFileName()
+                           + " · " + ml::fmtTime (seconds) + T (" · Esc 停止", " · Esc stops");
         footerStatusColour = ml::theme::accent;
         repaint();
     };

@@ -95,13 +95,21 @@ void ReadoutBand::paint (juce::Graphics& g)
         g.setFont (getLabelFont());
         g.drawText (c.label, area.removeFromTop (16), juce::Justification::centredLeft, false);
         area.removeFromTop (4);
+
+        auto valueRow = area.removeFromTop (24);
+        const auto valueFont = i == 0 ? getCriticalFont() : getValueFont();
         g.setColour (c.status);
-        g.setFont (i == 0 ? getCriticalFont() : getValueFont());
-        g.drawText (c.value, area.removeFromTop (24), juce::Justification::centredLeft, false);
-        area.removeFromTop (4);
+        g.setFont (valueFont);
+        g.drawText (c.value, valueRow, juce::Justification::centredLeft, false);
+
+        // Keep the unit next to the reading: the label, number and unit make
+        // one semantic cell instead of three unrelated lines.
+        const auto valueWidth = juce::roundToInt (
+            juce::GlyphArrangement::getStringWidth (valueFont, c.value));
         g.setFont (getLabelFont());
         g.setColour (theme::textFaint);
-        g.drawText (c.unit, area.removeFromTop (16), juce::Justification::centredLeft, false);
+        g.drawText (c.unit, valueRow.withTrimmedLeft (valueWidth + 8).withTrimmedTop (8),
+                    juce::Justification::centredLeft, false);
     }
 }
 

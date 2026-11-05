@@ -138,6 +138,11 @@ void MasterLensAudioProcessorEditor::buildControls()
     exportButton.getProperties().set ("mlPrimary", true);
     addAndMakeVisible (exportButton);
 
+    snapshotCaption.setFont (ml::getLabelFont());
+    snapshotCaption.setJustificationType (juce::Justification::centredRight);
+    snapshotCaption.setColour (juce::Label::textColourId, ml::theme::textFaint);
+    addAndMakeVisible (snapshotCaption);
+
     snapshotA.onClick = [this] { recallSnapshot (0); };
     snapshotB.onClick = [this] { recallSnapshot (1); };
     snapshotA.onClear = [this] { clearSnapshot (0); };

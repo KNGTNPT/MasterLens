@@ -171,6 +171,7 @@ private:
     juce::Slider targetSlider, ceilingSlider;
     juce::TextButton holdButton, clearButton, languageButton, aboutButton, themeButton, exportButton, settingsButton;
     juce::TextButton monitorButton;
+    juce::Label snapshotCaption;
 
     ml::ReadoutBand readout;
     ml::ModuleRail rail;

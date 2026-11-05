@@ -55,12 +55,12 @@ void LevelMeters::paintRow (juce::Graphics& g, juce::Rectangle<int> area, const 
         g.drawText (windowText, row.getX(), row.getY() + 20, 100, 16, juce::Justification::centredLeft);
     }
 
-    auto readout = row.removeFromRight (64);
+    auto readout = row.removeFromRight (96);
     const bool over = valueDb > 0.0f;
 
     g.setColour (theme::text);
     g.setFont (getValueFont());
-    g.drawText (valueDb <= -99.0f ? noValue() : num (valueDb), readout,
+    g.drawText (valueDb <= -99.0f ? noValue() : num (valueDb) + " LUFS", readout,
                 juce::Justification::centredRight);
 
     if (over)

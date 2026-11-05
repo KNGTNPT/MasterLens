@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.22)
 
-project(MasterLens VERSION 2.4.1 LANGUAGES C CXX)
+project(MasterLens VERSION 2.5.0 LANGUAGES C CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -29,7 +29,7 @@ if(MASTERLENS_ENABLE_INSPECTOR)
 endif()
 
 juce_add_plugin(MasterLens
-    VERSION 2.4.1
+    VERSION 2.5.0
     COMPANY_NAME "BerryStudio"
     BUNDLE_ID "com.berrystudio.masterlens"
     PLUGIN_MANUFACTURER_CODE OrcA

@@ -42,17 +42,18 @@ namespace
 
         g.setColour (theme::textDim);
         g.setFont (getLabelFont());
-        g.drawText (c.title, titleRow.withTrimmedRight (64), juce::Justification::centredLeft, false);
+        g.drawText (c.title, titleRow.withTrimmedRight (78), juce::Justification::centredLeft, false);
 
         const auto colour = riskColour (c.risk);
-        const auto chip = juce::Rectangle<int> (titleRow.getRight() - 58, titleRow.getY() - 2, 58, 18);
+        const auto chip = juce::Rectangle<int> (titleRow.getRight() - 72, titleRow.getY() - 2, 72, 18);
+        const auto status = c.risk >= 65.0f ? T ("需修复", "FIX")
+                          : (c.risk >= 35.0f ? T ("建议回听", "REVIEW") : T ("通过", "PASS"));
 
         g.setColour (colour.withAlpha (0.14f));
         g.fillRoundedRectangle (chip.toFloat(), 9.0f);
         g.setColour (colour);
         g.setFont (getValueFont());
-        g.drawText (T ("风险 ", "risk ") + juce::String (juce::roundToInt (c.risk)),
-                    chip, juce::Justification::centred);
+        g.drawText (status, chip, juce::Justification::centred);
 
         auto valueRow = inner.removeFromTop (compact ? 24 : juce::jmin (38, inner.getHeight() / 2));
 

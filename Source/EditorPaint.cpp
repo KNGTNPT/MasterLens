@@ -69,10 +69,45 @@ void MasterLensAudioProcessorEditor::paint (juce::Graphics& g)
         else if (stats.hostLength > 0.0)
             tech << "  ·  " << T ("cov ", "cov ") << ml::num (stats.coveragePct) << "%";
 
-        g.drawText (tech, f.getX(), f.getY(), 300, f.getHeight(),
-                    juce::Justification::centredLeft, false);
+        // Listening source is separate from output state: BYPASS still means
+        // the project bus, and a reference / evidence preview must remain
+        // visible on every page.
+        juce::String source = T ("工程", "PROJECT");
+        auto sourceColour = ml::theme::textDim;
+        bool sourceIsProject = true;
 
-        // One output state, centred in the 32 px strip.
+        if (processor.referencePlayer.isEnabled())
+        {
+            source = T ("参考", "REFERENCE");
+            sourceColour = ml::theme::warn;
+            sourceIsProject = false;
+        }
+        else if (processor.isAuditionActive())
+        {
+            source = T ("问题片段", "EVIDENCE");
+            sourceColour = ml::theme::accent;
+            sourceIsProject = false;
+        }
+        else if (processor.isFilePreviewActive() && processor.filePreviewFeedsAnalysis())
+        {
+            source = T ("文件", "FILE");
+            sourceColour = ml::theme::cyan;
+            sourceIsProject = false;
+        }
+        else if (processor.isFilePreviewActive())
+        {
+            source = T ("问题片段", "EVIDENCE");
+            sourceColour = ml::theme::accent;
+            sourceIsProject = false;
+        }
+
+        const auto leftText = (! sourceIsProject && footerStatusText.isNotEmpty()) ? footerStatusText : tech;
+        g.setColour (ml::theme::textFaint);
+        g.setFont (ml::getValueFont());
+        g.drawFittedText (leftText, f.getX(), f.getY(), 300, f.getHeight(),
+                          juce::Justification::centredLeft, 1);
+
+        // One output state and one listening source, both in the 32 px strip.
         juce::String outState = T ("BYPASS", "BYPASS");
         auto outColour = ml::theme::textFaint;
 
@@ -86,6 +121,11 @@ void MasterLensAudioProcessorEditor::paint (juce::Graphics& g)
             outState = T ("AUDITION", "AUDITION");
             outColour = ml::theme::accent;
         }
+        else if (processor.isFilePreviewActive())
+        {
+            outState = T ("FILE", "FILE");
+            outColour = ml::theme::cyan;
+        }
         else if (processor.isMonitorMatch())
         {
             outState = T ("MATCH ", "MATCH ") + ml::sgn (processor.getMonitorTrimDb(), 1) + " dB";
@@ -96,6 +136,15 @@ void MasterLensAudioProcessorEditor::paint (juce::Graphics& g)
         const int outW = juce::jmin (160, juce::roundToInt (
             juce::GlyphArrangement::getStringWidth (outFont, outState)) + 18);
         auto outArea = juce::Rectangle<int> (f.getRight() - outW, f.getY(), outW, f.getHeight());
+
+        const int sourceW = 128;
+        auto sourceArea = outArea.withX (outArea.getX() - sourceW - 12).withWidth (sourceW);
+        g.setColour (sourceColour.withAlpha (0.12f));
+        g.fillRoundedRectangle (sourceArea.toFloat(), 4.0f);
+        g.setColour (sourceColour);
+        g.setFont (outFont);
+        g.drawFittedText (T ("监听 · ", "LISTEN · ") + source,
+                          sourceArea.reduced (8, 0), juce::Justification::centredRight, 1);
 
         g.setColour (outColour);
         g.fillEllipse ((float) outArea.getX(), (float) outArea.getCentreY() - 2.5f, 5.0f, 5.0f);

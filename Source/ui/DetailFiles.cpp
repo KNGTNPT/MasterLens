@@ -10,6 +10,16 @@ void DetailArea::setFilePlaybackAvailable (bool available)
     filePlay.setVisible (available && page == PageId::files);
     fileProgress.setVisible (available && page == PageId::files);
     fileTime.setVisible (available && page == PageId::files);
+
+    if (! available)
+        setFileTransportState (FileTransportState::unavailable);
+    else if (const auto* selected = selectedFile())
+    {
+        setFileTransportState (FileTransportState::ready);
+        setFileProgress (0.0, selected->durationSeconds);
+    }
+    else
+        setFileTransportState (FileTransportState::unloaded);
 }
 
 void DetailArea::setFilePlayActive (bool active)
@@ -17,24 +27,67 @@ void DetailArea::setFilePlayActive (bool active)
     filePlay.setButtonText (ml::grid::controlText (active ? T ("停止播放", "Stop file")
                                                           : T ("播放文件", "Play file")));
     filePlay.setToggleState (active, juce::dontSendNotification);
+    setFileTransportState (active ? FileTransportState::playing
+                                  : (selectedFile() != nullptr ? FileTransportState::ready
+                                                               : FileTransportState::unloaded));
     repaint();
 }
 
 void DetailArea::setFileProgress (double positionSeconds, double durationSeconds)
 {
     fileProgressDuration = juce::jmax (0.001, durationSeconds);
+    fileProgressPosition = juce::jlimit (0.0, fileProgressDuration, positionSeconds);
+
+    if (fileTransportState == FileTransportState::unloaded)
+        setFileTransportState (FileTransportState::ready);
 
     if (std::abs (fileProgress.getMaximum() - fileProgressDuration) > 0.01)
         fileProgress.setRange (0.0, fileProgressDuration, 0.01);
 
     updatingFileProgress = true;
-    fileProgress.setValue (juce::jlimit (0.0, fileProgressDuration, positionSeconds),
-                          juce::dontSendNotification);
+    fileProgress.setValue (fileProgressPosition, juce::dontSendNotification);
     updatingFileProgress = false;
+    updateFileTransportText();
+}
 
-    fileTime.setText (ml::fmtTime (juce::jlimit (0.0, fileProgressDuration, positionSeconds))
+void DetailArea::setFileTransportState (FileTransportState state)
+{
+    fileTransportState = state;
+    updateFileTransportText();
+}
+
+void DetailArea::updateFileTransportText()
+{
+    if (! filePlaybackAvailable || fileTransportState == FileTransportState::unavailable)
+    {
+        fileTime.setText ("— / —", juce::dontSendNotification);
+        return;
+    }
+
+    if (fileTransportState == FileTransportState::unloaded || fileProgressDuration <= 0.0)
+    {
+        fileTime.setText (T ("未加载", "NOT LOADED"), juce::dontSendNotification);
+        return;
+    }
+
+    const auto prefix = fileTransportState == FileTransportState::playing
+                            ? T ("播放中 ", "PLAYING ")
+                            : T ("可播放 ", "READY ");
+    fileTime.setText (prefix + ml::fmtTime (fileProgressPosition)
                           + " / " + ml::fmtTime (fileProgressDuration),
                       juce::dontSendNotification);
+}
+
+void DetailArea::setFileInspectorCollapsed (bool collapsed)
+{
+    if (fileInspectorCollapsed == collapsed)
+        return;
+
+    fileInspectorCollapsed = collapsed;
+    fileInspectorToggle.setButtonText (ml::grid::controlText (
+        collapsed ? T ("展开证据", "Expand") : T ("收起证据", "Collapse")));
+    resized();
+    repaint();
 }
 
 namespace
@@ -45,6 +98,25 @@ constexpr int kFileButtonRow = 40;
 constexpr int kFileTransportRow = 48;
 constexpr int kFileBandRow = 22;
 constexpr int kFileDropGap = 8;
+
+juce::String fileReviewStatus (const FileAnalysisResult& r)
+{
+    if (! r.ok)
+        return T ("分析失败", "ERROR");
+
+    if (r.forensic.blockers() > 0)
+        return T ("需修复", "FIX");
+
+    if (r.forensic.findings.empty())
+        return T ("通过", "PASS");
+
+    const bool allReviewed = std::all_of (r.forensic.findings.begin(), r.forensic.findings.end(),
+                                          [] (const FileFinding& f) { return f.reviewed; });
+    if (allReviewed)
+        return T ("已复核", "REVIEWED");
+
+    return T ("建议回听", "REVIEW");
+}
 
 std::vector<int> sortedFileOrder (const std::vector<FileAnalysisResult>& results,
                                   int column, bool ascending)
@@ -124,6 +196,25 @@ juce::Rectangle<int> DetailArea::fileTableBounds() const
         area.setBottom (fileInspectorBounds().getY() - 8);
 
     return area;
+}
+
+juce::Rectangle<int> DetailArea::fileInspectorBounds() const
+{
+    auto area = contentArea().withTrimmedTop (30 + kFileBandRow + kFileDropGap + 28 + kFileDropGap);
+    area.removeFromBottom (kFileButtonRow);
+
+    if (filePlaybackAvailable)
+        area.removeFromBottom (kFileTransportRow);
+
+    if (fileInspectorCollapsed)
+        return area.removeFromBottom (34);
+
+    // Keep at least two complete file rows visible: the list is the task,
+    // evidence is the explanation. The user can still expand or collapse it.
+    constexpr int minTableHeight = kFileHeaderHeight + 3 * kFileRowHeight + 8;
+    const int maxInspector = juce::jmax (88, area.getHeight() - minTableHeight);
+    return area.removeFromBottom (juce::jlimit (88, maxInspector,
+        juce::roundToInt (area.getHeight() * 0.58f)));
 }
 
 void DetailArea::paintFiles (juce::Graphics& g)
@@ -216,8 +307,8 @@ void DetailArea::paintFiles (juce::Graphics& g)
     auto header = table.removeFromTop (kFileHeaderHeight);
     FileColumns cols (header.withTrimmedRight (8).reduced (10, 0));
 
-    const char* labelsZh[] { "文件", "采样率 / 位深", "时长", "LUFS", "TP", "LRA", "风险" };
-    const char* labelsEn[] { "FILE", "RATE / DEPTH", "LEN", "LUFS", "TP", "LRA", "RISK" };
+    const char* labelsZh[] { "文件", "采样率 / 位深", "时长", "LUFS", "TP", "LRA", "状态" };
+    const char* labelsEn[] { "FILE", "RATE / DEPTH", "LEN", "LUFS", "TP", "LRA", "STATUS" };
 
     g.setFont (getLabelFont());
     for (int i = 0; i < 7; ++i)
@@ -307,12 +398,16 @@ void DetailArea::paintFiles (juce::Graphics& g)
         g.drawText (num (r.stats.truePeakDb), rowCols.cells[4], juce::Justification::centredRight, false);
         g.drawText (num (r.stats.lra), rowCols.cells[5], juce::Justification::centredRight, false);
 
-        const int risk = juce::roundToInt (r.defects.worstRisk());
-        g.setColour (risk >= 65 ? theme::bad : (risk >= 35 ? theme::warn : theme::good));
+        const bool allReviewed = ! r.forensic.findings.empty()
+            && std::all_of (r.forensic.findings.begin(), r.forensic.findings.end(),
+                            [] (const FileFinding& f) { return f.reviewed; });
+        const bool needsReview = r.ok && ! r.forensic.findings.empty() && ! allReviewed
+            && r.forensic.blockers() == 0;
+        const auto reviewStatus = fileReviewStatus (r);
+        g.setColour (! r.ok || r.forensic.blockers() > 0 ? theme::bad
+                                                          : (needsReview ? theme::warn : theme::good));
         g.setFont (getLabelFont());
-        g.setColour (r.forensic.blockers() > 0 ? theme::bad : theme::textDim);
-        g.drawText (r.forensic.blockers() > 0 ? T ("QC 阻断", "QC block") : T ("风险 ", "risk ") + juce::String (risk),
-                    rowCols.cells[6], juce::Justification::centredRight, false);
+        g.drawText (reviewStatus, rowCols.cells[6], juce::Justification::centredRight, false);
     }
 
 
@@ -333,17 +428,6 @@ void DetailArea::paintFiles (juce::Graphics& g)
     paintFileInspector (g);
 }
 
-juce::Rectangle<int> DetailArea::fileInspectorBounds() const
-{
-    auto area = contentArea().withTrimmedTop (30 + kFileBandRow + kFileDropGap + 28 + kFileDropGap);
-    area.removeFromBottom (kFileButtonRow);
-
-    if (filePlaybackAvailable)
-        area.removeFromBottom (kFileTransportRow);
-
-    return area.removeFromBottom (juce::jlimit (88, 240, juce::roundToInt (area.getHeight() * 0.58f)));
-}
-
 void DetailArea::paintFileInspector (juce::Graphics& g)
 {
     fileFindingRows.clear();
@@ -352,8 +436,21 @@ void DetailArea::paintFileInspector (juce::Graphics& g)
     auto& q = r.forensic;
     auto panel = fileInspectorBounds();
     surface::recessed (g, panel.toFloat());
+
+    if (fileInspectorCollapsed)
+    {
+        auto line = panel.reduced (10, 0).removeFromTop (32);
+        g.setColour (theme::textDim);
+        g.setFont (getLabelFont());
+        g.drawText (T ("证据详情", "EVIDENCE"), line.removeFromLeft (96),
+                    juce::Justification::centredLeft, false);
+        g.setColour (theme::textFaint);
+        g.drawFittedText (r.fileName, line.withTrimmedRight (88), juce::Justification::centredLeft, 1);
+        return;
+    }
+
     auto area = panel.reduced (10, 0);
-    auto title = area.removeFromTop (32).withTrimmedLeft (320);
+    auto title = area.removeFromTop (32).withTrimmedLeft (320).withTrimmedRight (88);
     g.setFont (getLabelFont());
     g.setColour (r.ok ? theme::textDim : theme::bad);
     g.drawText (r.fileName, title, juce::Justification::centredRight, true);
@@ -503,7 +600,15 @@ bool DetailArea::handleFileMouseDown (const juce::MouseEvent& e)
                     return true;
                 }
 
-                return false;
+                // One click on the finding itself auditions the event; the
+                // right-hand checkbox remains the review toggle.
+                if (onPreviewFile != nullptr && fileResults[(size_t) fileSelected].sampleRate > 0.0)
+                {
+                    onPreviewFile (fileResults[(size_t) fileSelected].path,
+                                   findings[(size_t) i].startSample
+                                       / fileResults[(size_t) fileSelected].sampleRate);
+                    return true;
+                }
             }
     }
 
@@ -552,6 +657,13 @@ bool DetailArea::handleFileMouseDown (const juce::MouseEvent& e)
     {
         fileSelected = order[(size_t) index];
         fileFindingScroll = 0;
+
+        if (filePlaybackAvailable && selectedFile() != nullptr)
+        {
+            setFileTransportState (FileTransportState::ready);
+            setFileProgress (0.0, selectedFile()->durationSeconds);
+        }
+
         resized();
         repaint();
         return true;

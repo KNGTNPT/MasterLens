@@ -96,10 +96,13 @@ void MasterLensAudioProcessorEditor::resized()
     const int holdWidth = english ? 48 : 40;
     const int clearWidth = english ? 48 : 40;
     const int monitorWidth = base.getWidth() < 1000 ? 64 : 88;
-    const int actionWidth = holdWidth + clearWidth + monitorWidth + 32 + 32 + 88 + 5 * 8;
+    const int snapshotCaptionWidth = english ? 72 : 60;
+    const int actionWidth = holdWidth + clearWidth + monitorWidth + snapshotCaptionWidth
+                            + 32 + 32 + 88 + 6 * 8;
     auto actions = desk.withTrimmedTop (24).withHeight (32).removeFromRight (actionWidth);
-    ml::grid::row (actions, { &holdButton, &clearButton, &monitorButton, &snapshotA, &snapshotB, &exportButton },
-                  { holdWidth, clearWidth, monitorWidth, 32, 32, 88 });
+    ml::grid::row (actions, { &holdButton, &clearButton, &monitorButton, &snapshotCaption,
+                              &snapshotA, &snapshotB, &exportButton },
+                  { holdWidth, clearWidth, monitorWidth, snapshotCaptionWidth, 32, 32, 88 });
 
     aboutPanel.setBounds (base);
     genrePanel.setBounds (base);

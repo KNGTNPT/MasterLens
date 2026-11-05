@@ -262,6 +262,8 @@ public:
     void setFilePlaybackAvailable (bool available);
     void setFilePlayActive (bool active);
     void setFileProgress (double positionSeconds, double durationSeconds);
+    void setFileInspectorCollapsed (bool collapsed);
+    bool isFileInspectorCollapsed() const noexcept { return fileInspectorCollapsed; }
     std::function<void (double)> onSeekFile;
     const std::vector<FileAnalysisResult>& getFileResults() const noexcept { return fileResults; }
     const FileAnalysisResult* selectedFile() const
@@ -339,11 +341,16 @@ private:
     juce::TextButton applyTarget;
 
     juce::TextButton fileChoose, fileFolder, filePlay, fileAddAlbum, fileClear, fileExport;
+    juce::TextButton fileInspectorToggle;
     juce::Slider fileProgress;
     juce::Label fileTime;
+    enum class FileTransportState { unavailable, unloaded, ready, playing };
+    FileTransportState fileTransportState = FileTransportState::unloaded;
     bool filePlaybackAvailable = false;
+    bool fileInspectorCollapsed = false;
     bool updatingFileProgress = false;
     double fileProgressDuration = 0.0;
+    double fileProgressPosition = 0.0;
     std::array<juce::TextButton, 3> fileViewButtons;
     std::vector<FileAnalysisResult> fileResults;
     DeliverySpec spec;
@@ -358,6 +365,8 @@ private:
     std::vector<juce::Rectangle<int>> fileFindingRows;
 
     juce::Rectangle<int> fileTableBounds() const;
+    void updateFileTransportText();
+    void setFileTransportState (FileTransportState state);
     juce::Rectangle<int> fileInspectorBounds() const;
     void paintFileInspector (juce::Graphics&);
     bool handleFileMouseDown (const juce::MouseEvent&);
