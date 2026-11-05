@@ -31,8 +31,8 @@ MasterLens 是放在母带链末尾的小检查员：这首歌有多响、峰值
 详细结果见 [3.0.0-alpha 验证记录](docs/performance-3.0.0-alpha.md)。
 
 - 11 个页面逐页截图检查数字、单位与标签基线。
-- DSP / CLI / UI 回归继续通过。
-- macOS DMG 与 Windows 安装器构建通过。
+- DSP / CLI / UI 回归：**151 / 66 / 35 通过**。
+- macOS / Windows x64 / Windows ARM64 构建与 Release 发布通过；Windows x64 安装冒烟通过。
 
 ![MasterLens 3.0.0-alpha 响度与动态](docs/screenshot-3.0.0-alpha.png)
 

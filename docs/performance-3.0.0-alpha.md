@@ -17,8 +17,11 @@
 - DSP / 可靠性断言：**151 项通过**。
 - CLI 集成检查：**66 项通过**。
 - UI 布局：**35/35 通过**。
-- macOS Universal 构建、DMG 校验、`auval` 通过；DMG SHA-256 `99281c90b3cdb3b67d0de980b2b1f9068c1d68876100b889798c76cb61ca9589`。
+- macOS Universal 构建、DMG 校验、`auval` 通过；本地 DMG SHA-256 `99281c90b3cdb3b67d0de980b2b1f9068c1d68876100b889798c76cb61ca9589`。
 - 3.0.0-alpha 截图：6 张，2240×1400，记录在 `docs/screenshots-3.0.0-alpha.json`。
+- GitHub Actions run `42001151245`：macOS、Windows x64、Windows ARM64 与 Release 发布全部 success。
+- Windows x64 安装冒烟测试通过；VST3 与独立版安装到正确目录。
+- GitHub Release `v3.0.0-alpha`（pre-release）：macOS DMG `d825fe2187b86fa530f23bfbfa1fc94f424f923d45b3f71409f5b983857e33f9`，Windows x64 `ea97fbfd29f08e9b57d0c436a6ac840fc429c06438f2a91fa3c63d543a40d1c8`，Windows ARM64 `9d59eaa9cd306093379e3caf6d454255e7552596f34bbfaef9f1242e0740780a`。
 
 ## 范围
 
