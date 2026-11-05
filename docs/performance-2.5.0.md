@@ -33,6 +33,9 @@
 - UI 布局：**35/35 通过**。
 - 2.5.0 README 截图：6 张，2240×1400，记录在 `docs/screenshots-2.5.0.json`。
 - 文件 QC 截图确认两首曲目同屏、`可播放 00:00 / 00:04`、状态列与监听来源可见。
+- GitHub Actions run `41994558587`：macOS、Windows x64、Windows ARM64 构建与 Release 发布全部 success。
+- Windows x64 安装冒烟测试通过：静默安装后 VST3 位于 `C:\Program Files\Common Files\VST3\MasterLens.vst3`，独立版位于 `C:\Program Files\MasterLens\MasterLens.exe`。
+- GitHub Release `v2.5.0` 资产：macOS DMG SHA-256 `5548103ad15b1ed4cf4c24a8703b4c4bc9855137dbe3d287d7de6ea51d137b87`，Windows x64 `1d51f7fa299eeea4e5fc407814301218f880b55121b64d1ead2fb69313af3d27`，Windows ARM64 `53c5d600ede7daaa6785d141d46179e570537c56c54c4856bcc0d17a01455091`。
 
 ## 3. 范围与限制
 
