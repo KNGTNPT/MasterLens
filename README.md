@@ -30,6 +30,7 @@ MasterLens 是放在母带链末尾的小检查员：这首歌有多响、峰值
 
 - DSP / 可靠性断言：**178 项通过**（含 4 阶独听泄漏 ≤ −24 dB、门限积分、2 小时虚拟文件流式、编码预览）。
 - CLI 集成检查：**66 项通过**；UI 布局：**35/35 通过**。
+- macOS / Windows x64 / Windows ARM64 构建与 Release 发布通过；Windows x64 安装冒烟通过。
 - 11 个页面逐页截图检查；6 张 README 截图记录在 `docs/screenshots-3.0.0-rc.1.json`。
 
 ![MasterLens 3.0.0-rc.1 响度与动态](docs/screenshot-3.0.0-rc.1.png)

@@ -20,6 +20,9 @@
 - UI 布局：**35/35 通过**（文件页新增编码按钮、时间页新增选区等响按钮后仍无越界）。
 - 11 个页面逐页截图检查；6 张 README 截图（2240×1400）记录在 `docs/screenshots-3.0.0-rc.1.json`，SHA-256 复核一致。
 - macOS Universal 构建（x86_64 + arm64）、DMG 校验、`auval -v aufx Maln OrcA` 通过；本地 DMG SHA-256 `435133e2d4284bbbe404ac955069c520720b7bda8b2aa1fec9250991754b32b5`。
+- GitHub Actions run `42172562165`：macOS、Windows x64、Windows ARM64 与 Publish verified installers 全部 success。
+- Windows x64 安装冒烟测试通过；VST3 与独立版安装到正确目录。
+- GitHub Release `v3.0.0-rc.1`（pre-release）：macOS DMG `5157109a9cbb0778553236c90284af0ff1b9f2c150c4453098dd0a634fa25c4a`，Windows x64 `b2178cd76fae886f9d33d26fab3e8ae1cd29605260b693fb5e91823c6b5f003d`，Windows ARM64 `ed1d033bfae633d3af12ab7fc91dcba73a21826dede8e5343ea5d0eb07278b42`；下载后 `shasum -a 256 -c SHA256SUMS.txt` 三个文件全部 OK。Release 的 DMG 由 CI 重新构建，哈希与本地构建不同，校验一律以 `SHA256SUMS.txt` 为准。
 
 ## 未验证 / 限制
 
