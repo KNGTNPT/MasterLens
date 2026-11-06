@@ -213,6 +213,8 @@ public:
     void expandFirstIssueForSnapshot();
     void setReferenceInfo (bool hasRef, const juce::String& status);
     void setReferencePlaybackState (bool playing, const juce::String& status);
+    void setReferenceSlots (const juce::StringArray& names, int active,
+                            double offsetSeconds, double gainDb);
     void setSpectrumView (int view);   // 0 spectrum, 1 spectrogram, 2 band heat map
     int getSpectrumView() const noexcept { return spectrumView; }
     void setRegionMeasurement (const RegionMeasurement& r) { region = r; repaint(); }
@@ -223,6 +225,9 @@ public:
     std::function<void()> onClearReference;
     std::function<void()> onToggleReferencePlayback;
     std::function<void()> onAutoAlignReference;
+    std::function<void(int)> onReferenceSlotChanged;
+    std::function<void(double)> onReferenceOffsetChanged;
+    std::function<void(double)> onReferenceGainChanged;
     std::function<void()> onExportReport;
     std::function<void()> onAddMarkerNow;
     std::function<void (double)> onAddMarkerAt;
@@ -329,6 +334,9 @@ private:
     IssueList issues;
 
     juce::TextButton refImport, refClear, refPlay, refAlign, reportButton, markButton;
+    juce::ComboBox refSlotBox;
+    juce::TextEditor refOffset, refGain;
+    bool updatingReferenceControls = false;
     bool refPlaying = false;
     juce::TextButton markerExport, markerImport;
     juce::TextButton albumCapture, albumProof, albumImport, albumClearButton, albumProject;

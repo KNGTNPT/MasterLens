@@ -133,6 +133,36 @@ DetailArea::DetailArea()
     for (auto& b : albumRuleButtons)
         addChildComponent (b);
 
+    addChildComponent (refSlotBox);
+    addChildComponent (refOffset);
+    addChildComponent (refGain);
+    refSlotBox.onChange = [this]
+    {
+        if (! updatingReferenceControls && refSlotBox.getSelectedId() > 0 && onReferenceSlotChanged != nullptr)
+            onReferenceSlotChanged (refSlotBox.getSelectedId() - 1);
+    };
+    for (auto* editor : { &refOffset, &refGain })
+    {
+        editor->setFont (getValueFont());
+        editor->setJustification (juce::Justification::centred);
+        editor->setInputRestrictions (12, "0123456789.-+");
+        editor->setColour (juce::TextEditor::backgroundColourId, theme::cardAlt);
+        editor->setColour (juce::TextEditor::textColourId, theme::text);
+        editor->setColour (juce::TextEditor::outlineColourId, theme::border);
+    }
+    refOffset.setText ("0.0", false);
+    refGain.setText ("0.0", false);
+    refOffset.onTextChange = [this]
+    {
+        if (! updatingReferenceControls && onReferenceOffsetChanged != nullptr)
+            onReferenceOffsetChanged (refOffset.getText().getDoubleValue());
+    };
+    refGain.onTextChange = [this]
+    {
+        if (! updatingReferenceControls && onReferenceGainChanged != nullptr)
+            onReferenceGainChanged (refGain.getText().getDoubleValue());
+    };
+
     refImport.onClick = [this] { if (onImportReference != nullptr) onImportReference(); };
     refClear.onClick = [this] { if (onClearReference != nullptr) onClearReference(); };
     refPlay.onClick = [this] { if (onToggleReferencePlayback != nullptr) onToggleReferencePlayback(); };
@@ -190,6 +220,9 @@ void DetailArea::refreshTexts()
                                       : T ("监听参考", "Monitor reference")));
     refPlay.setTooltip (T ("切换监听来源：工程总线 / 参考轨；旁边的 A/B 只保存读数快照",
                             "Switch listening source: project bus / reference track; A/B only stores reading snapshots"));
+    refSlotBox.setTooltip (T ("参考槽位：快速切换不同参考曲", "Reference slot: switch between reference tracks"));
+    refOffset.setTooltip (T ("参考起始偏移（秒），用于对齐工程段落", "Reference start offset in seconds, used to align sections"));
+    refGain.setTooltip (T ("参考匹配增益（dB），用于手动等响锁定", "Reference matching gain in dB, for manual loudness lock"));
     refAlign.setButtonText (ml::grid::controlText (T ("粗略对齐", "Auto align")));
     refAlign.setTooltip (T ("用最近 30 s 短时响度包络做粗略自动对齐；不是采样级同步",
                              "Coarse envelope alignment over the last 30 s; not sample-accurate"));
@@ -265,6 +298,12 @@ void DetailArea::refreshTexts()
 
 void DetailArea::invalidateDisplays()
 {
+    for (auto* editor : { &refOffset, &refGain })
+    {
+        editor->setColour (juce::TextEditor::backgroundColourId, theme::cardAlt);
+        editor->setColour (juce::TextEditor::textColourId, theme::text);
+        editor->setColour (juce::TextEditor::outlineColourId, theme::border);
+    }
     backgroundDirty = true;
     spectrum.invalidateBackground();
     bands.invalidateBackground();
@@ -288,6 +327,9 @@ void DetailArea::hideAllChildren()
     refClear.setVisible (false);
     refPlay.setVisible (false);
     refAlign.setVisible (false);
+    refSlotBox.setVisible (false);
+    refOffset.setVisible (false);
+    refGain.setVisible (false);
     reportButton.setVisible (false);
     markButton.setVisible (false);
     markerExport.setVisible (false);
@@ -392,6 +434,27 @@ void DetailArea::setSpectrumView (int view)
                                            : SpectrogramDisplay::Mode::spectrogram);
     spectrogram.setVisible (spectrumView != 0);
     bands.setVisible (false);   // the 2.0.2 right column is painted by DetailArea
+    resized();
+    repaint();
+}
+
+void DetailArea::setReferenceSlots (const juce::StringArray& names, int active,
+                                    double offsetSeconds, double gainDb)
+{
+    updatingReferenceControls = true;
+    refSlotBox.clear (juce::dontSendNotification);
+
+    for (int i = 0; i < names.size(); ++i)
+        refSlotBox.addItem (names[i], i + 1);
+
+    refSlotBox.setSelectedId (juce::jlimit (1, juce::jmax (1, names.size()), active + 1),
+                              juce::dontSendNotification);
+    refOffset.setText (juce::String (offsetSeconds, 2), false);
+    refGain.setText (juce::String (gainDb, 2), false);
+    refSlotBox.setVisible (! names.isEmpty() && page == PageId::spectrum);
+    refOffset.setVisible (! names.isEmpty() && page == PageId::spectrum);
+    refGain.setVisible (! names.isEmpty() && page == PageId::spectrum);
+    updatingReferenceControls = false;
     resized();
     repaint();
 }
@@ -659,14 +722,16 @@ void DetailArea::resized()
             // compact row; the graph retains its own protected 32-point anchors.
             auto graph = getLocalBounds().withHeight (spectrumSplit);
             auto controls = getLocalBounds().withTrimmedTop (spectrumSplit + 8).withHeight (24).reduced (16, 0);
-            controls.removeFromLeft (144);
+            controls.removeFromLeft (112);
             spectrumSideArea = spectrumBandHeight > 0
                 ? getLocalBounds().removeFromBottom (spectrumBandHeight).reduced (16, 0) : juce::Rectangle<int>();
-            const int modeWidth = 80;
+            const int modeWidth = 72;
             grid::row (controls, { &spectrumViewButtons[0], &spectrumViewButtons[1], &spectrumViewButtons[2] },
                        { modeWidth, modeWidth, modeWidth });
-            auto referenceControls = controls.removeFromRight (384);
-            grid::row (referenceControls, { &refPlay, &refImport, &refAlign, &refClear }, { 80, 136, 88, 56 });
+            auto referenceControls = controls.removeFromRight (476);
+            grid::row (referenceControls,
+                       { &refSlotBox, &refOffset, &refGain, &refPlay, &refImport, &refAlign, &refClear },
+                       { 108, 46, 46, 60, 76, 54, 38 });
             spectrum.setBounds (grid::bounds (graph));
             spectrogram.setBounds (grid::bounds (graph));
             spectrum.setVisible (spectrumView == 0);
@@ -674,6 +739,10 @@ void DetailArea::resized()
             bands.setVisible (false);
             for (auto& button : spectrumViewButtons) button.setVisible (true);
             for (auto* button : { &refPlay, &refImport, &refAlign, &refClear }) button->setVisible (true);
+            const bool hasSlots = refSlotBox.getNumItems() > 0;
+            refSlotBox.setVisible (hasSlots);
+            refOffset.setVisible (hasSlots);
+            refGain.setVisible (hasSlots);
             break;
         }
 
@@ -694,7 +763,7 @@ void DetailArea::resized()
 
         case PageId::timeline:
         {
-            auto buttons = area.removeFromBottom (36);
+            auto buttons = area.removeFromBottom (52);
             markButton.setBounds (buttons.removeFromRight (104).withSizeKeepingCentre (104, 32));
             buttons.removeFromRight (8);
             markerExport.setBounds (buttons.removeFromRight (120).withSizeKeepingCentre (118, 32));

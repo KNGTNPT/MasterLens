@@ -1,4 +1,4 @@
-MasterLens 3.0.0-alpha —— 先把数字和单位排好喵
+MasterLens 3.0.0-beta —— 参考槽位与排版一起收好喵
 by BerryStudio · 开发者 KNGTNPT 兰
 =====================================================================
 
@@ -6,6 +6,14 @@ by BerryStudio · 开发者 KNGTNPT 兰
 1. 运行「安装 Install.command」。首次运行未公证版本，可能需要右键 → 打开。
 2. VST3 / AU 复制到用户 Library/Audio/Plug-Ins；独立版放入 ~/Applications。
 3. 重启 DAW，在 BerryStudio 下搜索 MasterLens，并放到母带链最后。
+
+【3.0.0-beta】
+- 频谱页加入参考槽位、OFS（参考偏移）和 GAIN（匹配增益）；可快速切换不同参考曲。
+- 设置页底部 logo、BERRYSTUDIO、开发者和关闭按钮改为同一水平中线。
+- 各页读数单位跟随数值基线；平台归一化下拉与 REF / CEIL 读数对齐。
+- 读数快照 A/B 文字居中；时间页按钮与事件轴留出上下空白。
+- 目标页两栏行距按可用高度分散，不再挤在顶部。
+- 2.7 的长文件流式与编码 A/B 仍未进入 beta。
 
 【3.0.0-alpha】
 这一版是排版切片：重点统一数值与单位的关系，让“读数 + 单位”成为一个整体。

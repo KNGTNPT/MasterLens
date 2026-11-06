@@ -576,19 +576,78 @@ void MasterLensAudioProcessorEditor::importReference()
                                   for (int i = 0; i < juce::jmin (4, results.size()); ++i)
                                       files.add (results[i].getFullPathName());
 
+                                  referencePaths = files;
+                                  referenceOffsets.fill (0.0);
+                                  referenceGains.fill (0.0);
+                                  referenceSlot = 0;
+
+                                  juce::StringArray names;
+                                  for (const auto& path : referencePaths)
+                                      names.add (juce::File (path).getFileName());
+
                                   reference.load (files, analyzerSampleRate, 13);
-                                  processor.referencePlayer.load (files, analyzerSampleRate);
-                                  processor.apvts.state.setProperty ("referenceFiles", files.joinIntoString ("|"), nullptr);
+                                  processor.referencePlayer.load ({ referencePaths[0] }, analyzerSampleRate);
+                                  processor.referencePlayer.setOffsetSeconds (0.0);
+                                  processor.referencePlayer.setGainDb (0.0f);
+                                  detail.setReferenceSlots (names, 0, 0.0, 0.0);
+                                  saveReferenceSettings();
                                   analyzer.clearReference();
                               });
 }
 
+void MasterLensAudioProcessorEditor::selectReferenceSlot (int slot)
+{
+    if (referencePaths.isEmpty())
+        return;
+
+    referenceSlot = juce::jlimit (0, juce::jmax (0, referencePaths.size() - 1), slot);
+
+    if (referencePaths[referenceSlot].isNotEmpty())
+    {
+        processor.referencePlayer.load ({ referencePaths[referenceSlot] }, analyzerSampleRate);
+        processor.referencePlayer.setOffsetSeconds (referenceOffsets[(size_t) referenceSlot]);
+        processor.referencePlayer.setGainDb ((float) referenceGains[(size_t) referenceSlot]);
+    }
+
+    juce::StringArray names;
+    for (const auto& path : referencePaths)
+        names.add (juce::File (path).getFileName());
+    detail.setReferenceSlots (names, referenceSlot,
+                              referenceOffsets[(size_t) referenceSlot],
+                              referenceGains[(size_t) referenceSlot]);
+    saveReferenceSettings();
+}
+
+void MasterLensAudioProcessorEditor::saveReferenceSettings()
+{
+    processor.apvts.state.setProperty ("referenceFiles", referencePaths.joinIntoString ("|"), nullptr);
+    processor.apvts.state.setProperty ("referenceSlot", referenceSlot, nullptr);
+
+    juce::StringArray offsets, gains;
+    for (int i = 0; i < 4; ++i)
+    {
+        offsets.add (juce::String (referenceOffsets[(size_t) i], 2));
+        gains.add (juce::String (referenceGains[(size_t) i], 2));
+    }
+
+    processor.apvts.state.setProperty ("referenceOffsets", offsets.joinIntoString (","), nullptr);
+    processor.apvts.state.setProperty ("referenceGains", gains.joinIntoString (","), nullptr);
+}
+
 void MasterLensAudioProcessorEditor::clearReference()
 {
+    referencePaths.clear();
+    referenceOffsets.fill (0.0);
+    referenceGains.fill (0.0);
+    referenceSlot = 0;
     reference.clear();
     processor.referencePlayer.clear();
     analyzer.clearReference();
     processor.apvts.state.setProperty ("referenceFiles", juce::String(), nullptr);
+    processor.apvts.state.setProperty ("referenceOffsets", juce::String(), nullptr);
+    processor.apvts.state.setProperty ("referenceGains", juce::String(), nullptr);
+    processor.apvts.state.setProperty ("referenceSlot", 0, nullptr);
+    detail.setReferenceSlots ({}, 0, 0.0, 0.0);
     detail.setReferenceInfo (false, {});
     detail.setReferencePlaybackState (false, {});
 }

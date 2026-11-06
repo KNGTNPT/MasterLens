@@ -40,6 +40,19 @@ MasterLensAudioProcessorEditor::MasterLensAudioProcessorEditor (MasterLensAudioP
     detail.onClearReference  = [this] { clearReference(); };
     detail.onToggleReferencePlayback = [this] { toggleReferencePlayback(); };
     detail.onAutoAlignReference = [this] { autoAlignReference(); };
+    detail.onReferenceSlotChanged = [this] (int slot) { selectReferenceSlot (slot); };
+    detail.onReferenceOffsetChanged = [this] (double seconds)
+    {
+        referenceOffsets[(size_t) juce::jlimit (0, 3, referenceSlot)] = seconds;
+        processor.referencePlayer.setOffsetSeconds (seconds);
+        saveReferenceSettings();
+    };
+    detail.onReferenceGainChanged = [this] (double db)
+    {
+        referenceGains[(size_t) juce::jlimit (0, 3, referenceSlot)] = db;
+        processor.referencePlayer.setGainDb ((float) db);
+        saveReferenceSettings();
+    };
     detail.onExportReport    = [this] { exportReport(); };
     detail.onAddMarkerNow    = [this] { addManualMarker (timelineNow()); };
     detail.onAddMarkerAt     = [this] (double t) { addManualMarker (t); };
@@ -174,8 +187,35 @@ MasterLensAudioProcessorEditor::MasterLensAudioProcessorEditor (MasterLensAudioP
     {
         juce::StringArray files;
         files.addTokens (saved, "|", {});
+        referencePaths = files;
+
+        const auto savedOffsets = processor.apvts.state.getProperty ("referenceOffsets").toString();
+        const auto savedGains = processor.apvts.state.getProperty ("referenceGains").toString();
+        juce::StringArray offsets, gains;
+        offsets.addTokens (savedOffsets, ",", {});
+        gains.addTokens (savedGains, ",", {});
+        for (int i = 0; i < 4; ++i)
+        {
+            referenceOffsets[(size_t) i] = i < offsets.size() ? offsets[i].getDoubleValue() : 0.0;
+            referenceGains[(size_t) i] = i < gains.size() ? gains[i].getDoubleValue() : 0.0;
+        }
+
+        referenceSlot = juce::jlimit (0, juce::jmax (0, files.size() - 1),
+                                      (int) processor.apvts.state.getProperty ("referenceSlot", 0));
         reference.load (files, analyzerSampleRate, 13);
-        processor.referencePlayer.load (files, analyzerSampleRate);
+        processor.referencePlayer.load ({ referencePaths[referenceSlot] }, analyzerSampleRate);
+        processor.referencePlayer.setOffsetSeconds (referenceOffsets[(size_t) referenceSlot]);
+        processor.referencePlayer.setGainDb ((float) referenceGains[(size_t) referenceSlot]);
+        juce::StringArray names;
+        for (const auto& path : referencePaths)
+            names.add (juce::File (path).getFileName());
+        detail.setReferenceSlots (names, referenceSlot,
+                                  referenceOffsets[(size_t) referenceSlot],
+                                  referenceGains[(size_t) referenceSlot]);
+    }
+    else
+    {
+        detail.setReferenceSlots ({}, 0, 0.0, 0.0);
     }
 
     attachShortcutListener (*this);

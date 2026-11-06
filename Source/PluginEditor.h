@@ -118,6 +118,8 @@ private:
     void clearReference();
     void toggleReferencePlayback();
     void autoAlignReference();
+    void selectReferenceSlot (int slot);
+    void saveReferenceSettings();
     void chooseFiles();
     void chooseFolder();
     void toggleFilePlayback();
@@ -193,6 +195,10 @@ private:
     juce::String fileAnalysisStatus;
     juce::String pendingAlbumName;
     juce::String filePreviewPath;
+    juce::StringArray referencePaths;
+    std::array<double, 4> referenceOffsets { 0.0, 0.0, 0.0, 0.0 };
+    std::array<double, 4> referenceGains { 0.0, 0.0, 0.0, 0.0 };
+    int referenceSlot = 0;
     ml::DeliverySpec deliverySpec;
     juce::File watchedFolder;
     std::map<juce::String, std::pair<juce::int64, juce::int64>> watchedStamps;

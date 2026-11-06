@@ -18,6 +18,29 @@ namespace
         return juce::Rectangle<int> (w, h).withCentre (full.getCentre());
     }
 
+    SettingsLayout settingsLayout (juce::Rectangle<int> full);
+
+    struct FooterParts
+    {
+        juce::Rectangle<int> brand, developer, close;
+    };
+
+    FooterParts settingsFooterParts (juce::Rectangle<int> full)
+    {
+        const auto footer = settingsLayout (full).footer;
+        constexpr int brandW = 150, developerW = 170, closeW = 80, gap = 16;
+        const int total = brandW + developerW + closeW + gap * 2;
+        const int x = footer.getCentreX() - total / 2;
+        const int h = juce::jmin (30, footer.getHeight());
+        const int y = footer.getCentreY() - h / 2;
+
+        FooterParts p;
+        p.brand = { x, y, brandW, h };
+        p.developer = { p.brand.getRight() + gap, y, developerW, h };
+        p.close = { p.developer.getRight() + gap, y, closeW, h };
+        return p;
+    }
+
     SettingsLayout settingsLayout (juce::Rectangle<int> full)
     {
         auto card = settingsCard (full).reduced (26, 22);
@@ -181,13 +204,15 @@ void SettingsPanel::paint (juce::Graphics& g)
     row (T ("测量", "Measurement"), T ("只读分析，零延迟，不修改音频",
                                        "Read-only analysis, zero latency, never alters audio"));
 
-    // ---- footer -------------------------------------------------------------
-    paintBerryLockup (g, l.footer.withWidth (230), theme::textDim, 26.0f, 8.5f);
+    // ---- footer: one centred horizontal group --------------------------------
+    const auto footer = settingsFooterParts (getLocalBounds());
+    paintBerryLockup (g, footer.brand, theme::textDim, 26.0f, 8.5f);
 
     g.setColour (theme::textFaint);
     g.setFont (getLabelFont());
-    g.drawText ("BerryStudio  |  " + juce::String::fromUTF8 (Localisation::isEnglish() ? ml::kDeveloperEnglish : ml::kDeveloper),
-                l.footer.withTrimmedRight (120), juce::Justification::centredRight, false);
+    g.drawText (T ("开发者 ", "Developer ") + juce::String::fromUTF8 (
+                    Localisation::isEnglish() ? ml::kDeveloperEnglish : ml::kDeveloper),
+                footer.developer, juce::Justification::centredLeft, false);
 }
 
 void SettingsPanel::resized()
@@ -205,7 +230,7 @@ void SettingsPanel::resized()
         row.removeFromLeft (gap);
     }
 
-    closeButton.setBounds (l.footer.getRight() - 96, l.footer.getY() - 2, 96, 30);
+    closeButton.setBounds (settingsFooterParts (getLocalBounds()).close);
     grid::alignChildren (*this);
 }
 

@@ -64,9 +64,13 @@ void DetailArea::paintTarget (juce::Graphics& g)
 
         inner.removeFromTop (tiny ? 2 : (compact ? 5 : 8));
 
+        const int rowCount = tiny ? 5 : 7;
+        const int reservedNote = tiny ? 0 : (compact ? 34 : 52);
+        const int rowH = juce::jlimit (15, 42,
+            (inner.getHeight() - reservedNote) / juce::jmax (1, rowCount));
         const auto row = [&] (const juce::String& key, const juce::String& value)
         {
-            auto r = inner.removeFromTop (tiny ? 15 : (compact ? 17 : 19));
+            auto r = inner.removeFromTop (rowH);
 
             g.setColour (theme::textFaint);
             g.setFont (getLabelFont());
@@ -163,10 +167,11 @@ void DetailArea::paintTarget (juce::Graphics& g)
             return theme::good;
         };
 
+        const int rowH = juce::jlimit (18, 38,
+            (inner.getHeight() - (compact ? 46 : 62)) / numPlatforms);
+
         for (int i = 0; i < numPlatforms; ++i)
         {
-            const int rowH = inner.getHeight() < 250 ? 18 : 23;
-
             if (inner.getHeight() < rowH)
                 break;
 

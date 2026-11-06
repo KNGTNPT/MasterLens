@@ -3,7 +3,7 @@
 namespace ml
 {
 static constexpr int kTimelineStripHeight = 96;
-static constexpr int kTimelineButtonRow  = 34;
+static constexpr int kTimelineButtonRow  = 52;
 
 static double timeNow (const StatsSnapshot& s) noexcept
 {

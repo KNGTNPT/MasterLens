@@ -50,6 +50,16 @@ public:
         return offsetSeconds.load (std::memory_order_relaxed);
     }
 
+    void setGainDb (float db) noexcept
+    {
+        gainDb.store (juce::jlimit (-24.0f, 12.0f, db), std::memory_order_relaxed);
+    }
+
+    float getGainDb() const noexcept
+    {
+        return gainDb.load (std::memory_order_relaxed);
+    }
+
     /** Replaces the output with the reference at the host position.
         @returns true when reference audio was written. */
     bool render (juce::AudioBuffer<float>& output, double hostSeconds,
@@ -80,6 +90,7 @@ private:
     std::atomic<bool> enabled { false };
     std::atomic<double> duration { 0.0 };
     std::atomic<double> offsetSeconds { 0.0 };
+    std::atomic<float> gainDb { 0.0f };
     std::atomic<float> loudnessLufs { kSilentDb };
 };
 } // namespace ml

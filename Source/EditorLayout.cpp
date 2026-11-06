@@ -83,7 +83,7 @@ void MasterLensAudioProcessorEditor::resized()
 
     auto desk = paramArea.reduced (24, 8);
     auto basis = desk.removeFromLeft (base.getWidth() < 1000 ? 136 : 192);
-    presetBox.setBounds (basis.withTrimmedTop (32).withHeight (32));
+    presetBox.setBounds (basis.withTrimmedTop (48).withHeight (32));
     desk.removeFromLeft (16);
     auto targets = desk.removeFromLeft (176);
     auto captions = targets.removeFromTop (16);

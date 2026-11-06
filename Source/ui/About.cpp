@@ -38,12 +38,12 @@ void SnapshotChip::paint (juce::Graphics& g)
 
     g.setColour (active ? theme::accent : (filled ? theme::text : theme::textDim));
     g.setFont (getValueFont());
-    g.drawText (letter, getLocalBounds().withTrimmedRight (12), juce::Justification::centred);
+    g.drawText (letter, getLocalBounds(), juce::Justification::centred);
 
     if (filled)
     {
         g.setColour (active ? theme::accent : theme::good);
-        g.fillEllipse (r.getRight() - 10.0f, r.getY() + 6.0f, 4.0f, 4.0f);
+        g.fillEllipse (r.getRight() - 6.0f, r.getBottom() - 6.0f, 4.0f, 4.0f);
     }
 
     if (hasKeyboardFocus (true))

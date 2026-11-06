@@ -52,6 +52,7 @@ void ReferencePlayer::clear()
     enabled.store (false);
     duration.store (0.0);
     offsetSeconds.store (0.0);
+    gainDb.store (0.0f);
     loudnessLufs.store (kSilentDb);
 }
 
@@ -87,7 +88,8 @@ bool ReferencePlayer::render (juce::AudioBuffer<float>& output, double hostSecon
     double pos = hostPlaying ? (hostSeconds + offsetSeconds.load (std::memory_order_relaxed)) * d->sourceRate : audioPosition;
     const float inputGain = juce::Decibels::decibelsToGain (inputGainDb);
     const float step = (float) (1.0 / (0.005 * juce::jmax (1.0, targetRate.load())));
-    const float gain = juce::Decibels::decibelsToGain (extraGainDb, -60.0f);
+    const float gain = juce::Decibels::decibelsToGain (
+        extraGainDb + gainDb.load (std::memory_order_relaxed), -60.0f);
     const auto length = (int) d->length;
 
     // Catmull-Rom (4-point cubic) keeps 44.1 / 48 / 88.2 / 96 kHz references

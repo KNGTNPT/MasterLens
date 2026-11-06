@@ -5,13 +5,47 @@
 **母带响度 / 文件 QC / 频谱 / 声场 / 专辑交付 / CLI**<br>
 by **BerryStudio** · developer **KNGTNPT 兰**<br>
 macOS / Windows · VST3 / AU / 独立版 · C++17 + JUCE 8<br>
-当前版本：**3.0.0-alpha**
+当前版本：**3.0.0-beta**
 
 MasterLens 是放在母带链末尾的小检查员：这首歌有多响、峰值会不会顶过头、立体声合成单声道后会不会变薄、交出去之前还有哪里值得听一遍，它都帮你留意着。把它插在 Master / Stereo Out 的最后一级就好。
 
 默认零延迟、逐位旁路，也就是只看、不动你的声音。点试听、开等响监听或切参考 A/B 时，才会临时改变输出。辛苦做好的声音，会好好留在原地。
 
 歌该做成什么样，还是你的耳朵说了算。数字有点多也没关系，我们一项项看；它负责把容易漏掉的小细节摊开，陪你把交付前的最后一遍检查做完。
+
+## 3.0.0-beta：参考槽位和排版一起收好喵
+
+3.0-beta 把参考工作区先搭起来，同时把上一版发现的六个界面问题逐项修掉。
+
+- **参考槽位**：频谱页可导入多条参考轨，用槽位下拉快速切换；每个槽位保存自己的 OFS（参考偏移）和 GAIN（匹配增益），随工程状态保留。
+- **设置页页脚**：底层 logo、BERRYSTUDIO、开发者和关闭按钮改为同一水平组，以页面中点对齐。
+- **左栏读数**：真峰值、综合响度、平台最大衰减等数值与单位回到同一基线；频谱页下方的读数同步。
+- **平台下拉对齐**：平台归一化后果下拉下沉，与右侧 REF / CEIL 读数保持同一水平。
+- **快照按钮**：A/B 字母在按钮控件内真正居中，小状态点移到右下角。
+- **时间页按钮**：导入 / 导出标记与打标记按钮不再贴住事件轴，上下留白居中。
+- **目标页行距**：曲风参照与平台要求两栏按可用高度分散行距，减少挤在顶部和底部大片空白。
+
+2.7 的长文件流式播放、编码 A/B、选区等响和频段独听还没有进入 beta；这些仍继续走 3.0-rc。
+
+### 3.0.0-beta 验证
+
+详细结果见 [3.0.0-beta 验证记录](docs/performance-3.0.0-beta.md)。
+
+- 11 个页面逐页截图检查数字、单位与标签基线。
+- DSP / CLI / UI 回归：**151 / 66 / 35 通过**。
+- macOS / Windows x64 / Windows ARM64 构建与 Release 发布通过；Windows x64 安装冒烟通过。
+
+![MasterLens 3.0.0-beta 响度与动态](docs/screenshot-3.0.0-beta.png)
+
+![MasterLens 3.0.0-beta 信号健康](docs/signal-3.0.0-beta.png)
+
+![MasterLens 3.0.0-beta 频谱平衡](docs/spectrum-3.0.0-beta.png)
+
+![MasterLens 3.0.0-beta 声场与相位](docs/stereo-3.0.0-beta.png)
+
+![MasterLens 3.0.0-beta 文件 QC](docs/fileqc-3.0.0-beta.png)
+
+![MasterLens 3.0.0-beta 关于页原始 SVG](docs/about-3.0.0-beta.png)
 
 ## 3.0.0-alpha：先把数字和单位排好喵
 
@@ -259,7 +293,7 @@ Windows ARM64 安装包由交叉构建生成；**手头没有 Windows on ARM 设
 
 ### 先装好，再播一首
 
-[下载 3.0.0-alpha](https://github.com/KNGTNPT/MasterLens/releases/tag/v3.0.0-alpha)。macOS 打开 DMG，运行「安装 Install.command」；Windows 运行对应 x64 / ARM64 的 EXE，然后重启 DAW。
+[下载 3.0.0-beta](https://github.com/KNGTNPT/MasterLens/releases/tag/v3.0.0-beta)。macOS 打开 DMG，运行「安装 Install.command」；Windows 运行对应 x64 / ARM64 的 EXE，然后重启 DAW。
 
 把 MasterLens 插在母带链最后，先播 20–30 秒，跟它打个招呼。左侧的综合响度看整体有多响，真峰值看最高处有没有越线；LRA 看强弱变化的范围，PLR 看峰值与平均响度之间还留了多少空间。中央曲线会把变化过程画出来。
 
