@@ -91,6 +91,7 @@ bool MasterLensAudioProcessorEditor::keyPressed (const juce::KeyPress& key)
     {
         processor.stopAudition();
         lastAuditionIndex = -1;
+        activeBandSolo.clear();
         footerStatusText = T ("试听已停止", "Audition stopped");
         footerStatusColour = ml::theme::textDim;
         repaint();
@@ -105,9 +106,12 @@ bool MasterLensAudioProcessorEditor::keyPressed (const juce::KeyPress& key)
         && ! key.getModifiers().isShiftDown())
     {
         if (processor.wrapperType == juce::AudioProcessor::wrapperType_Standalone
-            && processor.isFilePreviewActive())
+            && (processor.isFilePreviewActive() || processor.isStreamingPreviewActive()
+                || processor.isCodecPreviewActive()))
         {
             processor.stopFilePreview();
+            processor.stopStreamingPreview();
+            stopCodecAB();
             filePreviewPath.clear();
             detail.setFilePlayActive (false);
             footerStatusText = T ("文件播放已停止", "File playback stopped");
@@ -173,6 +177,12 @@ bool MasterLensAudioProcessorEditor::keyPressed (const juce::KeyPress& key)
         return true;
     }
 
+    if (c == 'b' || c == 'B')
+    {
+        toggleCodecSide();
+        return true;
+    }
+
     if (key == juce::KeyPress::escapeKey)
     {
         if (settingsPanel.isVisible())
@@ -181,8 +191,13 @@ bool MasterLensAudioProcessorEditor::keyPressed (const juce::KeyPress& key)
             hideOverlay (aboutPanel);
         else if (genrePanel.isVisible())
             hideOverlay (genrePanel);
-        else if (processor.isFilePreviewActive())
+        else if (processor.isFilePreviewActive() || processor.isStreamingPreviewActive()
+                 || processor.isCodecPreviewActive())
+        {
             processor.stopFilePreview();
+            processor.stopStreamingPreview();
+            stopCodecAB();
+        }
         else
             setHold (false, false);
 

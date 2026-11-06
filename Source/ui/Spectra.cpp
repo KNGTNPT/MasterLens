@@ -497,6 +497,50 @@ void SpectrogramDisplay::drawGrid (juce::Graphics& g)
                 (int) plot.getBottom() + 4, 40, 12, juce::Justification::centredRight);
 }
 
+juce::Rectangle<int> SpectrogramDisplay::bandRowBounds (int band) const
+{
+    if (mode != Mode::bands)
+        return {};
+
+    auto plot = getLocalBounds().withTrimmedLeft (56).withTrimmedRight (32)
+                               .withTrimmedTop (32).withTrimmedBottom (48);
+
+    if (plot.getHeight() < 20 || plot.getWidth() < 20)
+        return {};
+
+    const int b = juce::jlimit (0, 9, band);
+    const float cellH = (float) plot.getHeight() / 10.0f;
+    const int top = plot.getBottom() - juce::roundToInt ((float) (b + 1) * cellH);
+    const int bottom = plot.getBottom() - juce::roundToInt ((float) b * cellH);
+
+    return { plot.getX(), top, plot.getWidth(), juce::jmax (1, bottom - top) };
+}
+
+void SpectrogramDisplay::mouseDown (const juce::MouseEvent& e)
+{
+    if (mode != Mode::bands || onBandClicked == nullptr)
+        return;
+
+    for (int b = 0; b < 10; ++b)
+        if (bandRowBounds (b).contains (e.getPosition()))
+        {
+            onBandClicked (b);
+            return;
+        }
+}
+
+void SpectrogramDisplay::mouseMove (const juce::MouseEvent& e)
+{
+    bool over = false;
+
+    if (mode == Mode::bands)
+        for (int b = 0; b < 10 && ! over; ++b)
+            over = bandRowBounds (b).contains (e.getPosition());
+
+    setMouseCursor (over ? juce::MouseCursor::PointingHandCursor
+                         : juce::MouseCursor::NormalCursor);
+}
+
 void SpectrogramDisplay::paint (juce::Graphics& g)
 {
     if (backgroundDirty || background.isNull() || cachedThemeRevision != theme::revision())

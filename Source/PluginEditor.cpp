@@ -58,6 +58,7 @@ MasterLensAudioProcessorEditor::MasterLensAudioProcessorEditor (MasterLensAudioP
     detail.onAddMarkerAt     = [this] (double t) { addManualMarker (t); };
     detail.onExportMarkers   = [this] { exportMarkers(); };
     detail.onImportMarkers   = [this] { importMarkers(); };
+    detail.onMatchSelection  = [this] { requestSelectionMatch(); };
     detail.onAlbumCapture    = [this] { captureAlbum(); };
     detail.onAlbumExportProof= [this] { exportAlbumProof(); };
     detail.onAlbumImport     = [this] { importAlbumSnapshot(); };
@@ -70,11 +71,16 @@ MasterLensAudioProcessorEditor::MasterLensAudioProcessorEditor (MasterLensAudioP
     };
     detail.onAuditionSignal  = [this] (int i) { auditionSignal (i); };
     detail.onAuditionSignalRegion = [this] (int i, double s, double e) { auditionSignalRegion (i, s, e); };
+    detail.onAuditionBand = [this] (float lo, float hi, const juce::String& label)
+    {
+        auditionBand (lo, hi, label);
+    };
     detail.onHistorySeek = [this] (double age)
     {
         const double now = timelineNow();
         const double t = juce::jmax (0.0, now - age);
         processor.startAudition (juce::jmax (0.0, t - 1.0), t + 1.0, 20.0, 20000.0, false);
+        activeBandSolo.clear();
         footerStatusText = T ("试听曲线选点 · Esc 停止", "Auditioning graph point · Esc to stop");
         footerStatusColour = ml::theme::accent;
         repaint();
@@ -91,15 +97,23 @@ MasterLensAudioProcessorEditor::MasterLensAudioProcessorEditor (MasterLensAudioP
     detail.onChooseFiles = [this] { chooseFiles(); };
     detail.onChooseFolder = [this] { chooseFolder(); };
     detail.onPlayFile = [this] { toggleFilePlayback(); };
-    detail.onSeekFile = [this] (double seconds) { processor.seekFilePreview (seconds); };
+    detail.onSeekFile = [this] (double seconds)
+    {
+        if (processor.isStreamingPreviewActive())
+            processor.seekStreamingPreview (seconds);
+        else
+            processor.seekFilePreview (seconds);
+    };
     detail.onAddFileResultsToAlbum = [this] { addFileResultsToAlbum(); };
     detail.onClearFileResults = [this] { clearFileResults(); };
     detail.onExportFileTable = [this] { exportFileTable(); };
+    detail.onCodecMenu = [this] { showCodecMenu(); };
     detail.onPreviewFile = [this] (const juce::String& path, double seconds)
     {
         const auto file = juce::File (path);
         processor.startFilePreview (file, juce::jmax (0.0, seconds - 1.5),
                                     seconds + 2.5, true);
+        activeBandSolo.clear();
         footerStatusText = T ("问题片段 · ", "Evidence · ") + file.getFileName()
                            + " · " + ml::fmtTime (seconds) + T (" · Esc 停止", " · Esc stops");
         footerStatusColour = ml::theme::accent;

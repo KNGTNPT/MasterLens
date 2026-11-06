@@ -350,6 +350,7 @@ void MasterLensAudioProcessorEditor::auditionRiskDetail (const juce::String& det
 
     const double end = juce::jmax (0.5, timelineNow());
     processor.startAudition (juce::jmax (0.0, end - 1.5), end, lo, hi, mono);
+    activeBandSolo.clear();
     lastAuditionIndex = -2;
     footerStatusText = T ("试听风险：", "Audition risk: ") + detail.substring (0, 42);
     footerStatusColour = ml::theme::cyan;
@@ -360,6 +361,8 @@ void MasterLensAudioProcessorEditor::auditionSignal (int index)
 {
     if (! stats.hasSignal || stats.elapsed <= 0.2)
         return;
+
+    activeBandSolo.clear();
 
     if (processor.isAuditionActive() && lastAuditionIndex == index)
     {
@@ -398,6 +401,8 @@ void MasterLensAudioProcessorEditor::auditionSignalRegion (int index, double sta
     if (! stats.hasSignal || end <= start + 0.05)
         return;
 
+    activeBandSolo.clear();
+
     struct Band { float lo, hi; bool mono; const char* zh; const char* en; };
     static const Band bands[6] {
         { 2000.0f, 12000.0f, false, "谐波/互调 2–12 kHz", "harmonics/IMD 2-12 kHz" },
@@ -421,6 +426,37 @@ void MasterLensAudioProcessorEditor::auditionSignalRegion (int index, double sta
 }
 
 
+
+void MasterLensAudioProcessorEditor::auditionBand (float lowHz, float highHz, const juce::String& label)
+{
+    if (! stats.hasSignal || stats.elapsed <= 0.2)
+    {
+        footerStatusText = T ("先让工程播放一段，再进行频段独听",
+                              "Play the project for a moment before soloing a band");
+        footerStatusColour = ml::theme::warn;
+        repaint();
+        return;
+    }
+
+    if (processor.isAuditionActive() && activeBandSolo == label)
+    {
+        processor.stopAudition();
+        activeBandSolo.clear();
+        footerStatusText = T ("频段独听已停止", "Band solo stopped");
+        footerStatusColour = ml::theme::textDim;
+        repaint();
+        return;
+    }
+
+    // 4th order, no makeup gain: what you hear is the real energy of that band.
+    processor.startBandSolo (lowHz, highHz);
+    lastAuditionIndex = -1;
+    activeBandSolo = label;
+    footerStatusText = T ("实时跟随 DAW · 独听 ", "Live with DAW · solo ")
+                       + label + T (" · 不做等响 · Esc 停止", " · no makeup · Esc stops");
+    footerStatusColour = ml::theme::cyan;
+    repaint();
+}
 
 void MasterLensAudioProcessorEditor::updateSignalProblems()
 {
@@ -530,6 +566,9 @@ void MasterLensAudioProcessorEditor::resetAnalysis()
 
     curve.clear();
     resetRawSeries();
+    hasSelection = false;
+    lastSelectionLufs = ml::kSilentDb;
+    detail.setSelectionMatchReady (false);
     stats = ml::StatsSnapshot {};
     markers.clear();
     tpEvents.clear();

@@ -45,6 +45,9 @@ void MasterLensAudioProcessorEditor::measureRegion (double start, double end)
     if (end < start)
         std::swap (start, end);
 
+    hasSelection = false;
+    detail.setSelectionMatchReady (false);
+
     std::vector<const RawSeriesPoint*> points;
 
     for (const auto& p : rawSeries)
@@ -60,14 +63,18 @@ void MasterLensAudioProcessorEditor::measureRegion (double start, double end)
         return;
     }
 
-    double lufsEnergy = 0.0, midEnergy = 0.0, sideEnergy = 0.0;
+    double midEnergy = 0.0, sideEnergy = 0.0;
     float tp = -100.0f, corr = 0.0f, width = 0.0f;
     std::array<float, 10> bands {};
     int bandCount = 0;
+    std::vector<float> momentary;
+    momentary.reserve (points.size());
 
     for (const auto* p : points)
     {
-        lufsEnergy += ml::lufsToEnergy (p->momentary);
+        // BS.1770 gating needs the 400 ms momentary windows, not an arithmetic
+        // mean of them: quiet sections must be gated out, not averaged in.
+        momentary.push_back (p->momentary);
         midEnergy += ml::lufsToEnergy (p->midShortTerm);
         sideEnergy += ml::lufsToEnergy (p->sideShortTerm);
         tp = juce::jmax (tp, p->truePeak);
@@ -86,7 +93,7 @@ void MasterLensAudioProcessorEditor::measureRegion (double start, double end)
     r.valid = true;
     r.start = start;
     r.end = end;
-    r.lufs = ml::energyToLufs (lufsEnergy / (double) points.size());
+    r.lufs = ml::gatedLufsFromMomentary (momentary);
     r.midLufs = ml::energyToLufs (midEnergy / (double) points.size());
     r.sideLufs = ml::energyToLufs (sideEnergy / (double) points.size());
     r.truePeak = tp;
@@ -100,6 +107,11 @@ void MasterLensAudioProcessorEditor::measureRegion (double start, double end)
 
     r.name = T ("选区 ", "Region ") + ml::fmtTime (start) + ml::enDash() + ml::fmtTime (end);
     lastRegion = r;
+    lastSelectionStart = start;
+    lastSelectionEnd = end;
+    lastSelectionLufs = r.lufs;
+    hasSelection = r.lufs > -70.0f;
+    detail.setSelectionMatchReady (hasSelection);
     detail.setRegionMeasurement (r);
     footerStatusText = T ("选区测量 ", "Region ") + ml::fmtTime (start) + "-" + ml::fmtTime (end)
                        + T (" · ", " · ") + ml::num (r.lufs) + " LUFS"

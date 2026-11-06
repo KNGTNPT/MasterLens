@@ -9,6 +9,8 @@
 #include "Basis.h"
 #include "album/AlbumSession.h"
 #include "dsp/ReferenceSpectrum.h"
+#include "dsp/RegionLoudness.h"
+#include "file/CodecABJob.h"
 #include "file/DeliverySpec.h"
 #include "ui/Modules.h"
 #include "ui/Theme.h"
@@ -104,6 +106,15 @@ private:
     void auditionSignal (int index);
     void auditionSignalRegion (int index, double start, double end);
     void auditionRiskDetail (const juce::String& detail);
+    void auditionBand (float lowHz, float highHz, const juce::String& label);
+    void requestSelectionMatch();
+    void pollSelectionMatch();
+    void showCodecMenu();
+    void startCodecAB (const juce::String& codec);
+    void toggleCodecSide();
+    void toggleCodecSide (int side);
+    void pollCodecAB();
+    void stopCodecAB();
     void setTargetGenre (int index);
     void setTargetWar (float percent);
     void applyTargetPlan();
@@ -189,6 +200,13 @@ private:
     ml::SpectrumFifo::Reader outputSpectrumReader;
     ml::Advisor advisor;
     ml::ReferenceSpectrum reference;
+    ml::ReferenceRangeMeter referenceRangeMeter;
+    ml::CodecABJob codecJob;
+    ml::CodecABResult codecResult;
+    bool hasCodecPreview = false;
+    juce::String codecSourcePath;
+    float codecSourceLufs = ml::kSilentDb;
+    float codecSourceTp = ml::kSilentDb;
     ml::FileAnalyzer fileAnalyzer;
 
     std::vector<ml::FileAnalysisResult> fileResults;
@@ -223,6 +241,10 @@ private:
     std::vector<RawSeriesPoint> rawSeries;
     double lastRawSeriesTime = -1.0;
     ml::RegionMeasurement lastRegion;
+    double lastSelectionStart = 0.0, lastSelectionEnd = 0.0;
+    double lastSelectionLufs = ml::kSilentDb;
+    bool hasSelection = false;
+    int pendingMatchSlot = -1;
 
     std::vector<float> curve;
     ml::StatsSnapshot stats;
@@ -237,6 +259,7 @@ private:
     ml::Snapshot snapshots[2];
     int viewingSnapshot = -1;
     int lastAuditionIndex = -1;
+    juce::String activeBandSolo;
 
     ml::BasisMode basisMode = ml::BasisMode::platform;
     int targetGenreIndex = 16;

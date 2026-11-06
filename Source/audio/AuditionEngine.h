@@ -33,6 +33,15 @@ public:
     /** Message-thread request: filter the live input and follow the host. */
     void startLive (float lowHz, float highHz, bool monoFold);
 
+    /** Message-thread request: live band audition with an explicit filter order.
+
+        order 2 keeps the original 12 dB/oct slope used by the signal cards;
+        order 4 cascades two Butterworth biquads (24 dB/oct) for the 10-band solo,
+        where adjacent octaves would otherwise leak. compensate=false keeps the
+        band at its real level instead of matching full-band RMS.
+    */
+    void startLiveBand (float lowHz, float highHz, bool monoFold, int order, bool compensate);
+
     void stop();
 
     bool isActive() const noexcept { return active.load (std::memory_order_acquire); }
@@ -94,6 +103,8 @@ private:
     std::atomic<double> requestedStart { 0.0 }, requestedEnd { 0.0 };
     std::atomic<float> requestedLo { 20.0f }, requestedHi { 20000.0f };
     std::atomic<bool> requestedMono { false };
+    std::atomic<int> requestedOrder { 2 };
+    std::atomic<bool> requestedCompensate { true };
     std::atomic<int> rangeRejected { 0 };
     std::atomic<double> rejectedStart { 0.0 };
 
@@ -103,5 +114,9 @@ private:
     int fadeSamples = 1;
 
     Biquad hpL, hpR, lpL, lpR;
+    // Second stage, only used by the 4th-order band solo.
+    Biquad hp2L, hp2R, lp2L, lp2R;
+    bool fourthOrder = false;
+    bool compensate = true;
 };
 } // namespace ml

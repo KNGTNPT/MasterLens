@@ -88,6 +88,12 @@ void MasterLensAudioProcessorEditor::paint (juce::Graphics& g)
             sourceColour = ml::theme::accent;
             sourceIsProject = false;
         }
+        else if (processor.isStreamingPreviewActive() || processor.isCodecPreviewActive())
+        {
+            source = T ("文件", "FILE");
+            sourceColour = ml::theme::cyan;
+            sourceIsProject = false;
+        }
         else if (processor.isFilePreviewActive() && processor.filePreviewFeedsAnalysis())
         {
             source = T ("文件", "FILE");
@@ -121,7 +127,8 @@ void MasterLensAudioProcessorEditor::paint (juce::Graphics& g)
             outState = T ("AUDITION", "AUDITION");
             outColour = ml::theme::accent;
         }
-        else if (processor.isFilePreviewActive())
+        else if (processor.isStreamingPreviewActive() || processor.isCodecPreviewActive()
+                 || processor.isFilePreviewActive())
         {
             outState = T ("FILE", "FILE");
             outColour = ml::theme::cyan;

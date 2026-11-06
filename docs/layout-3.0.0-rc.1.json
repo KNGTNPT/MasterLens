@@ -1,0 +1,399 @@
+{
+  "platform": "Darwin",
+  "cases": [
+    {
+      "arguments": [
+        "page0",
+        "minsize",
+        "out=qa300-rc1_00"
+      ],
+      "returncode": 0,
+      "stdout": "UiShot 3.0.0-rc.1 page=0 scale=1.00 size=880x560\ncurve points=1800 valid=1800 min=-18.19 max=-13.42 last=-17.68\nintegrated=-15.39  tp=-1.46  lra=4.60  corr=0.79  width=34.2  lowside=1.7\n",
+      "stderr": ""
+    },
+    {
+      "arguments": [
+        "page1",
+        "minsize",
+        "out=qa300-rc1_01"
+      ],
+      "returncode": 0,
+      "stdout": "UiShot 3.0.0-rc.1 page=1 scale=1.00 size=880x560\ncurve points=1800 valid=1800 min=-18.19 max=-13.42 last=-17.68\nintegrated=-15.39  tp=-1.46  lra=4.60  corr=0.79  width=34.2  lowside=1.7\n",
+      "stderr": ""
+    },
+    {
+      "arguments": [
+        "page2",
+        "minsize",
+        "out=qa300-rc1_02"
+      ],
+      "returncode": 0,
+      "stdout": "UiShot 3.0.0-rc.1 page=2 scale=1.00 size=880x560\ncurve points=1800 valid=1800 min=-18.19 max=-13.42 last=-17.68\nintegrated=-15.39  tp=-1.46  lra=4.60  corr=0.79  width=34.2  lowside=1.7\n",
+      "stderr": ""
+    },
+    {
+      "arguments": [
+        "page3",
+        "minsize",
+        "out=qa300-rc1_03"
+      ],
+      "returncode": 0,
+      "stdout": "UiShot 3.0.0-rc.1 page=3 scale=1.00 size=880x560\ncurve points=1800 valid=1800 min=-18.19 max=-13.42 last=-17.68\nintegrated=-15.39  tp=-1.46  lra=4.60  corr=0.79  width=34.2  lowside=1.7\n",
+      "stderr": ""
+    },
+    {
+      "arguments": [
+        "page4",
+        "minsize",
+        "out=qa300-rc1_04"
+      ],
+      "returncode": 0,
+      "stdout": "UiShot 3.0.0-rc.1 page=4 scale=1.00 size=880x560\ncurve points=1800 valid=1800 min=-18.19 max=-13.42 last=-17.68\nintegrated=-15.39  tp=-1.46  lra=4.60  corr=0.79  width=34.2  lowside=1.7\n",
+      "stderr": ""
+    },
+    {
+      "arguments": [
+        "page5",
+        "minsize",
+        "out=qa300-rc1_05"
+      ],
+      "returncode": 0,
+      "stdout": "UiShot 3.0.0-rc.1 page=5 scale=1.00 size=880x560\ncurve points=1800 valid=1800 min=-18.19 max=-13.42 last=-17.68\nintegrated=-15.39  tp=-1.46  lra=4.60  corr=0.79  width=34.2  lowside=1.7\n",
+      "stderr": ""
+    },
+    {
+      "arguments": [
+        "page6",
+        "minsize",
+        "out=qa300-rc1_06"
+      ],
+      "returncode": 0,
+      "stdout": "UiShot 3.0.0-rc.1 page=6 scale=1.00 size=880x560\ncurve points=1800 valid=1800 min=-18.19 max=-13.42 last=-17.68\nintegrated=-15.39  tp=-1.46  lra=4.60  corr=0.79  width=34.2  lowside=1.7\n",
+      "stderr": ""
+    },
+    {
+      "arguments": [
+        "page7",
+        "minsize",
+        "out=qa300-rc1_07"
+      ],
+      "returncode": 0,
+      "stdout": "UiShot 3.0.0-rc.1 page=7 scale=1.00 size=880x560\ncurve points=1800 valid=1800 min=-18.19 max=-13.42 last=-17.68\nintegrated=-15.39  tp=-1.46  lra=4.60  corr=0.79  width=34.2  lowside=1.7\n",
+      "stderr": ""
+    },
+    {
+      "arguments": [
+        "page8",
+        "minsize",
+        "out=qa300-rc1_08"
+      ],
+      "returncode": 0,
+      "stdout": "UiShot 3.0.0-rc.1 page=8 scale=1.00 size=880x560\ncurve points=1800 valid=1800 min=-18.19 max=-13.42 last=-17.68\nintegrated=-15.39  tp=-1.46  lra=4.60  corr=0.79  width=34.2  lowside=1.7\n",
+      "stderr": ""
+    },
+    {
+      "arguments": [
+        "page9",
+        "minsize",
+        "out=qa300-rc1_09"
+      ],
+      "returncode": 0,
+      "stdout": "UiShot 3.0.0-rc.1 page=9 scale=1.00 size=880x560\ncurve points=1800 valid=1800 min=-18.19 max=-13.42 last=-17.68\nintegrated=-15.39  tp=-1.46  lra=4.60  corr=0.79  width=34.2  lowside=1.7\n",
+      "stderr": ""
+    },
+    {
+      "arguments": [
+        "page10",
+        "minsize",
+        "fileqc",
+        "out=qa300-rc1_10"
+      ],
+      "returncode": 0,
+      "stdout": "UiShot 3.0.0-rc.1 page=10 scale=1.00 size=880x560\ncurve points=1800 valid=1800 min=-18.19 max=-13.42 last=-17.68\nintegrated=-15.39  tp=-1.46  lra=4.60  corr=0.79  width=34.2  lowside=1.7\n",
+      "stderr": ""
+    },
+    {
+      "arguments": [
+        "page0",
+        "size1120",
+        "scale100",
+        "out=qa300-rc1_11"
+      ],
+      "returncode": 0,
+      "stdout": "UiShot 3.0.0-rc.1 page=0 scale=1.00 size=1120x700\ncurve points=1800 valid=1800 min=-18.19 max=-13.42 last=-17.68\nintegrated=-15.39  tp=-1.46  lra=4.60  corr=0.79  width=34.2  lowside=1.7\n",
+      "stderr": ""
+    },
+    {
+      "arguments": [
+        "page0",
+        "settings",
+        "size1120",
+        "scale100",
+        "out=qa300-rc1_12"
+      ],
+      "returncode": 0,
+      "stdout": "UiShot 3.0.0-rc.1 page=0 scale=1.00 size=1120x700\ncurve points=1800 valid=1800 min=-18.19 max=-13.42 last=-17.68\nintegrated=-15.39  tp=-1.46  lra=4.60  corr=0.79  width=34.2  lowside=1.7\n",
+      "stderr": ""
+    },
+    {
+      "arguments": [
+        "page10",
+        "fileqc",
+        "fileview2",
+        "size1120",
+        "scale100",
+        "out=qa300-rc1_13"
+      ],
+      "returncode": 0,
+      "stdout": "UiShot 3.0.0-rc.1 page=10 scale=1.00 size=1120x700\ncurve points=1800 valid=1800 min=-18.19 max=-13.42 last=-17.68\nintegrated=-15.39  tp=-1.46  lra=4.60  corr=0.79  width=34.2  lowside=1.7\n",
+      "stderr": ""
+    },
+    {
+      "arguments": [
+        "page0",
+        "size1120",
+        "scale125",
+        "out=qa300-rc1_14"
+      ],
+      "returncode": 0,
+      "stdout": "UiShot 3.0.0-rc.1 page=0 scale=1.25 size=1400x875\ncurve points=1800 valid=1800 min=-18.19 max=-13.42 last=-17.68\nintegrated=-15.39  tp=-1.46  lra=4.60  corr=0.79  width=34.2  lowside=1.7\n",
+      "stderr": ""
+    },
+    {
+      "arguments": [
+        "page0",
+        "settings",
+        "size1120",
+        "scale125",
+        "out=qa300-rc1_15"
+      ],
+      "returncode": 0,
+      "stdout": "UiShot 3.0.0-rc.1 page=0 scale=1.25 size=1400x875\ncurve points=1800 valid=1800 min=-18.19 max=-13.42 last=-17.68\nintegrated=-15.39  tp=-1.46  lra=4.60  corr=0.79  width=34.2  lowside=1.7\n",
+      "stderr": ""
+    },
+    {
+      "arguments": [
+        "page10",
+        "fileqc",
+        "fileview2",
+        "size1120",
+        "scale125",
+        "out=qa300-rc1_16"
+      ],
+      "returncode": 0,
+      "stdout": "UiShot 3.0.0-rc.1 page=10 scale=1.25 size=1400x875\ncurve points=1800 valid=1800 min=-18.19 max=-13.42 last=-17.68\nintegrated=-15.39  tp=-1.46  lra=4.60  corr=0.79  width=34.2  lowside=1.7\n",
+      "stderr": ""
+    },
+    {
+      "arguments": [
+        "page0",
+        "size1120",
+        "scale150",
+        "out=qa300-rc1_17"
+      ],
+      "returncode": 0,
+      "stdout": "UiShot 3.0.0-rc.1 page=0 scale=1.50 size=1680x1050\ncurve points=1800 valid=1800 min=-18.19 max=-13.42 last=-17.68\nintegrated=-15.39  tp=-1.46  lra=4.60  corr=0.79  width=34.2  lowside=1.7\n",
+      "stderr": ""
+    },
+    {
+      "arguments": [
+        "page0",
+        "settings",
+        "size1120",
+        "scale150",
+        "out=qa300-rc1_18"
+      ],
+      "returncode": 0,
+      "stdout": "UiShot 3.0.0-rc.1 page=0 scale=1.50 size=1680x1050\ncurve points=1800 valid=1800 min=-18.19 max=-13.42 last=-17.68\nintegrated=-15.39  tp=-1.46  lra=4.60  corr=0.79  width=34.2  lowside=1.7\n",
+      "stderr": ""
+    },
+    {
+      "arguments": [
+        "page10",
+        "fileqc",
+        "fileview2",
+        "size1120",
+        "scale150",
+        "out=qa300-rc1_19"
+      ],
+      "returncode": 0,
+      "stdout": "UiShot 3.0.0-rc.1 page=10 scale=1.50 size=1680x1050\ncurve points=1800 valid=1800 min=-18.19 max=-13.42 last=-17.68\nintegrated=-15.39  tp=-1.46  lra=4.60  corr=0.79  width=34.2  lowside=1.7\n",
+      "stderr": ""
+    },
+    {
+      "arguments": [
+        "page0",
+        "size1120",
+        "scale175",
+        "out=qa300-rc1_20"
+      ],
+      "returncode": 0,
+      "stdout": "UiShot 3.0.0-rc.1 page=0 scale=1.75 size=1960x1225\ncurve points=1800 valid=1800 min=-18.19 max=-13.42 last=-17.68\nintegrated=-15.39  tp=-1.46  lra=4.60  corr=0.79  width=34.2  lowside=1.7\n",
+      "stderr": ""
+    },
+    {
+      "arguments": [
+        "page0",
+        "settings",
+        "size1120",
+        "scale175",
+        "out=qa300-rc1_21"
+      ],
+      "returncode": 0,
+      "stdout": "UiShot 3.0.0-rc.1 page=0 scale=1.75 size=1960x1225\ncurve points=1800 valid=1800 min=-18.19 max=-13.42 last=-17.68\nintegrated=-15.39  tp=-1.46  lra=4.60  corr=0.79  width=34.2  lowside=1.7\n",
+      "stderr": ""
+    },
+    {
+      "arguments": [
+        "page10",
+        "fileqc",
+        "fileview2",
+        "size1120",
+        "scale175",
+        "out=qa300-rc1_22"
+      ],
+      "returncode": 0,
+      "stdout": "UiShot 3.0.0-rc.1 page=10 scale=1.75 size=1960x1225\ncurve points=1800 valid=1800 min=-18.19 max=-13.42 last=-17.68\nintegrated=-15.39  tp=-1.46  lra=4.60  corr=0.79  width=34.2  lowside=1.7\n",
+      "stderr": ""
+    },
+    {
+      "arguments": [
+        "page0",
+        "size1120",
+        "scale200",
+        "out=qa300-rc1_23"
+      ],
+      "returncode": 0,
+      "stdout": "UiShot 3.0.0-rc.1 page=0 scale=2.00 size=2240x1400\ncurve points=1800 valid=1800 min=-18.19 max=-13.42 last=-17.68\nintegrated=-15.39  tp=-1.46  lra=4.60  corr=0.79  width=34.2  lowside=1.7\n",
+      "stderr": ""
+    },
+    {
+      "arguments": [
+        "page0",
+        "settings",
+        "size1120",
+        "scale200",
+        "out=qa300-rc1_24"
+      ],
+      "returncode": 0,
+      "stdout": "UiShot 3.0.0-rc.1 page=0 scale=2.00 size=2240x1400\ncurve points=1800 valid=1800 min=-18.19 max=-13.42 last=-17.68\nintegrated=-15.39  tp=-1.46  lra=4.60  corr=0.79  width=34.2  lowside=1.7\n",
+      "stderr": ""
+    },
+    {
+      "arguments": [
+        "page10",
+        "fileqc",
+        "fileview2",
+        "size1120",
+        "scale200",
+        "out=qa300-rc1_25"
+      ],
+      "returncode": 0,
+      "stdout": "UiShot 3.0.0-rc.1 page=10 scale=2.00 size=2240x1400\ncurve points=1800 valid=1800 min=-18.19 max=-13.42 last=-17.68\nintegrated=-15.39  tp=-1.46  lra=4.60  corr=0.79  width=34.2  lowside=1.7\n",
+      "stderr": ""
+    },
+    {
+      "arguments": [
+        "page10",
+        "fileqc",
+        "fileview1",
+        "minsize",
+        "out=qa300-rc1_26"
+      ],
+      "returncode": 0,
+      "stdout": "UiShot 3.0.0-rc.1 page=10 scale=1.00 size=880x560\ncurve points=1800 valid=1800 min=-18.19 max=-13.42 last=-17.68\nintegrated=-15.39  tp=-1.46  lra=4.60  corr=0.79  width=34.2  lowside=1.7\n",
+      "stderr": ""
+    },
+    {
+      "arguments": [
+        "page10",
+        "fileqc",
+        "fileview2",
+        "minsize",
+        "out=qa300-rc1_27"
+      ],
+      "returncode": 0,
+      "stdout": "UiShot 3.0.0-rc.1 page=10 scale=1.00 size=880x560\ncurve points=1800 valid=1800 min=-18.19 max=-13.42 last=-17.68\nintegrated=-15.39  tp=-1.46  lra=4.60  corr=0.79  width=34.2  lowside=1.7\n",
+      "stderr": ""
+    },
+    {
+      "arguments": [
+        "page10",
+        "fileqc",
+        "en",
+        "minsize",
+        "out=qa300-rc1_28"
+      ],
+      "returncode": 0,
+      "stdout": "UiShot 3.0.0-rc.1 page=10 scale=1.00 size=880x560\ncurve points=1800 valid=1800 min=-18.19 max=-13.42 last=-17.68\nintegrated=-15.39  tp=-1.46  lra=4.60  corr=0.79  width=34.2  lowside=1.7\n",
+      "stderr": ""
+    },
+    {
+      "arguments": [
+        "page9",
+        "en",
+        "minsize",
+        "out=qa300-rc1_29"
+      ],
+      "returncode": 0,
+      "stdout": "UiShot 3.0.0-rc.1 page=9 scale=1.00 size=880x560\ncurve points=1800 valid=1800 min=-18.19 max=-13.42 last=-17.68\nintegrated=-15.39  tp=-1.46  lra=4.60  corr=0.79  width=34.2  lowside=1.7\n",
+      "stderr": ""
+    },
+    {
+      "arguments": [
+        "page4",
+        "en",
+        "minsize",
+        "out=qa300-rc1_30"
+      ],
+      "returncode": 0,
+      "stdout": "UiShot 3.0.0-rc.1 page=4 scale=1.00 size=880x560\ncurve points=1800 valid=1800 min=-18.19 max=-13.42 last=-17.68\nintegrated=-15.39  tp=-1.46  lra=4.60  corr=0.79  width=34.2  lowside=1.7\n",
+      "stderr": ""
+    },
+    {
+      "arguments": [
+        "page0",
+        "about",
+        "minsize",
+        "out=qa300-rc1_31"
+      ],
+      "returncode": 0,
+      "stdout": "UiShot 3.0.0-rc.1 page=0 scale=1.00 size=880x560\ncurve points=1800 valid=1800 min=-18.19 max=-13.42 last=-17.68\nintegrated=-15.39  tp=-1.46  lra=4.60  corr=0.79  width=34.2  lowside=1.7\n",
+      "stderr": ""
+    },
+    {
+      "arguments": [
+        "page0",
+        "light",
+        "size1120",
+        "out=qa300-rc1_32"
+      ],
+      "returncode": 0,
+      "stdout": "UiShot 3.0.0-rc.1 page=0 scale=1.00 size=1120x700\ncurve points=1800 valid=1800 min=-18.19 max=-13.42 last=-17.68\nintegrated=-15.39  tp=-1.46  lra=4.60  corr=0.79  width=34.2  lowside=1.7\n",
+      "stderr": ""
+    },
+    {
+      "arguments": [
+        "page10",
+        "fileqc",
+        "light",
+        "size1120",
+        "out=qa300-rc1_33"
+      ],
+      "returncode": 0,
+      "stdout": "UiShot 3.0.0-rc.1 page=10 scale=1.00 size=1120x700\ncurve points=1800 valid=1800 min=-18.19 max=-13.42 last=-17.68\nintegrated=-15.39  tp=-1.46  lra=4.60  corr=0.79  width=34.2  lowside=1.7\n",
+      "stderr": ""
+    },
+    {
+      "arguments": [
+        "page10",
+        "empty",
+        "minsize",
+        "out=qa300-rc1_34"
+      ],
+      "returncode": 0,
+      "stdout": "UiShot 3.0.0-rc.1 page=10 scale=1.00 size=880x560\ncurve points=1800 valid=0 min=0.00 max=-200.00 last=-100.00\nintegrated=-100.00  tp=-100.00  lra=0.00  corr=0.00  width=0.0  lowside=0.0\n",
+      "stderr": ""
+    }
+  ]
+}

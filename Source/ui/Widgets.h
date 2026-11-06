@@ -203,6 +203,14 @@ public:
     void setMode (Mode m) { mode = m; backgroundDirty = true; repaint(); }
     Mode getMode() const noexcept { return mode; }
 
+    /** Row bounds for band b in Mode::bands (0 = sub at the bottom). */
+    juce::Rectangle<int> bandRowBounds (int band) const;
+
+    /** Called with the band index when the user clicks a band row. */
+    std::function<void (int)> onBandClicked;
+    void mouseDown (const juce::MouseEvent&) override;
+    void mouseMove (const juce::MouseEvent&) override;
+
     /** Push one column from the current analyser frame. */
     void capture (const SpectrumAnalyzer& analyser);
     void clear();

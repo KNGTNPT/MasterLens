@@ -7,6 +7,41 @@
 
 namespace ml
 {
+namespace
+{
+/** Mirrors the low / mid / high split painted by paintSpectrumExtras so the
+    same cells can be clicked for a band solo. */
+std::array<juce::Rectangle<int>, 3> spectrumGroupRects (juce::Rectangle<int> area)
+{
+    std::array<juce::Rectangle<int>, 3> out {};
+
+    if (area.isEmpty())
+        return out;
+
+    const bool compact = area.getHeight() < 110;
+
+    if (! compact)
+        area.removeFromTop (24);   // title row, same as paintSpectrumExtras
+
+    if (compact)
+    {
+        const int w = area.getWidth() / 3;
+        out[0] = area.removeFromLeft (w);
+        out[1] = area.removeFromLeft (w);
+        out[2] = area;
+    }
+    else
+    {
+        const int rowH = juce::jmax (54, area.getHeight() / 3);
+        out[0] = area.removeFromTop (rowH);
+        out[1] = area.removeFromTop (rowH);
+        out[2] = area;
+    }
+
+    return out;
+}
+} // namespace
+
 //==============================================================================
 DetailArea::DetailArea()
 {
@@ -49,6 +84,7 @@ DetailArea::DetailArea()
     addChildComponent (markButton);
     addChildComponent (markerExport);
     addChildComponent (markerImport);
+    addChildComponent (selectionMatch);
     addChildComponent (albumCapture);
     addChildComponent (albumProof);
     addChildComponent (albumImport);
@@ -120,7 +156,9 @@ DetailArea::DetailArea()
     fileAddAlbum.onClick = [this] { if (onAddFileResultsToAlbum != nullptr) onAddFileResultsToAlbum(); };
     fileClear.onClick = [this] { if (onClearFileResults != nullptr) onClearFileResults(); };
     fileExport.onClick = [this] { if (onExportFileTable != nullptr) onExportFileTable(); };
+    codecAB.onClick = [this] { if (onCodecMenu != nullptr) onCodecMenu(); };
     addChildComponent (fileExport);
+    addChildComponent (codecAB);
     for (int i = 0; i < 3; ++i)
     {
         auto& b = fileViewButtons[(size_t) i];
@@ -171,6 +209,7 @@ DetailArea::DetailArea()
     markButton.onClick = [this] { if (onAddMarkerNow != nullptr) onAddMarkerNow(); };
     markerExport.onClick = [this] { if (onExportMarkers != nullptr) onExportMarkers(); };
     markerImport.onClick = [this] { if (onImportMarkers != nullptr) onImportMarkers(); };
+    selectionMatch.onClick = [this] { if (onMatchSelection != nullptr) onMatchSelection(); };
 
     albumCapture.onClick = [this] { if (onAlbumCapture != nullptr) onAlbumCapture(); };
     albumProof.onClick = [this] { if (onAlbumExportProof != nullptr) onAlbumExportProof(); };
@@ -235,10 +274,25 @@ void DetailArea::refreshTexts()
         b.getProperties().set ("mlSegment", true);
     spectrumViewButtons[(size_t) spectrumView].setToggleState (true, juce::dontSendNotification);
 
+    spectrogram.onBandClicked = [this] (int band)
+    {
+        if (onAuditionBand == nullptr)
+            return;
+
+        const auto& info = SpectrumAnalyzer::getBandInfo (band);
+        const auto range = juce::String (juce::roundToInt (info.lo)) + "–"
+                           + juce::String (juce::roundToInt (info.hi)) + " Hz";
+        onAuditionBand (info.lo, info.hi, T (info.label, info.labelEn) + " " + range);
+    };
+
     reportButton.setButtonText (ml::grid::controlText (T ("导出报告", "Export report")));
     markButton.setButtonText (ml::grid::controlText (T ("+ 打标记", "+ Marker")));
     markerExport.setButtonText (ml::grid::controlText (T ("导出标记 CSV", "Export markers")));
     markerImport.setButtonText (ml::grid::controlText (T ("导入标记 CSV", "Import markers")));
+    selectionMatch.setButtonText (ml::grid::controlText (T ("选区等响", "Match selection")));
+    selectionMatch.setTooltip (T ("把当前参考槽位在 OFS + 选区的响度对齐到工程选区（只改参考 GAIN）",
+                                  "Match the active reference slot over OFS + selection to the project region (reference GAIN only)"));
+    selectionMatch.setEnabled (false);
     albumCapture.setButtonText (ml::grid::controlText (T ("采集本曲", "Capture track")));
     albumProof.setButtonText (ml::grid::controlText (T ("导出证明", "Proof")));
     albumImport.setButtonText (ml::grid::controlText (T ("导入基准", "Import")));
@@ -277,6 +331,10 @@ void DetailArea::refreshTexts()
     fileExport.setTooltip (T ("导出 CSV 摘要与完整 JSON 证据（时间、样本、源文件 SHA256）",
                               "Export CSV summary + full JSON evidence (time, samples, source SHA256)"));
     fileClear.setButtonText (ml::grid::controlText (T ("清空结果", "Clear results")));
+    codecAB.setButtonText (ml::grid::controlText (T ("编码 A/B", "Codec A/B")));
+    codecAB.setTooltip (T ("用本机 ffmpeg 生成 AAC 256k / MP3 320k，在同一时间码切换原始与编码后音频；缺少 ffmpeg 时明确不可用",
+                           "Render AAC 256k / MP3 320k with local ffmpeg and switch source/encoded at the same time code; unavailable without ffmpeg"));
+    codecAB.setEnabled (false);
     fileChoose.setTooltip (T ("离线分析 WAV / AIFF / FLAC，秒级出完整报告",
                                "Offline analysis of WAV / AIFF / FLAC in seconds"));
     fileFolder.setTooltip (T ("递归分析整个专辑文件夹，并自动填入门禁表",
@@ -334,6 +392,7 @@ void DetailArea::hideAllChildren()
     markButton.setVisible (false);
     markerExport.setVisible (false);
     markerImport.setVisible (false);
+    selectionMatch.setVisible (false);
     albumCapture.setVisible (false);
     albumProof.setVisible (false);
     albumImport.setVisible (false);
@@ -357,6 +416,7 @@ void DetailArea::hideAllChildren()
     fileAddAlbum.setVisible (false);
     fileClear.setVisible (false);
     fileExport.setVisible (false);
+    codecAB.setVisible (false);
     for (auto& b : fileViewButtons) b.setVisible (false);
 
     for (auto& b : albumRuleButtons)
@@ -553,6 +613,24 @@ void DetailArea::mouseDown (const juce::MouseEvent& e)
         return;
     }
 
+    if (page == PageId::spectrum)
+    {
+        static constexpr float edges[4] { 20.0f, 150.0f, 2000.0f, 20000.0f };
+
+        for (int i = 0; i < 3; ++i)
+            if (spectrumBandGroupBounds[(size_t) i].contains (e.getPosition())
+                && onAuditionBand != nullptr)
+            {
+                const juce::String label = i == 0 ? T ("低频 < 150 Hz", "LOW < 150 Hz")
+                                          : i == 1 ? T ("中频 150 Hz – 2 kHz", "MID 150 Hz - 2 kHz")
+                                                   : T ("高频 > 2 kHz", "HIGH > 2 kHz");
+                onAuditionBand (edges[i], edges[i + 1], label);
+                return;
+            }
+
+        return;
+    }
+
     if (page != PageId::signal)
         return;
 
@@ -584,6 +662,18 @@ void DetailArea::mouseDown (const juce::MouseEvent& e)
                 return;
             }
         }
+}
+
+void DetailArea::mouseMove (const juce::MouseEvent& e)
+{
+    bool over = false;
+
+    if (page == PageId::spectrum && spectrumView != 2)
+        for (int i = 0; i < 3 && ! over; ++i)
+            over = spectrumBandGroupBounds[(size_t) i].contains (e.getPosition());
+
+    setMouseCursor (over ? juce::MouseCursor::PointingHandCursor
+                         : juce::MouseCursor::NormalCursor);
 }
 
 void DetailArea::setState (UiState s)
@@ -725,6 +815,7 @@ void DetailArea::resized()
             controls.removeFromLeft (112);
             spectrumSideArea = spectrumBandHeight > 0
                 ? getLocalBounds().removeFromBottom (spectrumBandHeight).reduced (16, 0) : juce::Rectangle<int>();
+            spectrumBandGroupBounds = spectrumGroupRects (spectrumSideArea);
             const int modeWidth = 72;
             grid::row (controls, { &spectrumViewButtons[0], &spectrumViewButtons[1], &spectrumViewButtons[2] },
                        { modeWidth, modeWidth, modeWidth });
@@ -769,9 +860,12 @@ void DetailArea::resized()
             markerExport.setBounds (buttons.removeFromRight (120).withSizeKeepingCentre (118, 32));
             buttons.removeFromRight (8);
             markerImport.setBounds (buttons.removeFromRight (120).withSizeKeepingCentre (118, 32));
+            buttons.removeFromRight (8);
+            selectionMatch.setBounds (buttons.removeFromRight (104).withSizeKeepingCentre (100, 32));
             markButton.setVisible (true);
             markerExport.setVisible (true);
             markerImport.setVisible (true);
+            selectionMatch.setVisible (true);
             break;
         }
 
@@ -878,6 +972,7 @@ void DetailArea::resized()
             fileChoose.setBounds (buttons.removeFromRight (96).withSizeKeepingCentre (96, 30));
             buttons.removeFromRight (8);
             filePlay.setBounds (buttons.removeFromRight (80).withSizeKeepingCentre (80, 30));
+            codecAB.setBounds (buttons.removeFromLeft (104).withSizeKeepingCentre (100, 30));
 
             fileChoose.setVisible (true);
             fileFolder.setVisible (true);
@@ -885,6 +980,7 @@ void DetailArea::resized()
             fileAddAlbum.setVisible (true);
             fileClear.setVisible (true);
             fileExport.setVisible (true);
+            codecAB.setVisible (filePlaybackAvailable);
             auto tabs = fileInspectorBounds().removeFromTop (32);
             for (int i = 0; i < 3; ++i)
             {

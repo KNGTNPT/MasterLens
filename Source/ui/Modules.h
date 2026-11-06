@@ -235,6 +235,7 @@ public:
     std::function<void (double, double)> onHistorySelection;
     std::function<void()> onExportMarkers;
     std::function<void()> onImportMarkers;
+    std::function<void()> onMatchSelection;
     std::function<void()> onAlbumCapture;
     std::function<void()> onAlbumExportProof;
     std::function<void()> onAlbumImport;
@@ -245,6 +246,8 @@ public:
     std::function<void (int)> onAuditionSignal;
     std::function<void (int, double, double)> onAuditionSignalRegion;
     std::function<void (const juce::String&)> onAuditionRiskDetail;
+    /** Spectrum band solo: low/high edge (Hz) plus a localised label. */
+    std::function<void (float, float, const juce::String&)> onAuditionBand;
     std::function<void (int)> onTargetGenreChanged;
     std::function<void (float)> onTargetWarChanged;
     std::function<void()> onApplyTargetPlan;
@@ -258,14 +261,50 @@ public:
     std::function<void (const juce::String&, double)> onPreviewFile;
     std::function<void (const juce::String&)> onRevealFile;
     std::function<void (const juce::String&, bool)> onReviewEvidence;
+    std::function<void()> onCodecMenu;
 
     void setFileResults (std::vector<FileAnalysisResult> results, bool busy,
                          int done, int total, const juce::String& status);
+    /** Stores codec A/B evidence on the matching row for CSV / JSON export. */
+    void setFileCodecResult (const juce::String& path, const juce::String& label,
+                             float lufs, float tp, juce::int64 bytes)
+    {
+        for (auto& r : fileResults)
+            if (r.path == path)
+            {
+                r.codecLabel = label;
+                r.codecLufs = lufs;
+                r.codecTp = tp;
+                r.codecBytes = bytes;
+            }
+
+        repaint();
+    }
+    /** Enables the timeline "match selection" button once a region is measured. */
+    void setSelectionMatchReady (bool ready) { selectionMatch.setEnabled (ready); }
+
+    /** Codec A/B button label / availability on the file page. */
+    void setCodecABState (const juce::String& label, bool enabled)
+    {
+        codecAB.setButtonText (ml::grid::controlText (label));
+        codecAB.setEnabled (enabled);
+    }
+
+    juce::Rectangle<int> codecButtonScreenBounds() const { return codecAB.getScreenBounds(); }
     void setSpectrumSplit (int height, int bandHeight) { spectrumSplit = height; spectrumBandHeight = bandHeight; resized(); }
     void setFileView (int view) { fileView = juce::jlimit (0, 2, view); resized(); repaint(); }
     void setDeliverySpec (const DeliverySpec& s) { spec = s; repaint(); }
     void setFilePlaybackAvailable (bool available);
     void setFilePlayActive (bool active);
+    /** Shows "buffering" inside the playing state for the streaming transport. */
+    void setFileBuffering (bool buffering)
+    {
+        if (fileBuffering == buffering)
+            return;
+
+        fileBuffering = buffering;
+        updateFileTransportText();
+    }
     void setFileProgress (double positionSeconds, double durationSeconds);
     void setFileInspectorCollapsed (bool collapsed);
     bool isFileInspectorCollapsed() const noexcept { return fileInspectorCollapsed; }
@@ -292,6 +331,7 @@ public:
     void paint (juce::Graphics&) override;
     void resized() override;
     void mouseDown (const juce::MouseEvent&) override;
+    void mouseMove (const juce::MouseEvent&) override;
     void mouseDoubleClick (const juce::MouseEvent&) override;
     void mouseWheelMove (const juce::MouseEvent&, const juce::MouseWheelDetails&) override;
 
@@ -339,6 +379,7 @@ private:
     bool updatingReferenceControls = false;
     bool refPlaying = false;
     juce::TextButton markerExport, markerImport;
+    juce::TextButton selectionMatch;
     juce::TextButton albumCapture, albumProof, albumImport, albumClearButton, albumProject;
     juce::TextButton albumExportMarkers, albumImportMarkers;
     std::array<juce::TextButton, 5> albumRuleButtons;
@@ -349,12 +390,14 @@ private:
     juce::TextButton applyTarget;
 
     juce::TextButton fileChoose, fileFolder, filePlay, fileAddAlbum, fileClear, fileExport;
+    juce::TextButton codecAB;
     juce::TextButton fileInspectorToggle;
     juce::Slider fileProgress;
     juce::Label fileTime;
     enum class FileTransportState { unavailable, unloaded, ready, playing };
     FileTransportState fileTransportState = FileTransportState::unloaded;
     bool filePlaybackAvailable = false;
+    bool fileBuffering = false;
     bool fileInspectorCollapsed = false;
     bool updatingFileProgress = false;
     double fileProgressDuration = 0.0;
@@ -386,6 +429,7 @@ private:
     int spectrumSplit = 0, spectrumBandHeight = 0;
     juce::Rectangle<int> spectrumSideArea;
     std::array<juce::Rectangle<int>, 4> signalChipBounds;
+    std::array<juce::Rectangle<int>, 3> spectrumBandGroupBounds;
 
     juce::Image backgroundCache;
     bool backgroundDirty = true;

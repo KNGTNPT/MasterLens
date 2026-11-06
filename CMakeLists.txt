@@ -55,6 +55,8 @@ set(MASTERLENS_SOURCES
     Source/album/AlbumSession.cpp
     Source/audio/AuditionEngine.cpp
     Source/audio/ReferencePlayer.cpp
+    Source/audio/StreamingPreviewPlayer.cpp
+
     Source/audio/FilePreviewPlayer.cpp
     Source/file/FileAnalyzer.cpp
     Source/file/FileForensics.cpp
@@ -63,6 +65,11 @@ set(MASTERLENS_SOURCES
     Source/EditorControls.cpp
     Source/EditorProject.cpp
     Source/EditorFiles.cpp
+    Source/EditorSelectionMatch.cpp
+    Source/EditorCodecAB.cpp
+    Source/file/CodecPreview.cpp
+    Source/file/CodecABJob.cpp
+
     Source/EditorPaint.cpp
     Source/EditorLayout.cpp
     Source/EditorTimer.cpp
@@ -79,6 +86,7 @@ set(MASTERLENS_SOURCES
     Source/dsp/SpectrumAnalyzer.cpp
     Source/dsp/ReferenceSpectrum.cpp
     Source/dsp/DefectAnalyzer.cpp
+    Source/dsp/RegionLoudness.cpp
     Source/ui/Theme.cpp
     Source/ui/Logo.cpp
     Source/ui/Panels.cpp
@@ -144,9 +152,12 @@ target_sources(MasterLensDspTest PRIVATE
     Source/dsp/SpectrumAnalyzer.cpp
     Source/dsp/DefectAnalyzer.cpp
     Source/dsp/ReferenceSpectrum.cpp
+    Source/dsp/RegionLoudness.cpp
     Source/audio/AuditionEngine.cpp
     Source/audio/ReferencePlayer.cpp
+    Source/audio/StreamingPreviewPlayer.cpp
     Source/audio/FilePreviewPlayer.cpp
+    Source/file/CodecPreview.cpp
     Source/file/FileAnalyzer.cpp
     Source/file/FileForensics.cpp
     Source/file/FileReport.cpp

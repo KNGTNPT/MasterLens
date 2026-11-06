@@ -79,6 +79,8 @@ void MasterLensAudioProcessor::prepareToPlay (double sampleRate, int samplesPerB
     engine.prepare (currentSampleRate, juce::jmax (1, getTotalNumInputChannels()));
     auditionEngine.prepare (currentSampleRate, 2);
     filePreviewPlayer.prepare (currentSampleRate);
+    streamingPreview.prepare (currentSampleRate);
+    codecPreview.prepare (currentSampleRate);
     referencePlayer.prepare (currentSampleRate);
     ml::resetStats (stats);
     spectrumRing.reset();
@@ -180,10 +182,18 @@ void MasterLensAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, j
     // Standalone file transport is an analysis source, not just an output
     // override. Render it before the spectrum/loudness taps so every page sees
     // the imported file. Evidence audition stays as a post-analysis override.
-    const bool fileFeedsAnalysis = filePreviewPlayer.isActive()
+    const bool transportA = streamingPreview.isActive();
+    const bool transportB = ! transportA && codecPreview.isActive();
+    const bool streamingFeedsAnalysis = transportA || transportB;
+    const bool fileFeedsAnalysis = ! streamingFeedsAnalysis
+                                   && filePreviewPlayer.isActive()
                                    && filePreviewPlayer.feedsAnalysis();
 
-    if (fileFeedsAnalysis)
+    if (transportA)
+        streamingPreview.render (buffer);
+    else if (transportB)
+        codecPreview.render (buffer);
+    else if (fileFeedsAnalysis)
         filePreviewPlayer.render (buffer);
 
     // mono sum for the visualiser
@@ -203,11 +213,14 @@ void MasterLensAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, j
 
     // Evidence preview replaces only the output; the untouched bus above stays
     // the measurement source. A standalone file transport already fed analysis.
-    const bool previewOutput = fileFeedsAnalysis || filePreviewPlayer.render (buffer);
+    const bool transportAnalysis = streamingFeedsAnalysis || fileFeedsAnalysis;
+    const bool previewOutput = streamingFeedsAnalysis || fileFeedsAnalysis
+                               || (! streamingFeedsAnalysis && filePreviewPlayer.render (buffer));
 
-    const double knownLength = fileFeedsAnalysis
-        ? filePreviewPlayer.getDurationSeconds()
-        : trackLengthSeconds.load (std::memory_order_relaxed);
+    const double knownLength = streamingFeedsAnalysis
+        ? (transportB ? codecPreview.getDurationSeconds() : streamingPreview.getDurationSeconds())
+        : (fileFeedsAnalysis ? filePreviewPlayer.getDurationSeconds()
+                             : trackLengthSeconds.load (std::memory_order_relaxed));
     stats.hostLength = knownLength;
 
     if (hostValid)
@@ -217,9 +230,9 @@ void MasterLensAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, j
         markHostCoverage (hostPosition, hostPosition + (double) numSamples / currentSampleRate);
 
     const double covered = hostValid ? coverageTracker.seconds (knownLength) : -1.0;
-    float coverage = fileFeedsAnalysis ? 100.0f
+    float coverage = transportAnalysis ? 100.0f
         : (covered >= 0.0 ? (float) (100.0 * covered / knownLength) : -1.0f);
-    if (! fileFeedsAnalysis && covered >= 0.0 && covered < knownLength - 1.0e-9)
+    if (! transportAnalysis && covered >= 0.0 && covered < knownLength - 1.0e-9)
         coverage = std::nextafter (juce::jmin (100.0f, coverage), 0.0f);
     stats.coveragePct = coverage;
     if (previewOutput) { outputSpectrumFifo.pushMainOutput (buffer); return; }
@@ -283,6 +296,29 @@ float MasterLensAudioProcessor::getSmoothing() const
 }
 
 //==============================================================================
+void MasterLensAudioProcessor::setCodecSide (int side)
+{
+    const int next = side == 1 ? 1 : 0;
+
+    if (next == codecSide.load (std::memory_order_relaxed))
+        return;
+
+    if (next == 1)
+    {
+        const double position = streamingPreview.getPositionSeconds();
+        codecPreview.start (position);
+        streamingPreview.stop();
+    }
+    else
+    {
+        const double position = codecPreview.getPositionSeconds();
+        streamingPreview.start (position);
+        codecPreview.stop();
+    }
+
+    codecSide.store (next, std::memory_order_relaxed);
+}
+
 juce::AudioProcessorEditor* MasterLensAudioProcessor::createEditor()
 {
     return new MasterLensAudioProcessorEditor (*this);

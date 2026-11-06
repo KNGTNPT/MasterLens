@@ -8,11 +8,14 @@
 #include "dsp/SpectrumAnalyzer.h"
 #include "dsp/DefectAnalyzer.h"
 #include "dsp/ReferenceSpectrum.h"
+#include "dsp/RegionLoudness.h"
 #include "audio/AuditionEngine.h"
 #include "audio/ReferencePlayer.h"
+#include "audio/StreamingPreviewPlayer.h"
 #include "../Tools/MeasureProbe.h"
 #include "file/FileAnalyzer.h"
 #include "file/DeliverySpec.h"
+#include "file/CodecCheck.h"
 #include "Delivery.h"
 #include "album/AlbumSession.h"
 
@@ -29,6 +32,43 @@ static void check (const juce::String& name, double actual, double expected, dou
     if (! ok)
         ++failures;
 }
+
+/** On-demand reader used to exercise multi-hour files without touching disk. */
+class GeneratedToneReader : public juce::AudioFormatReader
+{
+public:
+    GeneratedToneReader (double rate, juce::int64 length, int channels)
+        : juce::AudioFormatReader (nullptr, "generated")
+    {
+        sampleRate = rate;
+        lengthInSamples = length;
+        numChannels = channels;
+        bitsPerSample = 32;
+        usesFloatingPointData = true;
+    }
+
+    bool readSamples (int* const* dest, int numDestChannels,
+                      int startOffsetInDestBuffer,
+                      juce::int64 startSampleInFile, int numSamples) override
+    {
+        for (int ch = 0; ch < numDestChannels; ++ch)
+        {
+            if (dest[ch] == nullptr)
+                continue;
+
+            auto* out = reinterpret_cast<float*> (dest[ch]) + startOffsetInDestBuffer;
+
+            for (int n = 0; n < numSamples; ++n)
+            {
+                const auto pos = startSampleInFile + n;
+                out[n] = 0.1f * std::sin (2.0f * juce::MathConstants<float>::pi * 1000.0f
+                                          * (float) pos / (float) sampleRate);
+            }
+        }
+
+        return true;
+    }
+};
 
 #include "RealtimeChecks.h"
 
@@ -590,6 +630,243 @@ int main (int argc, char** argv)
         check ("live audition stops with DAW", silenceEnergy < 1.0e-5 ? 1.0 : 0.0, 1.0, 0.0);
         audition.stop();
     }
+    // ---------------------------------------------------------------------
+    // 9b2) 4th-order band solo: passband level, adjacent leakage, RT safety
+    // ---------------------------------------------------------------------
+    {
+        ml::AuditionEngine soloPass, soloStop;
+        soloPass.prepare (sr, 2);
+        soloStop.prepare (sr, 2);
+        soloPass.startLiveBand (500.0f, 2000.0f, false, 4, false);
+        soloStop.startLiveBand (500.0f, 2000.0f, false, 4, false);
+
+        juce::AudioBuffer<float> pass (2, 512);
+        juce::AudioBuffer<float> stop (2, 512);
+        double passIn = 0.0, passOut = 0.0, stopIn = 0.0, stopOut = 0.0;
+        unsigned allocations = 0, releases = 0;
+
+        for (int block = 0; block < 60; ++block)
+        {
+            for (int n = 0; n < 512; ++n)
+            {
+                const double t = (double) (block * 512 + n) / sr;
+                const float low = (float) (0.30 * std::sin (2.0 * juce::MathConstants<double>::pi * 100.0 * t));
+                const float high = (float) (0.30 * std::sin (2.0 * juce::MathConstants<double>::pi * 8000.0 * t));
+                const float mid = (float) (0.30 * std::sin (2.0 * juce::MathConstants<double>::pi * 1000.0 * t));
+
+                pass.setSample (0, n, mid);
+                pass.setSample (1, n, mid);
+                stop.setSample (0, n, low + high);
+                stop.setSample (1, n, low + high);
+            }
+
+            const bool measure = block >= 50;
+
+            if (measure)
+                for (int ch = 0; ch < 2; ++ch)
+                    for (int n = 0; n < 512; ++n)
+                    {
+                        passIn += (double) pass.getSample (ch, n) * pass.getSample (ch, n);
+                        stopIn += (double) stop.getSample (ch, n) * stop.getSample (ch, n);
+                    }
+
+            {
+                rtAudit::Scope audit;
+                soloPass.process (pass);
+                soloStop.process (stop);
+
+                if (measure)
+                {
+                    allocations += rtAudit::allocations;
+                    releases += rtAudit::releases;
+                }
+            }
+
+            if (measure)
+                for (int ch = 0; ch < 2; ++ch)
+                    for (int n = 0; n < 512; ++n)
+                    {
+                        passOut += (double) pass.getSample (ch, n) * pass.getSample (ch, n);
+                        stopOut += (double) stop.getSample (ch, n) * stop.getSample (ch, n);
+                    }
+        }
+
+        const double passGainDb = 10.0 * std::log10 (juce::jmax (1.0e-20, passOut / juce::jmax (1.0e-20, passIn)));
+        const double stopGainDb = 10.0 * std::log10 (juce::jmax (1.0e-20, stopOut / juce::jmax (1.0e-20, stopIn)));
+
+        check ("band solo passband gain", passGainDb, 0.0, 1.5);
+        check ("band solo leakage <= -24 dB", stopGainDb < -24.0 ? 1.0 : 0.0, 1.0, 0.0);
+        check ("band solo live mode", soloPass.isLive() ? 1.0 : 0.0, 1.0, 0.0);
+        check ("band solo low edge", soloPass.lowHz(), 500.0, 0.01);
+        check ("band solo high edge", soloPass.highHz(), 2000.0, 0.01);
+        check ("band solo callback new", allocations, 0, 0);
+        check ("band solo callback delete", releases, 0, 0);
+
+        soloPass.stop();
+        soloStop.stop();
+    }
+
+
+
+    // ---------------------------------------------------------------------
+    // 9b3) selection loudness: BS.1770 absolute / relative gating
+    // ---------------------------------------------------------------------
+    {
+        std::vector<float> steady (100, -23.0f);
+        check ("gated steady -23 LUFS", ml::gatedLufsFromMomentary (steady), -23.0, 0.05);
+
+        std::vector<float> withSilence = steady;
+        for (int i = 0; i < 100; ++i)
+            withSilence.push_back (-95.0f);          // absolute gate (-70 LUFS)
+        check ("gated absolute gate", ml::gatedLufsFromMomentary (withSilence), -23.0, 0.05);
+
+        std::vector<float> twoLevels (10, -20.0f);
+        for (int i = 0; i < 190; ++i)
+            twoLevels.push_back (-50.0f);            // 30 LU down: relative gate
+        check ("gated relative gate", ml::gatedLufsFromMomentary (twoLevels), -20.0, 0.2);
+
+        check ("gated empty is silent",
+               ml::gatedLufsFromMomentary ({}) <= -70.0 ? 1.0 : 0.0, 1.0, 0.0);
+
+        const auto file = juce::File::getSpecialLocation (juce::File::tempDirectory)
+                              .getChildFile ("masterlens-range-48k.wav");
+        file.deleteFile();
+
+        {
+            const double rate = 48000.0;
+            const int n = (int) (rate * 5.0);
+            juce::AudioBuffer<float> audio (2, n);
+
+            for (int i = 0; i < n; ++i)
+            {
+                const float v = (float) (std::pow (10.0, -20.0 / 20.0)
+                                         * std::sin (2.0 * juce::MathConstants<double>::pi
+                                                     * 997.0 * (double) i / rate));
+                audio.setSample (0, i, v);
+                audio.setSample (1, i, v);
+            }
+
+            auto out = file.createOutputStream();
+
+            if (out != nullptr)
+            {
+                juce::WavAudioFormat wav;
+                std::unique_ptr<juce::AudioFormatWriter> writer (
+                    wav.createWriterFor (out.release(), rate, 2, 24, {}, 0));
+
+                if (writer != nullptr)
+                {
+                    writer->writeFromAudioSampleBuffer (audio, 0, n);
+                    writer.reset();
+                }
+            }
+        }
+
+        const auto measured = ml::measureFileRangeLufs (file, 0.0, 4.0);
+        check ("file range ok", measured.ok ? 1.0 : 0.0, 1.0, 0.0);
+        // Dual-mono stereo: BS.1770 sums both channels, so -20 dBFS peak reads -20 LUFS.
+        check ("file range -20 LUFS", measured.lufs, -20.0, 0.2);
+        check ("file range window count", (double) measured.windows, 36.0, 6.0);
+
+        const auto tooShort = ml::measureFileRangeLufs (file, 1.0, 1.2);
+        check ("file range rejects < 0.4 s", tooShort.ok ? 1.0 : 0.0, 0.0, 0.0);
+
+        file.deleteFile();
+    }
+    // ---------------------------------------------------------------------
+    // 9b4) long-file streaming preview: seek, EOF, RT safety
+    // ---------------------------------------------------------------------
+    {
+        ml::StreamingPreviewPlayer stream;
+        stream.prepare (48000.0, 4.0);
+
+        const double rate = 48000.0;
+        const auto length = (juce::int64) (rate * 7200.0);   // 2 h virtual file
+        stream.openReader (std::make_unique<GeneratedToneReader> (rate, length, 2), false);
+
+        for (int i = 0; i < 400 && ! stream.isReady(); ++i)
+            juce::Thread::sleep (5);
+
+        check ("stream reader ready", stream.isReady() ? 1.0 : 0.0, 1.0, 0.0);
+        check ("stream duration 2 h", stream.getDurationSeconds(), 7200.0, 0.05);
+
+        stream.start (0.0);
+
+        juce::AudioBuffer<float> block (2, 512);
+        const auto energyOf = [&block]
+        {
+            double e = 0.0;
+
+            for (int ch = 0; ch < block.getNumChannels(); ++ch)
+                for (int n = 0; n < block.getNumSamples(); ++n)
+                    e += (double) block.getSample (ch, n) * block.getSample (ch, n);
+
+            return e;
+        };
+
+        double energy = 0.0;
+        unsigned allocations = 0, releases = 0;
+        bool sawBuffering = false;
+
+        for (int i = 0; i < 2000 && energy <= 1.0e-6; ++i)
+        {
+            block.clear();
+
+            if (i > 50)
+            {
+                rtAudit::Scope audit;
+                stream.render (block);
+                allocations += rtAudit::allocations;
+                releases += rtAudit::releases;
+            }
+            else
+            {
+                stream.render (block);
+            }
+
+            sawBuffering = sawBuffering || stream.isBuffering();
+            energy = energyOf();
+
+            if (energy <= 1.0e-6)
+                juce::Thread::sleep (3);
+        }
+
+        check ("stream produces audio", energy > 1.0e-4 ? 1.0 : 0.0, 1.0, 0.0);
+        check ("stream reports buffering", sawBuffering ? 1.0 : 0.0, 1.0, 0.0);
+        check ("stream render new", allocations, 0, 0);
+        check ("stream render delete", releases, 0, 0);
+
+        stream.seek (3600.0);
+
+        double resumed = 0.0;
+
+        for (int i = 0; i < 2000 && resumed <= 0.0; ++i)
+        {
+            juce::Thread::sleep (3);
+            block.clear();
+            stream.render (block);
+
+            if (energyOf() > 1.0e-6)
+                resumed = stream.getPositionSeconds();
+        }
+
+        check ("stream seek position", resumed, 3600.0, 1.0);
+
+        stream.start (7199.0);
+
+        for (int i = 0; i < 2000 && stream.isActive(); ++i)
+        {
+            block.clear();
+            stream.render (block);
+            juce::Thread::sleep (2);
+        }
+
+        check ("stream stops at EOF", stream.isActive() ? 1.0 : 0.0, 0.0, 0.0);
+        stream.stop();
+    }
+
+
+
 
     // ---------------------------------------------------------------------
     // 9c) trailing digital silence (Apple Music tail requirement input)
@@ -984,6 +1261,72 @@ int main (int argc, char** argv)
             std::printf ("performance budget exceeded\n");
             ++failures;
         }
+    }
+
+    // ---------------------------------------------------------------------
+    // 10) codec A/B preview: encode -> decode keeps a playable float WAV
+    //     (skipped explicitly when ffmpeg is unavailable; never faked)
+    // ---------------------------------------------------------------------
+    {
+        const auto source = juce::File::getSpecialLocation (juce::File::tempDirectory)
+                                .getChildFile ("masterlens-codec-source.wav");
+        source.deleteFile();
+
+        {
+            const int n = (int) (sr * 5.0);
+            juce::AudioBuffer<float> audio (2, n);
+
+            for (int i = 0; i < n; ++i)
+            {
+                const float v = (float) (std::pow (10.0, -20.0 / 20.0)
+                                         * std::sin (2.0 * juce::MathConstants<double>::pi
+                                                     * 997.0 * (double) i / sr));
+                audio.setSample (0, i, v);
+                audio.setSample (1, i, v);
+            }
+
+            auto out = source.createOutputStream();
+
+            if (out != nullptr)
+            {
+                juce::WavAudioFormat wav;
+                std::unique_ptr<juce::AudioFormatWriter> writer (
+                    wav.createWriterFor (out.release(), sr, 2, 24, {}, 0));
+
+                if (writer != nullptr)
+                {
+                    writer->writeFromAudioSampleBuffer (audio, 0, n);
+                    writer.reset();
+                }
+            }
+        }
+
+        const auto parent = juce::File::getSpecialLocation (juce::File::tempDirectory)
+                                .getChildFile ("MasterLensCodecTest");
+        auto preview = ml::createCodecPreview (source, "aac", parent);
+
+        if (preview.error == "encode: ffmpeg unavailable")
+        {
+            std::printf ("codec preview            skipped: ffmpeg unavailable\n");
+        }
+        else
+        {
+            check ("codec preview ok", preview.ok ? 1.0 : 0.0, 1.0, 0.0);
+            check ("codec preview bytes", preview.encodedBytes > 0 ? 1.0 : 0.0, 1.0, 0.0);
+
+            if (preview.ok)
+            {
+                const auto measured = ml::measureFileRangeLufs (preview.decodedFile, 0.0, 4.0);
+                check ("codec decoded measurable", measured.ok ? 1.0 : 0.0, 1.0, 0.0);
+                check ("codec delta <= 0.6 LU", std::abs (measured.lufs + 20.0) <= 0.6 ? 1.0 : 0.0,
+                       1.0, 0.0);
+            }
+        }
+
+        if (preview.workDirectory != juce::File())
+            preview.workDirectory.deleteRecursively();
+
+        source.deleteFile();
     }
 
     std::printf ("\n%s\n", failures == 0 ? "ALL CHECKS PASSED" : "SOME CHECKS FAILED");

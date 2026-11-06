@@ -36,6 +36,12 @@ struct FileAnalysisResult
     SignalDefects defects;
     FileForensics forensic;
 
+    // Optional codec A/B evidence (GUI only; the CLI leaves these empty).
+    juce::String codecLabel;
+    float codecLufs = kSilentDb;
+    float codecTp = kSilentDb;
+    juce::int64 codecBytes = 0;
+
     bool ok = false;
 };
 

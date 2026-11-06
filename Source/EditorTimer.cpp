@@ -52,6 +52,12 @@ void MasterLensAudioProcessorEditor::setPage (int index)
                            + T ("  · Esc 停止", "  · Esc stops");
         footerStatusColour = ml::theme::cyan;
     }
+    else if (changed && processor.isAuditionActive() && activeBandSolo.isNotEmpty())
+    {
+        footerStatusText = T ("实时跟随 DAW · 独听 ", "Live with DAW · solo ")
+                           + activeBandSolo + T (" · 不做等响 · Esc 停止", " · no makeup · Esc stops");
+        footerStatusColour = ml::theme::cyan;
+    }
 
     repaint();
 }
@@ -90,6 +96,9 @@ void MasterLensAudioProcessorEditor::timerCallback()
 
 void MasterLensAudioProcessorEditor::updateUiFrame()
 {
+    pollSelectionMatch();
+    pollCodecAB();
+
     // Hidden real windows cost nothing; the offscreen UiShot renderer has no
     // peer and must still be able to drive its timer.
     if (! isShowing() && getPeer() != nullptr)
@@ -101,7 +110,8 @@ void MasterLensAudioProcessorEditor::updateUiFrame()
     const auto produced = processor.outputSpectrumFifo.getProducedSamples();
     if (produced != lastAudioSample) { lastAudioSample = produced; lastAudioMs = logoNow; }
     const auto liveStats = processor.getStatsSnapshot();
-    const bool active = processor.isFilePreviewActive() || processor.isAuditionActive()
+    const bool active = processor.isFilePreviewActive() || processor.isStreamingPreviewActive()
+        || processor.isAuditionActive()
         || ((logoNow - lastAudioMs) < 150.0 &&
             (processor.hostTransportPlaying.load (std::memory_order_relaxed)
              || (liveStats.hasSignal && liveStats.tailSilenceMs < 250.0f)));
@@ -161,14 +171,26 @@ void MasterLensAudioProcessorEditor::updateUiFrame()
         if (filePreviewPath.isNotEmpty())
         {
             const auto* selected = detail.selectedFile();
-            detail.setFileProgress (processor.getFilePreviewPosition(),
-                                    processor.getFilePreviewDuration());
+            const bool codecSideActive = processor.isCodecPreviewActive();
+            const bool streaming = processor.isStreamingPreviewActive() || codecSideActive;
+            detail.setFileBuffering (streaming && (processor.isStreamingPreviewBuffering()
+                                                   || processor.isCodecPreviewBuffering()));
 
-            if (! processor.isFilePreviewActive() || selected == nullptr
-                || selected->path != filePreviewPath)
+            detail.setFileProgress (codecSideActive ? processor.getCodecPosition()
+                                                    : (streaming ? processor.getStreamingPosition()
+                                                                 : processor.getFilePreviewPosition()),
+                                    codecSideActive ? processor.getCodecDuration()
+                                                    : (streaming ? processor.getStreamingDuration()
+                                                                 : processor.getFilePreviewDuration()));
+
+            if ((! streaming && ! processor.isFilePreviewActive())
+                || selected == nullptr || selected->path != filePreviewPath)
             {
                 if (selected == nullptr || selected->path != filePreviewPath)
+                {
                     processor.stopFilePreview();
+                    processor.stopStreamingPreview();
+                }
 
                 filePreviewPath.clear();
                 detail.setFilePlayActive (false);

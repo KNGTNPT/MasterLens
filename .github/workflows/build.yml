@@ -14,7 +14,7 @@ concurrency:
 
 env:
   JUCE_TAG: "8.0.15"
-  APP_VERSION: "3.0.0-beta"
+  APP_VERSION: "3.0.0-rc.1"
 
 jobs:
   macos:
@@ -211,4 +211,4 @@ jobs:
           gh release create "$RELEASE_TAG" *.dmg *.exe SHA256SUMS.txt \
             --verify-tag --title "MasterLens ${APP_VERSION}" \
             $PRERELEASE \
-            --notes-file ../docs/release-3.0.0-beta.md
+            --notes-file ../docs/release-3.0.0-rc.1.md

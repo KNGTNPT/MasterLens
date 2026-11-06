@@ -101,9 +101,11 @@ void MasterLensAudioProcessorEditor::toggleFilePlayback()
         return;
     }
 
-    if (processor.isFilePreviewActive() && filePreviewPath == selected->path)
+    if ((processor.isFilePreviewActive() || processor.isStreamingPreviewActive())
+        && filePreviewPath == selected->path)
     {
         processor.stopFilePreview();
+        processor.stopStreamingPreview();
         filePreviewPath.clear();
         detail.setFilePlayActive (false);
         footerStatusText = T ("文件播放已停止", "File playback stopped");
@@ -113,10 +115,15 @@ void MasterLensAudioProcessorEditor::toggleFilePlayback()
     }
 
     processor.stopFilePreview();
+    processor.stopStreamingPreview();
+    stopCodecAB();
     resetAnalysis();
     filePreviewPath = selected->path;
     const double duration = juce::jmax (1.0, selected->durationSeconds);
-    processor.startFilePreview (juce::File (selected->path), 0.0, duration, false, true);
+
+    // Long files stream through a fixed ring instead of being decoded whole.
+    processor.openStreamingPreview (juce::File (selected->path), false);
+    processor.startStreamingPreview (0.0);
     detail.setFilePlayActive (true);
     detail.setFileProgress (0.0, duration);
     footerStatusText = T ("独立版播放 · ", "Standalone playback · ") + selected->fileName;

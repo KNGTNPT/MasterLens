@@ -14,6 +14,7 @@
 #include "audio/AuditionEngine.h"
 #include "audio/FilePreviewPlayer.h"
 #include "audio/ReferencePlayer.h"
+#include "audio/StreamingPreviewPlayer.h"
 
 class MasterLensAudioProcessor : public juce::AudioProcessor
 {
@@ -52,6 +53,9 @@ public:
     ml::SpectrumFifo outputSpectrumFifo;
     ml::AuditionEngine auditionEngine;
     ml::ReferencePlayer referencePlayer;
+    ml::StreamingPreviewPlayer streamingPreview;
+    ml::StreamingPreviewPlayer codecPreview;
+    std::atomic<int> codecSide { 0 };
     ml::album::Session albumSession;
     ml::FilePreviewPlayer filePreviewPlayer;
     std::atomic<bool> hostTransportPlaying { false };
@@ -96,6 +100,12 @@ public:
         auditionEngine.startLive (lowHz, highHz, monoFold);
     }
 
+    /** 4th-order band solo: real band level, no makeup gain. */
+    void startBandSolo (float lowHz, float highHz, bool monoFold = false)
+    {
+        auditionEngine.startLiveBand (lowHz, highHz, monoFold, 4, false);
+    }
+
     void startFilePreview (const juce::File& file, double start, double end,
                            bool loop, bool feedAnalysis = false)
     {
@@ -109,6 +119,32 @@ public:
     double getFilePreviewPosition() const noexcept { return filePreviewPlayer.getPositionSeconds(); }
     double getFilePreviewDuration() const noexcept { return filePreviewPlayer.getDurationSeconds(); }
     juce::String getFilePreviewStatus() const { return filePreviewPlayer.getStatus(); }
+
+    // Long-file transport: constant memory, lock-free render.
+    void openStreamingPreview (const juce::File& file, bool shouldLoop)
+    {
+        streamingPreview.open (file, shouldLoop);
+    }
+
+    void startStreamingPreview (double fromSeconds) { streamingPreview.start (fromSeconds); }
+    void stopStreamingPreview() { streamingPreview.stop(); }
+    void seekStreamingPreview (double seconds) { streamingPreview.seek (seconds); }
+    bool isStreamingPreviewActive() const noexcept { return streamingPreview.isActive(); }
+    bool isStreamingPreviewBuffering() const noexcept { return streamingPreview.isBuffering(); }
+    double getStreamingPosition() const noexcept { return streamingPreview.getPositionSeconds(); }
+    double getStreamingDuration() const noexcept { return streamingPreview.getDurationSeconds(); }
+    juce::String getStreamingStatus() const { return streamingPreview.getStatus(); }
+
+    // Codec A/B: side 0 is the source file, side 1 the decoded preview.
+    void openCodecPreview (const juce::File& file) { codecPreview.open (file, false); }
+    void startCodecPreview (double fromSeconds) { codecPreview.start (fromSeconds); }
+    void stopCodecPreview() { codecPreview.stop(); codecSide.store (0); }
+    bool isCodecPreviewActive() const noexcept { return codecPreview.isActive(); }
+    bool isCodecPreviewBuffering() const noexcept { return codecPreview.isBuffering(); }
+    double getCodecPosition() const noexcept { return codecPreview.getPositionSeconds(); }
+    double getCodecDuration() const noexcept { return codecPreview.getDurationSeconds(); }
+    int getCodecSide() const noexcept { return codecSide.load (std::memory_order_relaxed); }
+    void setCodecSide (int side);
 
     void stopAudition() { auditionEngine.stop(); }
     bool isAuditionActive() const noexcept { return auditionEngine.isActive(); }

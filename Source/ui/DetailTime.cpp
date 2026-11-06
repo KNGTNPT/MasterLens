@@ -63,8 +63,8 @@ void DetailArea::paintTimeline (juce::Graphics& g)
 
         g.setColour (theme::textFaint);
         g.setFont (getLabelFont());
-        g.drawText (T ("100 ms 包络估算 · 拖动底部时间线选择区域",
-                       "100 ms envelope estimate - drag the bottom timeline to select"),
+        g.drawText (T ("BS.1770 门限积分 · 拖动底部时间线选择区域",
+                       "BS.1770 gated integration - drag the bottom timeline to select"),
                     inner, juce::Justification::centredLeft, false);
     }
 

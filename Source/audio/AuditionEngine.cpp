@@ -52,6 +52,9 @@ void AuditionEngine::prepare (double newSampleRate, int)
     liveFade = 0;
     gain = 1.0f;
     fadeSamples = juce::jmax (1, (int) std::round (sampleRate * 0.005));
+    fourthOrder = false;
+    compensate = true;
+    hp2L.reset(); hp2R.reset(); lp2L.reset(); lp2R.reset();
 }
 
 void AuditionEngine::reset()
@@ -67,7 +70,10 @@ void AuditionEngine::reset()
     loopStart = loopLength = loopPos = 0;
     liveFade = 0;
     gain = 1.0f;
+    fourthOrder = false;
+    compensate = true;
     hpL.reset(); hpR.reset(); lpL.reset(); lpR.reset();
+    hp2L.reset(); hp2R.reset(); lp2L.reset(); lp2R.reset();
 }
 
 void AuditionEngine::start (double startSeconds, double endSeconds, float low, float high, bool monoFold)
@@ -91,12 +97,19 @@ void AuditionEngine::start (double startSeconds, double endSeconds, float low, f
 
 void AuditionEngine::startLive (float low, float high, bool monoFold)
 {
+    startLiveBand (low, high, monoFold, 2, true);
+}
+
+void AuditionEngine::startLiveBand (float low, float high, bool monoFold, int order, bool compensateBand)
+{
     if (high < low)
         std::swap (low, high);
 
     requestedLo.store (juce::jlimit (20.0f, 20000.0f, low), std::memory_order_relaxed);
     requestedHi.store (juce::jlimit (20.0f, 20000.0f, high), std::memory_order_relaxed);
     requestedMono.store (monoFold, std::memory_order_relaxed);
+    requestedOrder.store (order >= 4 ? 4 : 2, std::memory_order_relaxed);
+    requestedCompensate.store (compensateBand, std::memory_order_relaxed);
     mode.store ((int) Mode::live, std::memory_order_relaxed);
     active.store (false, std::memory_order_release);
     pendingStart.store (true, std::memory_order_release);
@@ -138,15 +151,28 @@ void AuditionEngine::process (juce::AudioBuffer<float>& buffer)
         const float lo = requestedLo.load (std::memory_order_relaxed);
         const float hi = requestedHi.load (std::memory_order_relaxed);
         const bool fullBand = lo <= 25.0f && hi >= 19000.0f;
+        const bool wantFourth = requestedOrder.load (std::memory_order_relaxed) >= 4 && ! fullBand;
+        const bool wantCompensate = requestedCompensate.load (std::memory_order_relaxed);
 
         Biquad tHpL, tHpR, tLpL, tLpR;
+        Biquad t2HpL, t2HpR, t2LpL, t2LpR;
 
         if (! fullBand)
         {
-            tHpL.setHighPass (sampleRate, lo, 0.707);
+            // 2nd order keeps the original signal-card slope. 4th order cascades
+            // two Butterworth stages (Q 0.5412 / 1.3066) for 24 dB/oct.
+            tHpL.setHighPass (sampleRate, lo, wantFourth ? 0.5412 : 0.7071);
             tHpR = tHpL;
-            tLpL.setLowPass (sampleRate, hi, 0.707);
+            tLpL.setLowPass (sampleRate, hi, wantFourth ? 0.5412 : 0.7071);
             tLpR = tLpL;
+
+            if (wantFourth)
+            {
+                t2HpL.setHighPass (sampleRate, lo, 1.3066);
+                t2HpR = t2HpL;
+                t2LpL.setLowPass (sampleRate, hi, 1.3066);
+                t2LpR = t2LpL;
+            }
         }
 
         if (mode.load (std::memory_order_relaxed) == (int) Mode::live)
@@ -155,6 +181,12 @@ void AuditionEngine::process (juce::AudioBuffer<float>& buffer)
             hpR = tHpR;
             lpL = tLpL;
             lpR = tLpR;
+            hp2L = t2HpL;
+            hp2R = t2HpR;
+            lp2L = t2LpL;
+            lp2R = t2LpR;
+            fourthOrder = wantFourth;
+            compensate = wantCompensate;
             loopStart = loopLength = loopPos = 0;
             liveFade = 0;
             gain = 1.0f;
@@ -249,6 +281,8 @@ void AuditionEngine::process (juce::AudioBuffer<float>& buffer)
         hpR = tHpR;
         lpL = tLpL;
         lpR = tLpR;
+        fourthOrder = false;
+        compensate = true;
         active.store (true, std::memory_order_release);
         }
     }
@@ -270,6 +304,7 @@ void AuditionEngine::process (juce::AudioBuffer<float>& buffer)
         if (inputPeak < 1.0e-6f)
         {
             hpL.reset(); hpR.reset(); lpL.reset(); lpR.reset();
+            hp2L.reset(); hp2R.reset(); lp2L.reset(); lp2R.reset();
             gain = 1.0f;
             buffer.clear();
             return;
@@ -284,8 +319,23 @@ void AuditionEngine::process (juce::AudioBuffer<float>& buffer)
             const float l = inL[i];
             const float r = inR[i];
 
-            float fl = lpL.process (hpL.process (l));
-            float fr = lpR.process (hpR.process (r));
+            float fl = hpL.process (l);
+            float fr = hpR.process (r);
+
+            if (fourthOrder)
+            {
+                fl = hp2L.process (fl);
+                fr = hp2R.process (fr);
+            }
+
+            fl = lpL.process (fl);
+            fr = lpR.process (fr);
+
+            if (fourthOrder)
+            {
+                fl = lp2L.process (fl);
+                fr = lp2R.process (fr);
+            }
 
             if (monoFold)
             {
@@ -320,11 +370,19 @@ void AuditionEngine::process (juce::AudioBuffer<float>& buffer)
 
         float target = 1.0f;
 
-        if (bandRms > 1.0e-7)
-            target = (float) juce::jlimit (0.25, 8.0, fullRms / bandRms);
+        if (compensate)
+        {
+            if (bandRms > 1.0e-7)
+                target = (float) juce::jlimit (0.25, 8.0, fullRms / bandRms);
 
-        if (bandPeak > 1.0e-6f)
-            target = juce::jmin (target, 0.96f / bandPeak);
+            if (bandPeak > 1.0e-6f)
+                target = juce::jmin (target, 0.96f / bandPeak);
+        }
+        else if (bandPeak > 1.0e-6f)
+        {
+            // Band solo keeps the real band level; only guard against overload.
+            target = juce::jmin (1.0f, 0.96f / bandPeak);
+        }
 
         gain += (juce::jlimit (0.05f, 8.0f, target) - gain) * 0.20f;
 

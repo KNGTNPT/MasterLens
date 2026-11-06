@@ -59,6 +59,19 @@ juce::var fileResultToVar (const FileAnalysisResult& r, float target, float ceil
     o->setProperty ("defects", juce::var (d));
 
     o->setProperty ("forensic", r.forensic.toVar (r.sampleRate));
+
+    if (r.codecLabel.isNotEmpty())
+    {
+        auto* c = new juce::DynamicObject();
+        c->setProperty ("codec", r.codecLabel);
+        c->setProperty ("integratedLufs", r.codecLufs);
+        c->setProperty ("truePeakDbtp", r.codecTp);
+        c->setProperty ("encodedBytes", (juce::int64) r.codecBytes);
+        c->setProperty ("deltaLufs", r.codecLufs - r.stats.integrated);
+        c->setProperty ("deltaTp", r.codecTp - r.stats.truePeakDb);
+        o->setProperty ("codecAB", juce::var (c));
+    }
+
     auto budget = gainBudget (r.stats.integrated, r.stats.truePeakDb, target, ceiling);
     budget.valid = budget.valid && r.ok;
     o->setProperty ("gainBudget", budget.toVar());
@@ -76,7 +89,7 @@ juce::var fileResultToVar (const FileAnalysisResult& r, float target, float ceil
 juce::String fileResultsCsv (const std::vector<FileAnalysisResult>& results, float target, float ceiling)
 {
     juce::StringArray lines;
-    lines.add ("file,status,error,sample_rate_hz,bit_depth,channels,duration_s,integrated_lufs,true_peak_dbtp,lra_lu,plr_db,blockers,reported_findings,reviewed_findings,leading_silence_s,trailing_silence_s,dc_left,dc_right,internal_silences,clipped_runs,target_lufs,ceiling_dbtp,safe_gain_db,achieved_lufs_estimate,shortfall_lu,sha256");
+    lines.add ("file,status,error,sample_rate_hz,bit_depth,channels,duration_s,integrated_lufs,true_peak_dbtp,lra_lu,plr_db,blockers,reported_findings,reviewed_findings,leading_silence_s,trailing_silence_s,dc_left,dc_right,internal_silences,clipped_runs,target_lufs,ceiling_dbtp,safe_gain_db,achieved_lufs_estimate,shortfall_lu,sha256,codec,codec_lufs,codec_dbtp,codec_bytes,codec_delta_lufs,codec_delta_dbtp");
     const auto quote = [] (const juce::String& text) { return "\"" + text.replace ("\"", "\"\"") + "\""; };
     for (const auto& r : results)
     {
@@ -95,6 +108,13 @@ juce::String fileResultsCsv (const std::vector<FileAnalysisResult>& results, flo
         row.add (juce::String (target, 2)); row.add (juce::String (ceiling, 2));
         for (float v : { p.safeGainDb, p.achievedLufsEstimate, p.shortfallLu }) row.add (r.ok && p.valid ? juce::String (v, 3) : "");
         row.add (q.sha256);
+        const bool hasCodec = r.codecLabel.isNotEmpty();
+        row.add (hasCodec ? quote (r.codecLabel) : juce::String());
+        row.add (hasCodec ? juce::String (r.codecLufs, 3) : juce::String());
+        row.add (hasCodec ? juce::String (r.codecTp, 3) : juce::String());
+        row.add (hasCodec ? juce::String ((juce::int64) r.codecBytes) : juce::String());
+        row.add (hasCodec ? juce::String (r.codecLufs - r.stats.integrated, 3) : juce::String());
+        row.add (hasCodec ? juce::String (r.codecTp - r.stats.truePeakDb, 3) : juce::String());
         lines.add (row.joinIntoString (","));
     }
     return lines.joinIntoString ("\n") + "\n";

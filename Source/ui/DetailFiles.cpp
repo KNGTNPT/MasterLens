@@ -10,6 +10,7 @@ void DetailArea::setFilePlaybackAvailable (bool available)
     filePlay.setVisible (available && page == PageId::files);
     fileProgress.setVisible (available && page == PageId::files);
     fileTime.setVisible (available && page == PageId::files);
+    codecAB.setEnabled (available && selectedFile() != nullptr && selectedFile()->ok);
 
     if (! available)
         setFileTransportState (FileTransportState::unavailable);
@@ -71,7 +72,8 @@ void DetailArea::updateFileTransportText()
     }
 
     const auto prefix = fileTransportState == FileTransportState::playing
-                            ? T ("播放中 ", "PLAYING ")
+                            ? (fileBuffering ? T ("缓冲中 ", "BUFFERING ")
+                                             : T ("播放中 ", "PLAYING "))
                             : T ("可播放 ", "READY ");
     fileTime.setText (prefix + ml::fmtTime (fileProgressPosition)
                           + " / " + ml::fmtTime (fileProgressDuration),
@@ -662,6 +664,7 @@ bool DetailArea::handleFileMouseDown (const juce::MouseEvent& e)
         {
             setFileTransportState (FileTransportState::ready);
             setFileProgress (0.0, selectedFile()->durationSeconds);
+            codecAB.setEnabled (selectedFile()->ok);
         }
 
         resized();
