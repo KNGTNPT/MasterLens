@@ -24,6 +24,7 @@
 
 - `scripts/check_ui.py` 接入 `build.yml` 的 macOS job（`Editor layout regression` 步骤 + 报告 artifact），构建目标补上 `MasterLensUiShot`。
 - `check_ui.py` 现在每个场景跑两次：先 `layoutcheck`（真实组件边界 / 字体 / 全部页面与缩放断言），再渲染；`layoutcheck` 被移到场景开关之后，settings / about / 频段热力 / 选区 / 编码状态都会在断言前生效。
+- 44 个场景用 6 路并行跑（本机约 1 分 10 秒；CI 约 3–5 分钟），否则 88 次 UiShot 串行在 macOS runner 上要 20 分钟以上。
 - `UiShot` 增加 `selectionset` / `codecstate` 两个快照入口，走真实的 `measureRegion()` 与 `applyCodecResult()` 路径，CI 不再只验证“能画出来”。
 - `Source/ui/About.cpp` 增加「选区等响需先播放该段 · 编码 A/B 需本机 ffmpeg」；README 与 DMG 使用说明同步这两条前提（设置页保持原有四行说明，未加行以免挤掉页脚）。
 
