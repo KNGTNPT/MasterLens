@@ -337,7 +337,7 @@ Windows ARM64 安装包由交叉构建生成；**手头没有 Windows on ARM 设
 
 ### 先装好，再播一首
 
-[下载 3.0.0-beta](https://github.com/KNGTNPT/MasterLens/releases/tag/v3.0.0-beta)。macOS 打开 DMG，运行「安装 Install.command」；Windows 运行对应 x64 / ARM64 的 EXE，然后重启 DAW。
+[下载 3.0.0](https://github.com/KNGTNPT/MasterLens/releases/tag/v3.0.0)。macOS 打开 DMG，运行「安装 Install.command」；Windows 运行对应 x64 / ARM64 的 EXE，然后重启 DAW。
 
 把 MasterLens 插在母带链最后，先播 20–30 秒，跟它打个招呼。左侧的综合响度看整体有多响，真峰值看最高处有没有越线；LRA 看强弱变化的范围，PLR 看峰值与平均响度之间还留了多少空间。中央曲线会把变化过程画出来。
 

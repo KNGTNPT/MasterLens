@@ -40,6 +40,9 @@
 - 三处对齐逐像素复核（深色 / 浅色，100% 与 200%）：侧栏与频谱页 5 组读数的数字/单位底线差 ≤ 1 px；设置页页脚字标 1132–1148、开发者 1131–1149、关闭按钮文字 1131–1149（中心均为 1140）；曲线右上角 `-17.7 LUFS` 完整显示。
 - 六张 README 截图（2240×1400）重新渲染，记录在 `docs/screenshots-3.0.0.json`，SHA-256 复核一致。
 - macOS Universal 构建（x86_64 + arm64）、DMG 校验、`auval -v aufx Maln OrcA` 通过；本地 DMG SHA-256 `18d727dec9c33af94cffed5259f3be084e88fb97af57b3cda73f91fde5a6fee1`。
+- GitHub Actions run `42242801550`：macOS（含 `Editor layout regression`，44 场景并行）、Windows x64、Windows ARM64 与 Publish verified installers 全部 success。
+- Windows x64 安装冒烟测试通过；VST3 与独立版安装到正确目录。
+- GitHub Release `v3.0.0`（正式版，非 pre-release）：macOS DMG `e3207c3a816ca52d9857038ea3748fb5bc43512c003bae43c3194a2aa66e9576`，Windows x64 `10343056c71c038cc9e8dadfe9ba8956a34df82ae08ea46f96e3236e00d1cbe4`，Windows ARM64 `40edce5f41b0143032f9643768111580a1e5a4420b48834f6c02074560a227a2`；下载后 `shasum -a 256 -c SHA256SUMS.txt` 三个文件全部 OK。Release 的 DMG 由 CI 重新构建，哈希与本地不同，校验以 `SHA256SUMS.txt` 为准。
 
 ## 未验证 / 限制
 
