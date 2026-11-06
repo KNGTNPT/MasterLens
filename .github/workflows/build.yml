@@ -14,7 +14,7 @@ concurrency:
 
 env:
   JUCE_TAG: "8.0.15"
-  APP_VERSION: "3.0.0-rc.1"
+  APP_VERSION: "3.0.0"
 
 jobs:
   macos:
@@ -31,10 +31,20 @@ jobs:
           -G "Unix Makefiles" -DCMAKE_OSX_ARCHITECTURES="arm64;x86_64"
 
       - name: Build (all bundles)
-        run: cmake --build build --config Release --target MasterLens_AU MasterLens_VST3 MasterLens_Standalone MasterLensCli MasterLensDspTest -j 4
+        run: cmake --build build --config Release --target MasterLens_AU MasterLens_VST3 MasterLens_Standalone MasterLensCli MasterLensDspTest MasterLensUiShot -j 4
 
       - name: DSP regression
         run: ./build/MasterLensDspTest_artefacts/Release/MasterLensDspTest
+
+      - name: Editor layout regression
+        run: python3 scripts/check_ui.py --build-dir build
+
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: MasterLens-layout-report
+          path: docs/layout-*.json
+          if-no-files-found: warn
 
       - name: FFmpeg test dependency
         run: command -v ffmpeg || brew install ffmpeg

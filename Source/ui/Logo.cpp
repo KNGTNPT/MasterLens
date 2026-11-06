@@ -103,8 +103,9 @@ void paintBerryLockup (juce::Graphics& g, juce::Rectangle<int> area, juce::Colou
     // Lockup gap is exactly half the mark height.
     area.removeFromLeft (juce::roundToInt (markSize * 0.5f));
 
-    auto textArea = area;
-    paintBerryWordmark (g, textArea.removeFromTop (juce::roundToInt (textHeight * 1.7f)),
-                        colour, textHeight, juce::Justification::centredLeft);
+    // The wordmark keeps the full row height so that its line box is centred on
+    // the same axis as the mark and as any sibling label drawn next to it. The
+    // old top strip (textHeight * 1.7) sat about 7 px high at footer sizes.
+    paintBerryWordmark (g, area, colour, textHeight, juce::Justification::centredLeft);
 }
 } // namespace ml

@@ -205,6 +205,60 @@ inline juce::String fmtTime (double seconds)
 }
 
 //==============================================================================
+/** Baseline-correct text runs.
+
+    JUCE vertically centres a glyph run inside a rectangle using the font's own
+    ascent and descent, so a 26 px reading and its 14 px unit placed in the same
+    rectangle share a box, not a baseline: the unit floats inside the value's
+    line box and drifts as soon as either size changes. Every value / unit pair
+    is drawn through these helpers instead, which anchor both runs to one
+    baseline measured from the box's optical centre.
+*/
+namespace text
+{
+/** Baseline that vertically centres the font's line box in `box`. */
+inline float centredBaseline (const juce::Font& font, juce::Rectangle<int> box) noexcept
+{
+    const float lineHeight = font.getAscent() + font.getDescent();
+    return (float) box.getCentreY() - lineHeight * 0.5f + font.getAscent();
+}
+
+/** Draws one run on the given baseline; returns its advance width. */
+inline int drawRun (juce::Graphics& g, const juce::Font& font, juce::Colour colour,
+                    const juce::String& run, int x, float baseline)
+{
+    g.setColour (colour);
+    g.setFont (font);
+    g.drawSingleLineText (run, x, juce::roundToInt (baseline));
+
+    return juce::roundToInt (juce::GlyphArrangement::getStringWidth (font, run));
+}
+
+/** Draws `value` and `unit` on one shared baseline inside `box`.
+
+    Returns the total advance, so the caller can continue the row (a pill, a
+    delta) without re-measuring.
+*/
+inline int drawValueUnit (juce::Graphics& g, juce::Rectangle<int> box,
+                          const juce::String& value, const juce::String& unit,
+                          const juce::Font& valueFont, const juce::Font& unitFont,
+                          juce::Colour valueColour, juce::Colour unitColour,
+                          int gap = 8)
+{
+    const float baseline = centredBaseline (valueFont, box);
+    const int valueWidth = drawRun (g, valueFont, valueColour, value, box.getX(), baseline);
+
+    if (unit.isEmpty())
+        return valueWidth;
+
+    const int unitWidth = drawRun (g, unitFont, unitColour, unit,
+                                   box.getX() + valueWidth + gap, baseline);
+
+    return valueWidth + gap + unitWidth;
+}
+} // namespace text
+
+//==============================================================================
 /** Font callbacks are shared independently of control painting. */
 class InstrumentTypography : public juce::LookAndFeel_V4
 {

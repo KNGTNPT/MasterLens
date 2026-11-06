@@ -5,7 +5,7 @@
 **母带响度 / 文件 QC / 频谱 / 声场 / 专辑交付 / CLI**<br>
 by **BerryStudio** · developer **KNGTNPT 兰**<br>
 macOS / Windows · VST3 / AU / 独立版 · C++17 + JUCE 8<br>
-当前版本：**3.0.0-rc.1**
+当前版本：**3.0.0**
 
 MasterLens 是放在母带链末尾的小检查员：这首歌有多响、峰值会不会顶过头、立体声合成单声道后会不会变薄、交出去之前还有哪里值得听一遍，它都帮你留意着。把它插在 Master / Stereo Out 的最后一级就好。
 
@@ -13,37 +13,49 @@ MasterLens 是放在母带链末尾的小检查员：这首歌有多响、峰值
 
 歌该做成什么样，还是你的耳朵说了算。数字有点多也没关系，我们一项项看；它负责把容易漏掉的小细节摊开，陪你把交付前的最后一遍检查做完。
 
-## 3.0.0-rc.1：四种比较一起听喵
+## 3.0.0：四种比较一起听，读数也回到一条基线
 
-3.0-rc.1 把 2.7 挂账的四项监听能力补齐，参考槽位与六项排版修复沿用 beta。
+3.0 把 2.7 挂账的四项监听能力补齐；正式版在 rc.1 的基础上只动了两件事——修好三处读数对齐，把「必须先播过 / 必须有 ffmpeg」写进界面和文档。
 
 - **频段独听**：频谱页「频段热力」的 10 段与低 / 中 / 高三段都可单击独听；4 阶 Butterworth（24 dB/oct），不做等响补偿，只改监听输出，`Esc` 停止。
 - **选区等响**：时间页拖选后点「选区等响」，按 BS.1770-4 门限积分测工程选区与当前参考槽位 `OFS + 选区` 的响度，把差值写进参考 GAIN；工程声音不动。
 - **长文件流式播放**：独立版文件传输改为固定环形缓冲（约 8 MB），读取线程预读 3 s；两小时以上的文件也能播放、拖动、循环，欠载时显示「缓冲中」，音频回调不阻塞、不分配。
 - **编码 A/B**：文件 QC 用本机 ffmpeg 生成 AAC 256k / MP3 320k，解码回 float WAV 后按同一时间码切换「A 原始 / B 编码后」，显示 ΔLUFS / ΔTP；缺少 ffmpeg 时明确不可用。
 
+**正式版修掉的三处对齐**（都在截图上被一眼看出来）：
+
+- 侧栏与频谱页的读数：数字和单位不再各按各自的框居中，改为共用一条基线（`theme::text::drawValueUnit`），26 px 的主读数和 14 px 的单位不会再一高一低。
+- 设置页页脚：logo、BERRYSTUDIO、开发者与关闭按钮统一到同一条水平中线；此前字标被放在顶部 14 px 的条带里，比旁边两行高约 7 px。
+- 三条都在浅色 / 深色、80%–200% 每个缩放档下复验过。
+
 「选区」指 MasterLens 时间线拖选，不是宿主 loop；长选区循环交给宿主，≤ 10 s 可用 12 s 历史环试听。参考轨仍整段解码，超过 1 小时或 512 MB 会明确拒绝。
 
-### 3.0.0-rc.1 验证
+**两条使用前提**（写在这里，是因为它们最容易被当成 bug）：
 
-详细结果见 [3.0.0-rc.1 验证记录](docs/performance-3.0.0-rc.1.md)。
+- **选区等响要先播过那一段**。选区的响度来自时间线已经采到的 100 ms 读数，没播过的区段没有数据，界面会提示「请先播放该段」。它不是整首歌的离线测量——要离线测整首歌，用文件 QC。
+- **编码 A/B 要有本机 ffmpeg**。找不到时按钮会明确显示不可用，不会假装出结果。macOS 用 `brew install ffmpeg`；Windows 用 `winget install ffmpeg` 或官网包。
+
+### 3.0.0 验证
+
+详细结果见 [3.0.0 验证记录](docs/performance-3.0.0.md)。
 
 - DSP / 可靠性断言：**178 项通过**（含 4 阶独听泄漏 ≤ −24 dB、门限积分、2 小时虚拟文件流式、编码预览）。
 - CLI 集成检查：**66 项通过**；UI 布局：**35/35 通过**。
 - macOS / Windows x64 / Windows ARM64 构建与 Release 发布通过；Windows x64 安装冒烟通过。
-- 11 个页面逐页截图检查；6 张 README 截图记录在 `docs/screenshots-3.0.0-rc.1.json`。
+- 11 个页面逐页截图检查；6 张 README 截图记录在 `docs/screenshots-3.0.0.json`。
+- 布局回归 `scripts/check_ui.py` 已接入 CI（macOS job），35 个场景每次发布都跑，不再靠人工点。
 
-![MasterLens 3.0.0-rc.1 响度与动态](docs/screenshot-3.0.0-rc.1.png)
+![MasterLens 3.0.0 响度与动态](docs/screenshot-3.0.0.png)
 
-![MasterLens 3.0.0-rc.1 信号健康](docs/signal-3.0.0-rc.1.png)
+![MasterLens 3.0.0 信号健康](docs/signal-3.0.0.png)
 
-![MasterLens 3.0.0-rc.1 频谱平衡](docs/spectrum-3.0.0-rc.1.png)
+![MasterLens 3.0.0 频谱平衡](docs/spectrum-3.0.0.png)
 
-![MasterLens 3.0.0-rc.1 声场与相位](docs/stereo-3.0.0-rc.1.png)
+![MasterLens 3.0.0 声场与相位](docs/stereo-3.0.0.png)
 
-![MasterLens 3.0.0-rc.1 文件 QC](docs/fileqc-3.0.0-rc.1.png)
+![MasterLens 3.0.0 文件 QC](docs/fileqc-3.0.0.png)
 
-![MasterLens 3.0.0-rc.1 关于页原始 SVG](docs/about-3.0.0-rc.1.png)
+![MasterLens 3.0.0 关于页原始 SVG](docs/about-3.0.0.png)
 
 ## 3.0.0-beta：参考槽位和排版一起收好喵
 

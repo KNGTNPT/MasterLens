@@ -354,15 +354,23 @@ void HistoryGraph::paintOverlay (juce::Graphics& g)
 
     if (latest > -99.0f)
     {
-        auto valueArea = plot.withHeight (20).withTrimmedTop (4).withTrimmedRight (4)
-                             .removeFromRight (92);
-        auto unitArea = valueArea.removeFromRight (34).withTrimmedLeft (6);
-        g.setColour (theme::text);
-        g.setFont (getValueFont());
-        g.drawText (num (latest), valueArea, juce::Justification::centredRight);
-        g.setColour (theme::textFaint);
-        g.setFont (getLabelFont());
-        g.drawText ("LUFS", unitArea, juce::Justification::centredLeft);
+        // Measure the run instead of reserving fixed columns: "LUFS" at 14 px is
+        // wider than the 34 px the old layout allowed, so the unit was clipped
+        // to "LU...". The value and unit share one baseline and are right-aligned
+        // against the plot edge.
+        const auto valueText = num (latest);
+        const auto valueFont = getValueFont();
+        const auto unitFont = getLabelFont();
+        const int gap = 6;
+        const int unitWidth = juce::roundToInt (juce::GlyphArrangement::getStringWidth (unitFont, "LUFS"));
+        const int valueWidth = juce::roundToInt (juce::GlyphArrangement::getStringWidth (valueFont, valueText));
+        const int runWidth = valueWidth + gap + unitWidth;
+        const int right = plot.getRight() - 20;
+
+        text::drawValueUnit (g,
+                             juce::Rectangle<int> (right - runWidth, plot.getY() + 4, runWidth, 20),
+                             valueText, "LUFS", valueFont, unitFont,
+                             theme::text, theme::textFaint, gap);
     }
 
     // ---- drag selection ------------------------------------------------------

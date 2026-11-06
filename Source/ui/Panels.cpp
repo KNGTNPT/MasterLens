@@ -96,20 +96,15 @@ void ReadoutBand::paint (juce::Graphics& g)
         g.drawText (c.label, area.removeFromTop (16), juce::Justification::centredLeft, false);
         area.removeFromTop (4);
 
-        auto valueRow = area.removeFromTop (24);
+        // The row is sized to the value's own line box: a 26 px reading and a
+        // 24 px row would otherwise clip the descender and pull the baseline
+        // up. Label, number and unit then share one baseline (see theme::text).
         const auto valueFont = i == 0 ? getCriticalFont() : getValueFont();
-        g.setColour (c.status);
-        g.setFont (valueFont);
-        g.drawText (c.value, valueRow, juce::Justification::centredLeft, false);
+        auto valueRow = area.removeFromTop (
+            juce::jmax (24, juce::roundToInt (valueFont.getAscent() + valueFont.getDescent()) + 2));
 
-        // Keep the unit next to the reading: the label, number and unit make
-        // one semantic cell instead of three unrelated lines.
-        const auto valueWidth = juce::roundToInt (
-            juce::GlyphArrangement::getStringWidth (valueFont, c.value));
-        g.setFont (getLabelFont());
-        g.setColour (theme::textFaint);
-        g.drawText (c.unit, valueRow.withTrimmedLeft (valueWidth + 8).withTrimmedTop (8),
-                    juce::Justification::centredLeft, false);
+        text::drawValueUnit (g, valueRow, c.value, c.unit, valueFont, getLabelFont(),
+                             c.status, theme::textFaint, 8);
     }
 }
 
@@ -166,23 +161,21 @@ void MetricGrid::paintCard (juce::Graphics& g, juce::Rectangle<int> area, const 
                     juce::Justification::centredRight, false);
     }
 
+    // Value and unit share one baseline; the old +16 px nudge made the unit
+    // ride high or low depending on the font metrics.
     const auto valueFont = getValueFont();
-    const int valueWidth = juce::roundToInt (
-        juce::GlyphArrangement::getStringWidth (valueFont, value));
-
     auto valueRow = juce::Rectangle<int> (area.getX() + 16, area.getY() + 36,
                                           area.getWidth() - 32, 38);
 
-    g.setColour (theme::text);
-    g.setFont (valueFont);
-    g.drawText (value, valueRow.withWidth (valueWidth + 6), juce::Justification::centredLeft);
-
-    if (! narrow)
+    if (narrow)
     {
-        g.setColour (theme::textFaint);
-        g.setFont (getValueFont());
-        g.drawText (unit, valueRow.withTrimmedLeft (valueWidth + 10).withTrimmedTop (16),
-                    juce::Justification::centredLeft);
+        text::drawValueUnit (g, valueRow, value, {}, valueFont, getValueFont(),
+                             theme::text, theme::textFaint, 10);
+    }
+    else
+    {
+        text::drawValueUnit (g, valueRow, value, unit, valueFont, getValueFont(),
+                             theme::text, theme::textFaint, 10);
     }
 
     // Status is a tiny underline, not a coloured number.
