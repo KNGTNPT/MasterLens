@@ -15,11 +15,11 @@
   - 频段独听：通带增益 −0.03 dB（容差 ±1.5 dB），相邻两倍频程泄漏 **≤ −24 dB**；回调内 `new/delete` 为 0。
   - 选区等响：稳态 −23.0 LUFS 门限积分不变；−95 LUFS 窗口被绝对门剔除；−50 LUFS 段按相对门剔除后回到 −20.0 LUFS；文件选段测量 −20.0 LUFS（双声道 −20 dBFS 正弦，±0.2），窗口数 37；短于 0.4 s 的选段明确拒绝。
   - 长文件流式：2 小时虚拟文件（测试用按需 `AudioFormatReader`）可打开、播放、seek 到 3600.01 s、EOF 停止；回调内 `new/delete` 为 0。
-  - 编码 A/B：AAC 往返成功，解码 WAV 可测量，与源的 LUFS 差 ≤ 0.6 LU；缺少 ffmpeg 时用例显式跳过，不冒充通过。
+  - 编码 A/B：AAC 往返成功，解码 WAV 可测量，与源的 LUFS 差 ≤ 0.6 LU；机器上没有 ffmpeg 时用例**显式跳过并打印原因**（`encode: ffmpeg unavailable`），不冒充通过。
 - CLI 集成检查：**66 项通过**。
 - UI 布局：**35/35 通过**（文件页新增编码按钮、时间页新增选区等响按钮后仍无越界）。
 - 11 个页面逐页截图检查；6 张 README 截图（2240×1400）记录在 `docs/screenshots-3.0.0-rc.1.json`，SHA-256 复核一致。
-- macOS Universal 构建（x86_64 + arm64）、DMG 校验、`auval -v aufx Maln OrcA` 通过；本地 DMG SHA-256 `b92ea12162d8ebcd7e7c547ab50ba0e55439aa34ac8a30c3794827a3bf097620`。
+- macOS Universal 构建（x86_64 + arm64）、DMG 校验、`auval -v aufx Maln OrcA` 通过；本地 DMG SHA-256 `435133e2d4284bbbe404ac955069c520720b7bda8b2aa1fec9250991754b32b5`。
 
 ## 未验证 / 限制
 

@@ -15,6 +15,40 @@ juce::String findFfmpegExecutable()
     return "ffmpeg";
 }
 
+/** Resolves a bare executable name through PATH so a missing ffmpeg is reported
+    as unavailable instead of a mysterious exit code from the child process. */
+juce::String resolveExecutable (const juce::String& name)
+{
+    if (name.isEmpty())
+        return {};
+
+    if (juce::File (name).existsAsFile())
+        return juce::File (name).getFullPathName();
+
+    const auto path = juce::SystemStats::getEnvironmentVariable ("PATH", {});
+   #if JUCE_WINDOWS
+    const juce::String separator (";");
+   #else
+    const juce::String separator (":");
+   #endif
+
+    for (const auto& dir : juce::StringArray::fromTokens (path, separator, ""))
+    {
+        if (dir.isEmpty())
+            continue;
+
+        for (const auto& candidate : { name, name + ".exe" })
+        {
+            const juce::File file (juce::File (dir).getChildFile (candidate));
+
+            if (file.existsAsFile())
+                return file.getFullPathName();
+        }
+    }
+
+    return {};
+}
+
 bool runFfmpeg (const juce::StringArray& args, const juce::String& stage, juce::String& error)
 {
     juce::ChildProcess process;
@@ -82,8 +116,14 @@ CodecPreview createCodecPreview (const juce::File& input, const juce::String& co
     const auto isAac = preview.codec == "aac";
     const auto encoded = preview.workDirectory.getChildFile (isAac ? "encoded.m4a" : "encoded.mp3");
     const auto decoded = preview.workDirectory.getChildFile ("decoded.wav");
-    const auto executable = juce::SystemStats::getEnvironmentVariable ("MASTERLENS_FFMPEG",
-                                                                      findFfmpegExecutable());
+    const auto executable = resolveExecutable (
+        juce::SystemStats::getEnvironmentVariable ("MASTERLENS_FFMPEG", findFfmpegExecutable()));
+
+    if (executable.isEmpty())
+    {
+        preview.error = "encode: ffmpeg unavailable";
+        return preview;
+    }
 
     juce::StringArray encode;
     encode.addArray ({ executable, "-nostdin", "-hide_banner", "-loglevel", "quiet", "-y",
