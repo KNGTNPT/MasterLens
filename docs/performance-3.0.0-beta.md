@@ -15,8 +15,11 @@
 - DSP / 可靠性断言：**151 项通过**。
 - CLI 集成检查：**66 项通过**。
 - UI 布局：**35/35 通过**。
-- 11 个页面逐页截图检查；6 张 README 截图记录在 `docs/screenshots-3.0.0-beta.json`。
+- 11 个页面逐页截图检查；6 张 README 截图（2240×1400）记录在 `docs/screenshots-3.0.0-beta.json`，SHA-256 复核一致。
 - macOS Universal 构建、DMG 校验、`auval` 通过；本地 DMG SHA-256 `4cc28be37a2bfa4bef4f57ecfd80a05fd72da3380221843b3ba9bc007bed0281`。
+- GitHub Actions run `42159603430`：macOS、Windows x64、Windows ARM64 与 Publish verified installers 全部 success。
+- Windows x64 安装冒烟测试通过；VST3 与独立版安装到正确目录。
+- GitHub Release `v3.0.0-beta`（pre-release）：macOS DMG `a059cb69e2a25f7b7a3f23f53eb91e9402f6813087980c2f61a4a6fe5c1b108e`，Windows x64 `e5a4c57a7d57691ef234690ae3dbb0ffaf557f8fed73e4635a48bbb54ea7b0b0`，Windows ARM64 `1f9dba25db468ef36b974834d448caad4a49bd616108a953801786f9730cef19`；下载后 `shasum -a 256 -c SHA256SUMS.txt` 三个文件全部 OK。Release 的 DMG 由 CI 重新构建，哈希与本地构建不同，校验一律以 `SHA256SUMS.txt` 为准。
 
 ## 范围
 
