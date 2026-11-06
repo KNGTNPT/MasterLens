@@ -87,6 +87,52 @@ void MasterLensAudioProcessorEditor::startCodecAB (const juce::String& codec)
 }
 
 
+void MasterLensAudioProcessorEditor::applyCodecResult (const ml::CodecABResult& measured)
+{
+    codecResult = measured;
+    hasCodecPreview = true;
+
+    if (measured.decodedFile != juce::File())
+        processor.openCodecPreview (measured.decodedFile);
+
+    detail.setCodecABState (T ("A 原始 / B ", "A source / B ") + measured.label, true);
+
+    if (const auto* selected = detail.selectedFile())
+        detail.setFileCodecResult (selected->path, measured.label, measured.decodedLufs,
+                                   measured.decodedTp, measured.encodedBytes);
+
+    footerStatusText = measured.label + T (" 就绪 · ", " ready · ")
+                       + T ("ΔLUFS ", "ΔLUFS ") + ml::sgn (measured.decodedLufs - codecSourceLufs, 1)
+                       + T (" · ΔTP ", " · ΔTP ") + ml::sgn (measured.decodedTp - codecSourceTp, 1)
+                       + " dB" + T (" · 点按钮或按 B 切换", " · click or press B to switch");
+    footerStatusColour = ml::theme::good;
+    repaint();
+}
+
+bool MasterLensAudioProcessorEditor::applyCodecReadyForSnapshot (const juce::String& label,
+                                                                 float lufs, float tp,
+                                                                 juce::int64 bytes)
+{
+    ml::CodecABResult measured;
+    measured.ok = true;
+    measured.codec = label.startsWithIgnoreCase ("mp3") ? "mp3" : "aac";
+    measured.label = label;
+    measured.decodedLufs = lufs;
+    measured.decodedTp = tp;
+    measured.encodedBytes = bytes;
+
+    if (detail.selectedFile() != nullptr)
+        codecSourcePath = detail.selectedFile()->path;
+
+    codecSourceLufs = detail.selectedFile() != nullptr ? detail.selectedFile()->stats.integrated
+                                                       : ml::kSilentDb;
+    codecSourceTp = detail.selectedFile() != nullptr ? detail.selectedFile()->stats.truePeakDb
+                                                     : ml::kSilentDb;
+
+    applyCodecResult (measured);
+    return hasCodecPreview && detail.isCodecABReady();
+}
+
 void MasterLensAudioProcessorEditor::pollCodecAB()
 {
     ml::CodecABResult measured;
@@ -114,19 +160,7 @@ void MasterLensAudioProcessorEditor::pollCodecAB()
         return;
     }
 
-    codecResult = measured;
-    hasCodecPreview = true;
-    processor.openCodecPreview (measured.decodedFile);
-    detail.setCodecABState (T ("A 原始 / B ", "A source / B ") + measured.label, true);
-    detail.setFileCodecResult (codecSourcePath, measured.label, measured.decodedLufs,
-                               measured.decodedTp, measured.encodedBytes);
-
-    footerStatusText = measured.label + T (" 就绪 · ", " ready · ")
-                       + T ("ΔLUFS ", "ΔLUFS ") + ml::sgn (measured.decodedLufs - codecSourceLufs, 1)
-                       + T (" · ΔTP ", " · ΔTP ") + ml::sgn (measured.decodedTp - codecSourceTp, 1)
-                       + " dB" + T (" · 点按钮或按 B 切换", " · click or press B to switch");
-    footerStatusColour = ml::theme::good;
-    repaint();
+    applyCodecResult (measured);
 }
 
 void MasterLensAudioProcessorEditor::toggleCodecSide()

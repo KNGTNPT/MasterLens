@@ -281,16 +281,37 @@ public:
         repaint();
     }
     /** Enables the timeline "match selection" button once a region is measured. */
-    void setSelectionMatchReady (bool ready) { selectionMatch.setEnabled (ready); }
+    void setSelectionMatchReady (bool ready)
+    {
+        selectionMatchAvailable = ready;
+        selectionMatch.setEnabled (ready);
+    }
+
+    bool isSelectionMatchReady() const noexcept { return selectionMatch.isEnabled(); }
 
     /** Codec A/B button label / availability on the file page. */
     void setCodecABState (const juce::String& label, bool enabled)
     {
+        codecLabel = label;
+        codecAvailable = enabled;
         codecAB.setButtonText (ml::grid::controlText (label));
         codecAB.setEnabled (enabled);
     }
 
     juce::Rectangle<int> codecButtonScreenBounds() const { return codecAB.getScreenBounds(); }
+
+    /** Availability follows the selected file; kept separate from the label so a
+        language refresh cannot disable a ready A/B button. */
+    void setCodecAvailable (bool available)
+    {
+        codecAvailable = available;
+        codecAB.setEnabled (available);
+    }
+
+    bool isCodecABReady() const
+    {
+        return codecAB.isEnabled() && codecAB.getButtonText().containsIgnoreCase ("AAC");
+    }
     void setSpectrumSplit (int height, int bandHeight) { spectrumSplit = height; spectrumBandHeight = bandHeight; resized(); }
     void setFileView (int view) { fileView = juce::jlimit (0, 2, view); resized(); repaint(); }
     void setDeliverySpec (const DeliverySpec& s) { spec = s; repaint(); }
@@ -378,6 +399,9 @@ private:
     juce::TextEditor refOffset, refGain;
     bool updatingReferenceControls = false;
     bool refPlaying = false;
+    bool selectionMatchAvailable = false;
+    juce::String codecLabel;
+    bool codecAvailable = false;
     juce::TextButton markerExport, markerImport;
     juce::TextButton selectionMatch;
     juce::TextButton albumCapture, albumProof, albumImport, albumClearButton, albumProject;

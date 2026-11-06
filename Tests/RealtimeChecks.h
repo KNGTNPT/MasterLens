@@ -62,7 +62,10 @@ inline void reliabilityChecks()
     {
         ml::ReferencePlayer reference;ml::FilePreviewPlayer preview;preview.prepare(48000);
         reference.load({file.getFullPathName()},48000);
-        for(int wait=0;wait<2500 && reference.isBusy();++wait)juce::Thread::sleep(2);
+        // Wait for the worker to publish readiness. The old loop waited for
+        // isBusy() to clear, which could still be false before the thread
+        // started, making this assertion timing-dependent on slower builds.
+        for(int wait=0;wait<2500 && !reference.isReady();++wait)juce::Thread::sleep(2);
         check("reference decoded before ready",reference.isReady(),1,0);
         preview.start(file,.1,.2,true);
         for(int wait=0;wait<2500 && !preview.isReady();++wait)juce::Thread::sleep(2);

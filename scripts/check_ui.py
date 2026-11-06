@@ -34,14 +34,39 @@ cases += [
     ['page0', 'light', 'size1120'],
     ['page10', 'fileqc', 'light', 'size1120'],
     ['page10', 'empty', 'minsize'],
+    # 3.0 state machines and overlays (CI used to rely on manual clicks).
+    ['page0', 'settings', 'minsize'],
+    ['page0', 'settings', 'size1120', 'scale200'],
+    ['page0', 'about', 'size1120', 'scale200'],
+    ['page9', 'size1120', 'scale200'],
+    ['page10', 'fileqc', 'standalone', 'size1120', 'scale200'],
+    ['page2', 'spectrumview2', 'size1120'],
+    ['page9', 'selectionset', 'size1120'],
+    ['page10', 'fileqc', 'codecstate', 'standalone', 'size1120'],
+    ['page10', 'fileqc', 'codecstate', 'standalone', 'minsize'],
 ]
 results = []
 for i, flags in enumerate(cases):
-    command = [str(renderer), *flags, f'out=qa{VERSION.replace(".", "")}_{i:02d}']
+    tag = f'qa{VERSION.replace(".", "")}_{i:02d}'
+
+    # 1) Real layout assertions (component bounds, fonts, all pages / scales).
+    check_command = [str(renderer), *flags, 'layoutcheck']
+    check = subprocess.run(check_command, cwd=ROOT, capture_output=True, text=True)
+    results.append({'arguments': check_command[1:], 'mode': 'layout',
+                    'returncode': check.returncode,
+                    'stdout': check.stdout, 'stderr': check.stderr})
+
+    # 2) Render the same state so the report also proves it paints.
+    command = [str(renderer), *flags, f'out={tag}']
     result = subprocess.run(command, cwd=ROOT, capture_output=True, text=True)
-    results.append({'arguments': command[1:], 'returncode': result.returncode,
+    results.append({'arguments': command[1:], 'mode': 'render',
+                    'returncode': result.returncode,
                     'stdout': result.stdout, 'stderr': result.stderr})
-    print(f'{i+1}/{len(cases)} exit={result.returncode}: {" ".join(flags)}', flush=True)
+
+    state = [line for line in (result.stdout + check.stdout).splitlines()
+             if line.startswith('STATE')]
+    print(f'{i+1}/{len(cases)} layout={check.returncode} render={result.returncode}: '
+          f'{" ".join(flags)}' + (f' [{" | ".join(state)}]' if state else ''), flush=True)
 report = ROOT / f'docs/layout-{VERSION}.json'
 report.write_text(json.dumps({'platform': platform.system(), 'cases': results}, indent=2) + '\n')
 failures = [x for x in results if x['returncode'] != 0]

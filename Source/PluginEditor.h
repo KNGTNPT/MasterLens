@@ -74,6 +74,15 @@ public:
 #endif
     void setSpectrumViewForSnapshot (int view) { detail.setSpectrumView (view); }
 
+    /** Headless state-machine coverage: seeds a measured selection and returns
+        true when the timeline button became enabled. */
+    bool seedSelectionForSnapshot (double startSeconds, double endSeconds);
+
+    /** Headless state-machine coverage: pushes a synthetic codec result through
+        the same UI path as a finished CodecABJob. */
+    bool applyCodecReadyForSnapshot (const juce::String& label, float lufs, float tp,
+                                     juce::int64 bytes);
+
     void writeReportPdfForSnapshot (const juce::File& file)
     {
         const auto pdf = buildReportPdf();
@@ -111,6 +120,7 @@ private:
     void pollSelectionMatch();
     void showCodecMenu();
     void startCodecAB (const juce::String& codec);
+    void applyCodecResult (const ml::CodecABResult& measured);
     void toggleCodecSide();
     void toggleCodecSide (int side);
     void pollCodecAB();

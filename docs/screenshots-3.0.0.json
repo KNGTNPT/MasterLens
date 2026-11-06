@@ -3,55 +3,55 @@
   "platform": "Darwin",
   "architecture": "arm64",
   "renderer": "MasterLensUiShot 3.0.0",
-  "rendererSha256": "ae3863e8446ac5e94340bc66bf2b1c319339b0ff92aac8977ace33d93bbc353f",
+  "rendererSha256": "6d1a230c543acf0b61ece113a63ad60ab75c9d07b70f9590b38543a3fc2abda9",
   "images": [
     {
       "path": "docs/screenshot-3.0.0.png",
-      "sha256": "34acf5c7d5126b8dba11635f40324da6e195375de3501340655d36b1ef269237",
+      "sha256": "12fc008cec56a711e3d33da067017c466601856c569a1016c5ae7145a61d216c",
       "width": 2240,
       "height": 1400,
       "arguments": [
         "page0",
         "size1120",
-        "out=screenshot300"
+        "out=screenshot300-final"
       ]
     },
     {
       "path": "docs/signal-3.0.0.png",
-      "sha256": "030bea04a384c70973ab5bdbac8a734e684c34bbac86b307990162516af757ad",
+      "sha256": "50caaf38f1da936842ae6d1d222c78817155de63d07d3109b668f63004194c89",
       "width": 2240,
       "height": 1400,
       "arguments": [
         "page6",
         "size1120",
-        "out=signal300"
+        "out=signal300-final"
       ]
     },
     {
       "path": "docs/spectrum-3.0.0.png",
-      "sha256": "02e3ab8401d1e37626c9120a95cd7264d5a0030e24a6d690583c9508121e3cbd",
+      "sha256": "c293d6ae7bae72c01343a8f71b449a061c73c12d89887611c147a6fd951d3353",
       "width": 2240,
       "height": 1400,
       "arguments": [
         "page2",
         "size1120",
-        "out=spectrum300"
+        "out=spectrum300-final"
       ]
     },
     {
       "path": "docs/stereo-3.0.0.png",
-      "sha256": "4f7315b5a1bd337984024f923d693fb1288ca517fa4aa78975118c51da016a39",
+      "sha256": "888b02854cc731501f6565b313c47cdd58f3eb1dc56c040e4aa1b1f106d218b9",
       "width": 2240,
       "height": 1400,
       "arguments": [
         "page3",
         "size1120",
-        "out=stereo300"
+        "out=stereo300-final"
       ]
     },
     {
       "path": "docs/fileqc-3.0.0.png",
-      "sha256": "6819007cae91c503ffdc7be6d511451f6f3703eabc6976616a0db1fa817973b2",
+      "sha256": "4a8370447ee5050ac9258fc854e23848c964e6317d0973797a2fe3f0056962fb",
       "width": 2240,
       "height": 1400,
       "arguments": [
@@ -59,19 +59,19 @@
         "fileqc",
         "standalone",
         "size1120",
-        "out=fileqc300"
+        "out=fileqc300-final"
       ]
     },
     {
       "path": "docs/about-3.0.0.png",
-      "sha256": "7418c1d3c1564deef53c5d32dcc6d6faf25b0d312e422b9c2bba031b91406d89",
+      "sha256": "5bfe6e973e1d90a8978cdd50f87061eef41f3be97471a5923a85ac773c371a6a",
       "width": 2240,
       "height": 1400,
       "arguments": [
         "page0",
         "about",
         "size1120",
-        "out=about300"
+        "out=about300-final"
       ]
     }
   ]

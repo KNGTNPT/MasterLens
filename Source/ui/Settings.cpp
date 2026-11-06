@@ -30,9 +30,12 @@ namespace
         const auto footer = settingsLayout (full).footer;
         constexpr int brandW = 150, developerW = 170, closeW = 80, gap = 16;
         const int total = brandW + developerW + closeW + gap * 2;
+        // Snap the whole group once: grid::alignChildren() used to shrink only the
+        // real button (30 -> 28 px, y 555 -> 552), lifting it ~4 px above the two
+        // painted labels. Snapping here keeps paint and hit bounds on one axis.
+        const int h = grid::down (juce::jmin (30, footer.getHeight()));
         const int x = footer.getCentreX() - total / 2;
-        const int h = juce::jmin (30, footer.getHeight());
-        const int y = footer.getCentreY() - h / 2;
+        const int y = grid::down (footer.getCentreY() - h / 2);
 
         FooterParts p;
         p.brand = { x, y, brandW, h };

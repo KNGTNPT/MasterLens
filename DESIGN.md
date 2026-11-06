@@ -4,7 +4,7 @@
 
 本文是后续 MasterLens 界面设计、代码修改、原型和截图审查的共同约束。规则中的「必须」「禁止」均为硬性要求；当前代码不符合的地方属于待迁移项，不构成例外。本文件定义目标，不表示界面重构已经完成。
 
-> 面向团队其他项目的可迁移版本、当前 3.0.0-rc.1 明暗 token 与 skill 取舍，见 [FRONTEND-DESIGN.md](FRONTEND-DESIGN.md)。该文件仅作团队参考，不构成 MasterLens 后续前端改动的约束；本文件继续保留 MasterLens 的详细实现和历史验收条款。
+> 面向团队其他项目的可迁移版本、当前 3.0.0 明暗 token 与 skill 取舍，见 [FRONTEND-DESIGN.md](FRONTEND-DESIGN.md)。该文件仅作团队参考，不构成 MasterLens 后续前端改动的约束；本文件继续保留 MasterLens 的详细实现和历史验收条款。
 
 ## 2.3.1 用户修订（优先于本文旧条款）
 

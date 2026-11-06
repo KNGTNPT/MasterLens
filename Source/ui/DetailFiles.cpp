@@ -10,7 +10,7 @@ void DetailArea::setFilePlaybackAvailable (bool available)
     filePlay.setVisible (available && page == PageId::files);
     fileProgress.setVisible (available && page == PageId::files);
     fileTime.setVisible (available && page == PageId::files);
-    codecAB.setEnabled (available && selectedFile() != nullptr && selectedFile()->ok);
+    setCodecAvailable (available && selectedFile() != nullptr && selectedFile()->ok);
 
     if (! available)
         setFileTransportState (FileTransportState::unavailable);
@@ -664,7 +664,7 @@ bool DetailArea::handleFileMouseDown (const juce::MouseEvent& e)
         {
             setFileTransportState (FileTransportState::ready);
             setFileProgress (0.0, selectedFile()->durationSeconds);
-            codecAB.setEnabled (selectedFile()->ok);
+            setCodecAvailable (selectedFile()->ok);
         }
 
         resized();

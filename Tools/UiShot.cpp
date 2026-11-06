@@ -147,23 +147,6 @@ public:
         const float shotH = minShot ? 560.0f : (smallShot ? 620.0f : (standardShot ? 700.0f : 820.0f));
         editor->setSize (juce::roundToInt (shotW * scale), juce::roundToInt (shotH * scale));
 
-        if (commandLine.containsIgnoreCase ("layoutcheck"))
-        {
-            setApplicationReturnValue (MasterLensLayoutCheck::run (*editor) ? 0 : 1);
-#if JUCE_DEBUG && defined(MASTERLENS_ENABLE_INSPECTOR)
-            editor->addToDesktop (juce::ComponentPeer::windowIsTemporary);
-            editor->setVisible (true);
-            editor->showInspector();
-            juce::Timer::callAfterDelay (500, [this]
-            {
-                MasterLensLayoutCheck::saveInspector (*editor);
-                saveAndQuit();
-            });
-#else
-            quit();
-#endif
-            return;
-        }
 
 #if JUCE_DEBUG && defined(MASTERLENS_ENABLE_INSPECTOR)
         if (commandLine.containsIgnoreCase ("inspector"))
@@ -229,6 +212,53 @@ public:
 
         if (genreShot)
             editor->showGenreInfoForSnapshot();
+
+        // ---- state-machine coverage --------------------------------------
+        bool stateOk = true;
+
+        if (commandLine.containsIgnoreCase ("selectionset"))
+        {
+            editor->setPageForSnapshot ((int) ml::PageId::timeline);
+            const bool ready = editor->seedSelectionForSnapshot (1.0, 4.0);
+            stateOk = stateOk && ready;
+            std::printf ("STATE selection %s\n", ready ? "ready" : "FAILED");
+        }
+
+        if (commandLine.containsIgnoreCase ("codecstate"))
+        {
+            editor->setPageForSnapshot ((int) ml::PageId::files);
+            const bool ready = editor->applyCodecReadyForSnapshot ("AAC 256k", -14.2f, -1.0f, 123456);
+            stateOk = stateOk && ready;
+            std::printf ("STATE codec %s\n", ready ? "ready" : "FAILED");
+        }
+
+        // Run the layout assertions after the scenario flags, so pages, overlays
+        // and the two 3.0 state machines are all exercised before checking bounds.
+        if (commandLine.containsIgnoreCase ("layoutcheck"))
+        {
+            const bool layoutOk = MasterLensLayoutCheck::run (*editor);
+            setApplicationReturnValue ((layoutOk && stateOk) ? 0 : 1);
+#if JUCE_DEBUG && defined(MASTERLENS_ENABLE_INSPECTOR)
+            editor->addToDesktop (juce::ComponentPeer::windowIsTemporary);
+            editor->setVisible (true);
+            editor->showInspector();
+            juce::Timer::callAfterDelay (500, [this]
+            {
+                MasterLensLayoutCheck::saveInspector (*editor);
+                saveAndQuit();
+            });
+#else
+            quit();
+#endif
+            return;
+        }
+
+        if (! stateOk)
+        {
+            setApplicationReturnValue (1);
+            quit();
+            return;
+        }
 
         if (benchMode)
         {

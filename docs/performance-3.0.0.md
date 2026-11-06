@@ -16,12 +16,16 @@
 - `Source/ui/Theme.h` 新增 `namespace text`：`centredBaseline()` / `drawRun()` / `drawValueUnit()`，让数值与单位共用一条基线。
 - `Source/ui/Panels.cpp`：`ReadoutBand::paint` 的行高改由 `valueFont.getAscent() + getDescent()` 决定，单位不再用 `withTrimmedTop(8)` 硬推；`MetricGrid::paintCard` 去掉 `withTrimmedTop(16)`，两处都改走 `drawValueUnit()`。
 - `Source/ui/Logo.cpp`：`paintBerryLockup` 不再把字标塞进顶部 14 px 条带，字标占满整行，与页脚其余两行同中线。
+- `Source/ui/Settings.cpp`：页脚先在 `settingsFooterParts()` 里把整组对齐到 4 px 网格，再交给 `grid::alignChildren()`。此前只有真实按钮被 30→28 px、y 555→552 上移约 4 px，文字与按钮并不在同一条中线。
+- `Tests/RealtimeChecks.h`：参考播放器的 ready 断言改为等 `isReady()`；原实现等 `isBusy()` 变 false，线程尚未启动时会提前断言，在 Universal / 慢构建上会偶发失败。
 - `Source/ui/History.cpp`：曲线右上角的当前值不再用固定的 92 / 34 px 列宽，改为按字体实测宽度排版；`LUFS` 之前在 14 px 下宽约 37 px，被截成 `LU…`。
 
 ### 工程
 
-- `scripts/check_ui.py` 接入 `build.yml` 的 macOS job（新增 `Editor layout regression` 步骤 + 报告 artifact），六个 bundle 的构建目标补上 `MasterLensUiShot`。
-- `Source/ui/About.cpp` 增加「选区等响需先播放该段 · 编码 A/B 需本机 ffmpeg」；README 与设置页同步这两条前提。
+- `scripts/check_ui.py` 接入 `build.yml` 的 macOS job（`Editor layout regression` 步骤 + 报告 artifact），构建目标补上 `MasterLensUiShot`。
+- `check_ui.py` 现在每个场景跑两次：先 `layoutcheck`（真实组件边界 / 字体 / 全部页面与缩放断言），再渲染；`layoutcheck` 被移到场景开关之后，settings / about / 频段热力 / 选区 / 编码状态都会在断言前生效。
+- `UiShot` 增加 `selectionset` / `codecstate` 两个快照入口，走真实的 `measureRegion()` 与 `applyCodecResult()` 路径，CI 不再只验证“能画出来”。
+- `Source/ui/About.cpp` 增加「选区等响需先播放该段 · 编码 A/B 需本机 ffmpeg」；README 与 DMG 使用说明同步这两条前提（设置页保持原有四行说明，未加行以免挤掉页脚）。
 
 ## 验证
 
@@ -31,10 +35,10 @@
   - 长文件流式：2 小时虚拟文件可打开、播放、seek 到 3600.01 s、EOF 停止；回调内 `new/delete` 为 0。
   - 编码 A/B：AAC 往返成功，解码 WAV 可测量，与源的 LUFS 差 ≤ 0.6 LU；无 ffmpeg 时用例显式跳过并打印 `encode: ffmpeg unavailable`。
 - CLI 集成检查：**66 项通过**。
-- UI 布局：**35/35 通过**（含 80% / 125% / 200% 缩放、浅色深色、最小窗口），本版起每次 CI 都跑。
-- 三处对齐按 100% 与 125% 逐像素复核：侧栏与频谱页读数共用基线、设置页页脚三者同中线、曲线右上角 `-17.7 LUFS` 完整显示（此前为 `-17.7 LU…`）。
+- UI 布局：**44/44 场景通过**（每个场景先跑 `layoutcheck` 边界断言，再渲染；含 80%–200% 缩放、浅色深色、最小窗口、settings / about、频段热力、选区与编码状态）。
+- 三处对齐逐像素复核（深色 / 浅色，100% 与 200%）：侧栏与频谱页 5 组读数的数字/单位底线差 ≤ 1 px；设置页页脚字标 1132–1148、开发者 1131–1149、关闭按钮文字 1131–1149（中心均为 1140）；曲线右上角 `-17.7 LUFS` 完整显示。
 - 六张 README 截图（2240×1400）重新渲染，记录在 `docs/screenshots-3.0.0.json`，SHA-256 复核一致。
-- macOS Universal 构建（x86_64 + arm64）、`auval -v aufx Maln OrcA` 通过。
+- macOS Universal 构建（x86_64 + arm64）、DMG 校验、`auval -v aufx Maln OrcA` 通过；本地 DMG SHA-256 `18d727dec9c33af94cffed5259f3be084e88fb97af57b3cda73f91fde5a6fee1`。
 
 ## 未验证 / 限制
 

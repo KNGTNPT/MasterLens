@@ -61,6 +61,35 @@ void MasterLensAudioProcessorEditor::requestSelectionMatch()
     repaint();
 }
 
+bool MasterLensAudioProcessorEditor::seedSelectionForSnapshot (double startSeconds,
+                                                              double endSeconds)
+{
+    if (endSeconds < startSeconds)
+        std::swap (startSeconds, endSeconds);
+
+    rawSeries.clear();
+
+    for (double t = startSeconds; t <= endSeconds + 1.0e-9; t += 0.1)
+    {
+        RawSeriesPoint p;
+        p.time = t;
+        p.momentary = -14.0f;
+        p.shortTerm = -14.0f;
+        p.integrated = -14.0f;
+        p.lra = 5.0f;
+        p.truePeak = -1.0f;
+        p.correlation = 0.8f;
+        p.width = 30.0f;
+        p.midShortTerm = -17.0f;
+        p.sideShortTerm = -20.0f;
+        rawSeries.push_back (p);
+    }
+
+    measureRegion (startSeconds, endSeconds);
+
+    return hasSelection && detail.isSelectionMatchReady();
+}
+
 void MasterLensAudioProcessorEditor::pollSelectionMatch()
 {
     ml::RangeLoudness measured;

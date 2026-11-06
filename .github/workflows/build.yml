@@ -221,4 +221,4 @@ jobs:
           gh release create "$RELEASE_TAG" *.dmg *.exe SHA256SUMS.txt \
             --verify-tag --title "MasterLens ${APP_VERSION}" \
             $PRERELEASE \
-            --notes-file ../docs/release-3.0.0-rc.1.md
+            --notes-file ../docs/release-3.0.0.md

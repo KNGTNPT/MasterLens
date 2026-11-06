@@ -292,7 +292,7 @@ void DetailArea::refreshTexts()
     selectionMatch.setButtonText (ml::grid::controlText (T ("选区等响", "Match selection")));
     selectionMatch.setTooltip (T ("把当前参考槽位在 OFS + 选区的响度对齐到工程选区（只改参考 GAIN）",
                                   "Match the active reference slot over OFS + selection to the project region (reference GAIN only)"));
-    selectionMatch.setEnabled (false);
+    selectionMatch.setEnabled (selectionMatchAvailable);
     albumCapture.setButtonText (ml::grid::controlText (T ("采集本曲", "Capture track")));
     albumProof.setButtonText (ml::grid::controlText (T ("导出证明", "Proof")));
     albumImport.setButtonText (ml::grid::controlText (T ("导入基准", "Import")));
@@ -331,10 +331,12 @@ void DetailArea::refreshTexts()
     fileExport.setTooltip (T ("导出 CSV 摘要与完整 JSON 证据（时间、样本、源文件 SHA256）",
                               "Export CSV summary + full JSON evidence (time, samples, source SHA256)"));
     fileClear.setButtonText (ml::grid::controlText (T ("清空结果", "Clear results")));
-    codecAB.setButtonText (ml::grid::controlText (T ("编码 A/B", "Codec A/B")));
+    codecAB.setButtonText (ml::grid::controlText (codecLabel.isNotEmpty()
+                                                      ? codecLabel
+                                                      : T ("编码 A/B", "Codec A/B")));
     codecAB.setTooltip (T ("用本机 ffmpeg 生成 AAC 256k / MP3 320k，在同一时间码切换原始与编码后音频；缺少 ffmpeg 时明确不可用",
                            "Render AAC 256k / MP3 320k with local ffmpeg and switch source/encoded at the same time code; unavailable without ffmpeg"));
-    codecAB.setEnabled (false);
+    codecAB.setEnabled (codecAvailable);
     fileChoose.setTooltip (T ("离线分析 WAV / AIFF / FLAC，秒级出完整报告",
                                "Offline analysis of WAV / AIFF / FLAC in seconds"));
     fileFolder.setTooltip (T ("递归分析整个专辑文件夹，并自动填入门禁表",
