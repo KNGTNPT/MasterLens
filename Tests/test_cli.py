@@ -47,7 +47,8 @@ def runtime_encoders():
         return set()
     try:
         out = subprocess.run([exe, '-hide_banner', '-encoders'],
-                             capture_output=True, text=True, timeout=10).stdout
+                             capture_output=True, text=True, encoding='utf-8',
+                             errors='replace', timeout=10).stdout
     except Exception:
         return set()
     caps = set()
@@ -59,7 +60,8 @@ def runtime_encoders():
 
 
 def run(*args, code=0, env=None):
-    result = subprocess.run([cli, 'analyze', *map(str, args)], capture_output=True, text=True, env=env)
+    result = subprocess.run([cli, 'analyze', *map(str, args)], capture_output=True,
+                            text=True, encoding='utf-8', errors='replace', env=env)
     check(result.returncode == code, f'exit {result.returncode} != {code}: {args}\n{result.stderr}')
     return result
 
