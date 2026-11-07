@@ -236,7 +236,7 @@ jobs:
             "/DOUTFILE=$out",
             "packaging/installer.nsi"
           )
-          if ($env:ALLOW_MISSING_RUNTIME -eq "1") { $argsList = @($argsList[0..4]) + "/DALLOW_MISSING_RUNTIME=1" + $argsList[5] }
+          if ($env:ALLOW_MISSING_RUNTIME -eq "1") { $argsList = @($argsList[0..5]) + "/DALLOW_MISSING_RUNTIME=1" + $argsList[6] }
           & "${env:ProgramFiles(x86)}\NSIS\makensis.exe" @argsList
           if (!(Test-Path $out)) { throw "NSIS 未生成安装包" }
 
