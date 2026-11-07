@@ -89,7 +89,7 @@ with tempfile.TemporaryDirectory(prefix='masterlens-qc-') as temp:
         write(anti, rate, inverted=True)
         report = root / 'report.json'
         run(normal, anti, '--json', report)
-        result = json.loads(report.read_text())
+        result = json.loads(report.read_text(encoding='utf-8'))
         by_name = {item['file']: item for item in result['files']}
         a, b = by_name[normal.name], by_name[anti.name]
         check(result['schemaVersion'] == 3, 'versioned QC schema')
@@ -106,7 +106,7 @@ with tempfile.TemporaryDirectory(prefix='masterlens-qc-') as temp:
     output = run(quoted, '--csv', '--json', root / 'quoted.json')
     rows = list(csv.DictReader(io.StringIO(output.stdout)))
     check(len(rows) == 1 and rows[0]['file'] == quoted.name, 'CSV quoting / clean stdout')
-    q = json.loads((root / 'quoted.json').read_text())['files'][0]['forensic']
+    q = json.loads((root / 'quoted.json').read_text(encoding='utf-8'))['files'][0]['forensic']
     event = next(x for x in q['findings'] if x['code'] == 'internal_digital_silence')
     check(event['startSample'] in (48000, 47999), 'gap starts at a sample address')
     check(event['lengthSamples'] >= 960, 'gap duration preserved')
@@ -130,14 +130,14 @@ with tempfile.TemporaryDirectory(prefix='masterlens-qc-') as temp:
     run(broken, code=1)
     # Strict delivery specs: end-to-end, not just direct evaluateSpec calls.
     spec = root / 'spec.json'
-    measured = json.loads((root / 'quoted.json').read_text())['files'][0]['stats']['integratedLufs']
+    measured = json.loads((root / 'quoted.json').read_text(encoding='utf-8'))['files'][0]['stats']['integratedLufs']
     spec.write_text(json.dumps(dict(targetLufs=measured, ceilingDbtp=-1, loudnessToleranceLu=.2, sampleRate=48000,bitDepth=16,channels=2)))
     run(quoted, '--spec', spec, '--json', root/'spec-pass.json')
-    checked=json.loads((root/'spec-pass.json').read_text())
+    checked=json.loads((root/'spec-pass.json').read_text(encoding='utf-8'))
     check(checked['analysisOk'] and not checked['gateFailed'], 'spec pass is reported accurately')
-    bad=json.loads(spec.read_text());bad['bitDepth']=24;spec.write_text(json.dumps(bad))
+    bad=json.loads(spec.read_text(encoding='utf-8'));bad['bitDepth']=24;spec.write_text(json.dumps(bad))
     run(quoted, '--spec', spec, '--json', root/'spec-fail.json',code=2)
-    check(json.loads((root/'spec-fail.json').read_text())['gateFailed'], 'spec failure gates even without --fail-on')
+    check(json.loads((root/'spec-fail.json').read_text(encoding='utf-8'))['gateFailed'], 'spec failure gates even without --fail-on')
     for invalid in ({'sampleRate':'48000'},{'loudnessToleranceLu':-1},{'channels':7},{'sampleRate':48000.5}):
         spec.write_text(json.dumps(invalid));run(quoted,'--spec',spec,code=1)
     spec.write_text('{}');run(silent,'--spec',spec,code=2)
@@ -145,7 +145,7 @@ with tempfile.TemporaryDirectory(prefix='masterlens-qc-') as temp:
     # Explicit but unusable runtime: fail, never fall back to PATH.
     missing_env=dict(os.environ,MASTERLENS_FFMPEG=str(root/'absent-ffmpeg'))
     run(quoted,'--codec','aac','--json',root/'codec-missing.json',code=1,env=missing_env)
-    error_report=json.loads((root/'codec-missing.json').read_text())
+    error_report=json.loads((root/'codec-missing.json').read_text(encoding='utf-8'))
     check(not error_report['analysisOk'] and error_report['gateFailed'] and not error_report['codecChecks'][0]['ok'],'codec failure is never a success')
     check('ffmpeg unavailable' in error_report['codecChecks'][0]['error'],'missing runtime is reported explicitly')
     # A hung encoder must fail promptly, with no successful evidence left behind.
@@ -165,7 +165,7 @@ exec sleep 10
         fake.chmod(0o755)
         timeout_env=dict(os.environ,MASTERLENS_FFMPEG=str(fake),MASTERLENS_CODEC_TIMEOUT_MS='100')
         run(quoted,'--codec','aac','--json',root/'codec-timeout.json',code=1,env=timeout_env)
-        timeout_report=json.loads((root/'codec-timeout.json').read_text())
+        timeout_report=json.loads((root/'codec-timeout.json').read_text(encoding='utf-8'))
         check(not timeout_report['analysisOk'],'encoder timeout cannot pass')
         check('timeout' in timeout_report['codecChecks'][0]['error'],'timeout is classified')
     original=quoted.read_bytes();run(quoted,'--json',quoted,code=1)
@@ -184,7 +184,7 @@ exec sleep 10
                 skip(f'{codec} encoder missing from this runtime')
                 continue
             report=root/f'codec-{codec}.json';run(quoted,'--codec',codec,'--json',report,env=codec_env)
-            cc=json.loads(report.read_text())['codecChecks'][0]
+            cc=json.loads(report.read_text(encoding='utf-8'))['codecChecks'][0]
             check(cc['ok'] and cc['encodedBytes']>100 and cc['encodedContainer'] in ('m4a','mp3'),'real codec container and packets')
             check(len(cc['encodedSha256'])==64 and len(cc['decodedSha256'])==64,'encoded and decoded content fingerprints')
             check(cc['integratedLufs']>-70 and cc['truePeakDbtp']>-90,'decoded measurements are valid')
@@ -194,12 +194,12 @@ exec sleep 10
         unicode_dir=root/'素材 文件夹';unicode_dir.mkdir()
         short=unicode_dir/'短 测试.wav';write(short,44100,channels=1)
         report=root/'codec-unicode.json';run(short,'--codec','aac','--json',report,env=codec_env)
-        cc=json.loads(report.read_text())['codecChecks'][0]
+        cc=json.loads(report.read_text(encoding='utf-8'))['codecChecks'][0]
         check(cc['ok'],'codec works with unicode / spaces / mono / 44.1 kHz')
         # Corrupt input must fail even when the runtime is healthy.
         corrupt=root/'corrupt-codec.wav';corrupt.write_bytes(b'not a wav')
         run(corrupt,'--codec','aac','--json',root/'codec-corrupt.json',code=1,env=codec_env)
-        corrupt_checks=json.loads((root/'codec-corrupt.json').read_text())['codecChecks']
+        corrupt_checks=json.loads((root/'codec-corrupt.json').read_text(encoding='utf-8'))['codecChecks']
         check(not corrupt_checks or not corrupt_checks[0]['ok'],
               'corrupt input cannot pass codec coverage')
 print(f'{checks} CLI integration checks passed, {skipped} skipped')
