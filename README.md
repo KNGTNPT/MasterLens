@@ -484,6 +484,8 @@ cmake --build build --config Release --target MasterLensUiShot -j 4
 
 无显示服务的 Linux 需要 Xvfb 和中文字体。同一个构建目录请串行执行 CMake / Ninja。
 
+发布流程永久遵循 [`docs/ffmpeg-release-readiness-guide.md`](docs/ffmpeg-release-readiness-guide.md)：先准备随包 FFmpeg（`scripts/fetch-ffmpeg.sh` + `scripts/verify-runtime.sh`），再跑 DSP / CLI / 布局 / 安装产物门禁。开发环境没有随包运行时，可用 `MASTERLENS_ALLOW_SYSTEM_FFMPEG=1` 让测试显式使用系统 ffmpeg；发布门禁使用 `MASTERLENS_REQUIRE_RUNTIME=1`，缺失运行时直接失败。
+
 本次本地验证包含 **151 项 DSP / 可靠性断言**、**66 项 CLI 集成检查**、默认旁路 / 零延迟检查、各页面布局、五档缩放及离屏性能。原生 macOS / Windows 安装包由 [GitHub Actions](https://github.com/KNGTNPT/MasterLens/actions) 构建；三个发布目标全部成功后才上传 Release，附带 `SHA256SUMS.txt`。离屏检查和构建不能代替真实 DAW 与音频硬件回归。
 
 ## 工程结构
