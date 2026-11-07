@@ -45,8 +45,10 @@
 | CLI | **74 项通过**（0 skipped）；无运行时 → 58 通过 + 1 skipped；`REQUIRE` → 失败 |
 | UI 布局 | **46/46 场景**（每场景先跑 `layoutcheck` 断言再渲染；新增编码中/失败状态） |
 | 编码分类 | 缺失 / 无效 / 超时 / 损坏输入 / Unicode 路径均有断言 |
-| macOS | Universal 构建、DMG 3.0.1、`auval` PASS（aufx Maln OrcA）；DMG SHA-256 `dfb5afb0ca2b927ab9a37f3d1effecfeb8b6ef798c1394282fbbe69e1b846644` |
+| macOS | Universal 构建、DMG 3.0.1、`auval` PASS（aufx Maln OrcA）；本地 DMG SHA-256 `dfb5afb0ca2b927ab9a37f3d1effecfeb8b6ef798c1394282fbbe69e1b846644` |
 | 截图 | 8 张（6 主图 + 编码就绪/失败），`docs/screenshots-3.0.1.json` 记录版本、尺寸、参数与 SHA-256 |
+| CI（tag `v3.0.1-rc.1`） | run `42405381902`：macOS / Windows x64 / ARM64 / publish 全绿；`SHA256SUMS.txt` 三资产校验通过 |
+| CI（push main） | run `42405374496`：macOS + Windows 快速门禁全绿 |
 | 运行时验证 | `verify-runtime.sh` 正确拒绝 Homebrew 的 `--enable-gpl` 构建 |
 
 ### 本环境无法完成的项
@@ -61,7 +63,7 @@
 |---|---|---|
 | 真实宿主与长时间运行验收 | 未完成 | 缺宿主环境；未执行听感/波形/2 小时持续播放 |
 | 修复“测试失败却绿灯” | 完成 | 缺失/失败/超时/损坏输入断言；`REQUIRE` 失败路径；skipped 单独计数 |
-| push / PR 与正式发布自动门禁 | 部分完成 | 工作流与门禁代码已就位；本环境未推送运行，运行时二进制缺失使稳定版门禁会按设计失败 |
+| push / PR 与正式发布自动门禁 | 完成 | push 门禁 run `42405374496` 全绿；发布门禁 run `42405381902` 全绿并校验三资产 SHA-256；稳定版仍会因缺少随包运行时被拒绝（设计如此） |
 | 当前版本文档与全部截图 | 完成 | 3.0.1 文档、截图清单与哈希、链接检查（见下） |
 
 ## 五、范围与限制
