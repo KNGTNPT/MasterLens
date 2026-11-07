@@ -33,6 +33,40 @@ cp "$ROOT/packaging/Uninstall.command" "$STAGE/卸载 Uninstall.command"
 cp "$ROOT/packaging/README-DMG.txt" "$STAGE/使用说明 README.txt"
 mkdir -p "$STAGE/Licenses"
 cp "$ROOT/Resources/fonts/OFL.txt" "$STAGE/Licenses/Geist-OFL.txt"
+
+# ---- bundled FFmpeg runtime (guide §三/§四) --------------------------------
+FFMPEG_RUNTIME="${FFMPEG_MACOS:-$ROOT/third_party/ffmpeg/macos-universal/ffmpeg}"
+if [ -f "$FFMPEG_RUNTIME" ]; then
+    chmod +x "$FFMPEG_RUNTIME"
+
+    "$ROOT/scripts/verify-runtime.sh" "$FFMPEG_RUNTIME" macos-universal
+
+    for bundle in "$STAGE/MasterLens.vst3" "$STAGE/MasterLens.component" "$STAGE/MasterLens.app"; do
+        mkdir -p "$bundle/Contents/Resources"
+        cp "$FFMPEG_RUNTIME" "$bundle/Contents/Resources/ffmpeg"
+        chmod +x "$bundle/Contents/Resources/ffmpeg"
+        codesign --force -s - "$bundle/Contents/Resources/ffmpeg" > /dev/null 2>&1 || true
+    done
+
+    cp "$FFMPEG_RUNTIME" "$STAGE/ffmpeg"
+    chmod +x "$STAGE/ffmpeg"
+
+    RUNTIME_DIR="$(dirname "$FFMPEG_RUNTIME")"
+    for f in FFmpeg-LGPL.txt FFmpeg-LICENSE.md; do
+        [ -f "$RUNTIME_DIR/$f" ] && cp "$RUNTIME_DIR/$f" "$STAGE/Licenses/"
+    done
+    cp "$ROOT/packaging/THIRD-PARTY-NOTICES.md" "$STAGE/Licenses/"
+    echo "Bundled FFmpeg: $("$FFMPEG_RUNTIME" -hide_banner -version | head -1)"
+else
+    if [ "${ALLOW_MISSING_RUNTIME:-0}" = "1" ]; then
+        echo "WARNING: FFmpeg runtime missing; this package cannot encode AAC/MP3." >&2
+        echo "         Fetch it with scripts/fetch-ffmpeg.sh macos-universal third_party/ffmpeg/macos-universal" >&2
+    else
+        echo "ERROR: FFmpeg runtime missing. Run scripts/fetch-ffmpeg.sh first," >&2
+        echo "       or set ALLOW_MISSING_RUNTIME=1 for a validation-only build." >&2
+        exit 1
+    fi
+fi
 chmod +x "$STAGE/安装 Install.command" "$STAGE/卸载 Uninstall.command"
 
 for bundle in "$STAGE/MasterLens.vst3" "$STAGE/MasterLens.component" "$STAGE/MasterLens.app"; do

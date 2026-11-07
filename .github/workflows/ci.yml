@@ -1,0 +1,98 @@
+name: CI (push / PR)
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: masterlens-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  JUCE_TAG: "8.0.15"
+
+jobs:
+  macos:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Fetch JUCE ${{ env.JUCE_TAG }}
+        run: git clone --depth 1 --branch "${JUCE_TAG}" https://github.com/juce-framework/JUCE.git .tools/JUCE
+
+      - name: Prepare codec runtime
+        env:
+          FFMPEG_MACOS_UNIVERSAL_URL: ${{ vars.FFMPEG_MACOS_UNIVERSAL_URL }}
+          FFMPEG_MACOS_UNIVERSAL_SHA256: ${{ vars.FFMPEG_MACOS_UNIVERSAL_SHA256 }}
+        run: scripts/ci-prepare-ffmpeg.sh macos-universal third_party/ffmpeg/macos-universal
+
+      - name: Configure (arm64, fast gate)
+        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -G "Unix Makefiles" -DCMAKE_OSX_ARCHITECTURES=arm64
+
+      - name: Build test targets
+        run: cmake --build build --config Release --target MasterLensDspTest MasterLensCli MasterLensUiShot -j 4
+
+      - name: DSP + codec regression
+        run: ./build/MasterLensDspTest_artefacts/Release/MasterLensDspTest
+
+      - name: Editor layout regression
+        run: python3 scripts/check_ui.py --build-dir build
+
+      - name: FFmpeg test dependency
+        run: |
+          if [ -z "${MASTERLENS_FFMPEG:-}" ]; then command -v ffmpeg || brew install ffmpeg; fi
+
+      - name: File QC integration
+        run: python3 Tests/test_cli.py build/MasterLensCli_artefacts/Release/MasterLensCli
+
+      - name: Independent measurement regression
+        run: python3 Tests/validate_measurements.py build/MasterLensDspTest_artefacts/Release/MasterLensDspTest --output measurement-generated.json
+
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Fetch JUCE ${{ env.JUCE_TAG }}
+        shell: bash
+        run: git clone --depth 1 --branch "${JUCE_TAG}" https://github.com/juce-framework/JUCE.git .tools/JUCE
+
+      - name: Prepare codec runtime
+        shell: bash
+        env:
+          FFMPEG_WINDOWS_X64_URL: ${{ vars.FFMPEG_WINDOWS_X64_URL }}
+          FFMPEG_WINDOWS_X64_SHA256: ${{ vars.FFMPEG_WINDOWS_X64_SHA256 }}
+        run: scripts/ci-prepare-ffmpeg.sh windows-x64 third_party/ffmpeg/windows-x64
+
+      - name: Detect Visual Studio generator
+        shell: pwsh
+        run: |
+          $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
+          $json = & $vswhere -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -format json | ConvertFrom-Json
+          $ver = $json.installationVersion
+          $major = [int](($ver -split '\.')[0])
+          $gen = switch ($major) { 17 { "Visual Studio 17 2022" } default { "Visual Studio 18 2026" } }
+          "VS_GENERATOR=$gen" | Out-File -FilePath $env:GITHUB_ENV -Append
+
+      - name: Configure (x64)
+        run: cmake -S . -B build -G "$env:VS_GENERATOR" -A x64
+
+      - name: Build test targets
+        run: |
+          cmake --build build --config Release --target MasterLensDspTest -j 4
+          cmake --build build --config Release --target MasterLensCli -j 4
+
+      - name: FFmpeg test dependency
+        shell: bash
+        run: |
+          if [ -z "$MASTERLENS_FFMPEG" ]; then choco install ffmpeg -y --no-progress; fi
+
+      - name: DSP + codec regression
+        run: ./build/MasterLensDspTest_artefacts/Release/MasterLensDspTest.exe
+
+      - name: File QC integration
+        run: python Tests/test_cli.py build/MasterLensCli_artefacts/Release/MasterLensCli.exe

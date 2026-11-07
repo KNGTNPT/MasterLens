@@ -1,4 +1,4 @@
-MasterLens 3.0.0 —— 听吧，四种比较，一条基线喵
+MasterLens 3.0.1 —— 编码后端统一，门禁补齐喵
 by BerryStudio · 开发者 KNGTNPT 兰
 =====================================================================
 
@@ -6,6 +6,13 @@ by BerryStudio · 开发者 KNGTNPT 兰
 1. 运行「安装 Install.command」。首次运行未公证版本，可能需要右键 → 打开。
 2. VST3 / AU 复制到用户 Library/Audio/Plug-Ins；独立版放入 ~/Applications。
 3. 重启 DAW，在 BerryStudio 下搜索 MasterLens，并放到母带链最后。
+
+【3.0.1】
+- 编码后端统一：GUI、文件 QC 与 CLI 共用 FFmpegRuntime；发布包优先使用随包运行时，不再要求 Homebrew / PATH；MASTERLENS_FFMPEG 可显式覆盖。
+- 失败分类：缺失 / 无法启动 / 编码失败 / 解码失败 / 超时 / 取消 / 无效输出分别报告；20 s 无输出视为停滞。
+- CLI 支持中文与空格路径；编码菜单、就绪提示与报告显示实际 FFmpeg 版本和后端。
+- 本 prerelease 未包含 ffmpeg 二进制（构建环境无法产出可再分发的 LGPL 运行时）；编码 A/B 仍需本机 ffmpeg，或自行设置 MASTERLENS_FFMPEG。
+- 使用前提：选区等响要先播过那一段。
 
 【3.0.0】
 - 频段独听：频谱页「频段热力」的 10 段，以及低 / 中 / 高三分段，单击即可独听；4 阶 24 dB/oct，不做等响补偿。

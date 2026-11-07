@@ -14,7 +14,7 @@ concurrency:
 
 env:
   JUCE_TAG: "8.0.15"
-  APP_VERSION: "3.0.0"
+  APP_VERSION: "3.0.1"
 
 jobs:
   macos:
@@ -24,6 +24,12 @@ jobs:
 
       - name: Fetch JUCE ${{ env.JUCE_TAG }}
         run: git clone --depth 1 --branch "${JUCE_TAG}" https://github.com/juce-framework/JUCE.git .tools/JUCE
+
+      - name: Prepare codec runtime
+        env:
+          FFMPEG_MACOS_UNIVERSAL_URL: ${{ vars.FFMPEG_MACOS_UNIVERSAL_URL }}
+          FFMPEG_MACOS_UNIVERSAL_SHA256: ${{ vars.FFMPEG_MACOS_UNIVERSAL_SHA256 }}
+        run: scripts/ci-prepare-ffmpeg.sh macos-universal third_party/ffmpeg/macos-universal
 
       - name: Configure
         run: >
@@ -47,7 +53,10 @@ jobs:
           if-no-files-found: warn
 
       - name: FFmpeg test dependency
-        run: command -v ffmpeg || brew install ffmpeg
+        run: |
+          if [ -z "${MASTERLENS_FFMPEG:-}" ]; then
+            command -v ffmpeg || brew install ffmpeg
+          fi
 
       - name: File QC integration
         run: python3 Tests/test_cli.py build/MasterLensCli_artefacts/Release/MasterLensCli
@@ -70,6 +79,29 @@ jobs:
           cp packaging/README-DMG.txt "stage/使用说明 README.txt"
           mkdir -p stage/Licenses
           cp Resources/fonts/OFL.txt stage/Licenses/Geist-OFL.txt
+
+          # Bundled codec runtime: nested binary first, then the bundles (guide §三.7).
+          if [ -n "${MASTERLENS_FFMPEG:-}" ] && [ -f "$MASTERLENS_FFMPEG" ]; then
+            scripts/verify-runtime.sh "$MASTERLENS_FFMPEG" macos-universal
+            for bundle in stage/MasterLens.vst3 stage/MasterLens.component stage/MasterLens.app; do
+              mkdir -p "$bundle/Contents/Resources"
+              cp "$MASTERLENS_FFMPEG" "$bundle/Contents/Resources/ffmpeg"
+              chmod +x "$bundle/Contents/Resources/ffmpeg"
+              codesign --force -s - "$bundle/Contents/Resources/ffmpeg" || true
+            done
+            cp "$MASTERLENS_FFMPEG" stage/ffmpeg
+            chmod +x stage/ffmpeg
+            cp third_party/ffmpeg/macos-universal/FFmpeg-* stage/Licenses/ 2>/dev/null || true
+            cp packaging/THIRD-PARTY-NOTICES.md stage/Licenses/
+            printf '{"present":true,"version":"%s"}\n' "$("$MASTERLENS_FFMPEG" -hide_banner -version | head -1)" > runtime-macos.json
+          elif [ "${ALLOW_MISSING_RUNTIME:-0}" = "1" ]; then
+            echo "::warning::Packaging without the FFmpeg runtime (prerelease validation build)."
+            printf '{"present":false}\n' > runtime-macos.json
+          else
+            echo "::error::FFmpeg runtime required for this package."
+            exit 1
+          fi
+
           chmod +x "stage/安装 Install.command" "stage/卸载 Uninstall.command"
           codesign --force --deep -s - stage/MasterLens.vst3 || true
           codesign --force --deep -s - stage/MasterLens.component || true
@@ -82,7 +114,9 @@ jobs:
       - uses: actions/upload-artifact@v7
         with:
           name: MasterLens-macOS
-          path: MasterLens-${{ env.APP_VERSION }}-macOS.dmg
+          path: |
+            MasterLens-${{ env.APP_VERSION }}-macOS.dmg
+            runtime-macos.json
           if-no-files-found: error
           retention-days: 30
 
@@ -100,6 +134,18 @@ jobs:
       - name: Fetch JUCE ${{ env.JUCE_TAG }}
         shell: bash
         run: git clone --depth 1 --branch "${JUCE_TAG}" https://github.com/juce-framework/JUCE.git .tools/JUCE
+
+      - name: Prepare codec runtime
+        shell: bash
+        env:
+          FFMPEG_WINDOWS_X64_URL: ${{ vars.FFMPEG_WINDOWS_X64_URL }}
+          FFMPEG_WINDOWS_X64_SHA256: ${{ vars.FFMPEG_WINDOWS_X64_SHA256 }}
+          FFMPEG_WINDOWS_ARM64_URL: ${{ vars.FFMPEG_WINDOWS_ARM64_URL }}
+          FFMPEG_WINDOWS_ARM64_SHA256: ${{ vars.FFMPEG_WINDOWS_ARM64_SHA256 }}
+          ARCH: ${{ matrix.arch }}
+        run: |
+          if [ "$ARCH" = "x64" ]; then P=windows-x64; else P=windows-arm64; fi
+          scripts/ci-prepare-ffmpeg.sh "$P" "third_party/ffmpeg/$P"
 
       - name: Detect Visual Studio generator
         shell: pwsh
@@ -138,7 +184,9 @@ jobs:
 
       - name: FFmpeg test dependency (native x64)
         if: matrix.arch == 'x64'
-        run: choco install ffmpeg -y --no-progress
+        run: |
+          if [ -z "$MASTERLENS_FFMPEG" ]; then choco install ffmpeg -y --no-progress; fi
+        shell: bash
 
       - name: File QC integration (native x64)
         if: matrix.arch == 'x64'
@@ -154,16 +202,42 @@ jobs:
           Copy-Item "build/MasterLensCli_artefacts/Release/MasterLensCli.exe" $stage
           New-Item -ItemType Directory -Force -Path "$stage/Licenses" | Out-Null
           Copy-Item "Resources/fonts/OFL.txt" "$stage/Licenses/Geist-OFL.txt"
+
+          $runtime = Join-Path $PWD "third_party/ffmpeg/windows-${{ matrix.arch }}/ffmpeg.exe"
+          if (Test-Path $runtime) {
+            New-Item -ItemType Directory -Force -Path "$stage/ffmpeg" | Out-Null
+            Copy-Item $runtime "$stage/ffmpeg/ffmpeg.exe"
+            $vstRes = Join-Path $stage "MasterLens.vst3/Contents/Resources/ffmpeg"
+            New-Item -ItemType Directory -Force -Path $vstRes | Out-Null
+            Copy-Item $runtime "$vstRes/ffmpeg.exe"
+            Copy-Item "packaging/THIRD-PARTY-NOTICES.md" "$stage/Licenses/"
+            Copy-Item "third_party/ffmpeg/windows-${{ matrix.arch }}/FFmpeg-*" "$stage/Licenses/" -ErrorAction SilentlyContinue
+            '{"present":true}' | Out-File -Encoding ascii "runtime-windows-${{ matrix.arch }}.json"
+            Write-Host "Bundled FFmpeg runtime staged"
+          } elseif ($env:ALLOW_MISSING_RUNTIME -eq "1") {
+            Write-Host "::warning::Packaging without the FFmpeg runtime (prerelease validation build)."
+            '{"present":false}' | Out-File -Encoding ascii "runtime-windows-${{ matrix.arch }}.json"
+          } else {
+            throw "FFmpeg runtime required for this package"
+          }
+
           "STAGE_DIR=$stage" | Out-File -FilePath $env:GITHUB_ENV -Append
 
       - name: Build installer (NSIS)
         shell: pwsh
         run: |
           $out = Join-Path $PWD "MasterLens-${{ env.APP_VERSION }}-Windows-${{ matrix.arch }}.exe"
-          # -WX turns NSIS warning 6000 (unknown variable) into a build failure.
-          & "${env:ProgramFiles(x86)}\NSIS\makensis.exe" -WX /V2 `
-            "/DVERSION=${{ env.APP_VERSION }}" "/DARCH=${{ matrix.arch }}" `
-            "/DSTAGE=$env:STAGE_DIR" "/DOUTFILE=$out" "packaging/installer.nsi"
+          $argsList = @(
+            "-WX",
+            "/V2",
+            "/DVERSION=${{ env.APP_VERSION }}",
+            "/DARCH=${{ matrix.arch }}",
+            "/DSTAGE=$env:STAGE_DIR",
+            "/DOUTFILE=$out",
+            "packaging/installer.nsi"
+          )
+          if ($env:ALLOW_MISSING_RUNTIME -eq "1") { $argsList = @($argsList[0..4]) + "/DALLOW_MISSING_RUNTIME=1" + $argsList[5] }
+          & "${env:ProgramFiles(x86)}\NSIS\makensis.exe" @argsList
           if (!(Test-Path $out)) { throw "NSIS 未生成安装包" }
 
       - name: Installer smoke test (native x64)
@@ -178,13 +252,27 @@ jobs:
           $standalone = Join-Path $env:ProgramFiles "MasterLens\MasterLens.exe"
           if (!(Test-Path $vst3)) { throw "VST3 不在 Common Files: $vst3" }
           if (!(Test-Path $standalone)) { throw "独立版不在 Program Files: $standalone" }
+
+          $runtime = Join-Path $env:ProgramFiles "MasterLens\ffmpeg\ffmpeg.exe"
+          $vstRuntime = Join-Path $env:CommonProgramFiles "VST3\MasterLens.vst3\Contents\Resources\ffmpeg\ffmpeg.exe"
+          if (Test-Path $runtime) {
+            & $runtime -hide_banner -version | Select-Object -First 1
+            if (!(Test-Path $vstRuntime)) { throw "VST3 bundle is missing its FFmpeg runtime" }
+            Write-Host "Bundled runtime verified: $runtime"
+          } elseif ($env:ALLOW_MISSING_RUNTIME -ne "1") {
+            throw "FFmpeg runtime missing after install"
+          } else {
+            Write-Host "::warning::Installed package has no bundled FFmpeg runtime (prerelease)."
+          }
           Write-Host "Installed VST3: $vst3"
           Write-Host "Installed standalone: $standalone"
 
       - uses: actions/upload-artifact@v7
         with:
           name: MasterLens-Windows-${{ matrix.arch }}
-          path: MasterLens-${{ env.APP_VERSION }}-Windows-${{ matrix.arch }}.exe
+          path: |
+            MasterLens-${{ env.APP_VERSION }}-Windows-${{ matrix.arch }}.exe
+            runtime-windows-${{ matrix.arch }}.json
           if-no-files-found: error
           retention-days: 30
 
@@ -208,7 +296,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          test "$RELEASE_TAG" = "v${APP_VERSION}"
+          test "$RELEASE_TAG" = "v${APP_VERSION}" || [[ "$RELEASE_TAG" == "v${APP_VERSION}-"* ]]
           cd release
           for asset in "MasterLens-${APP_VERSION}-macOS.dmg" "MasterLens-${APP_VERSION}-Windows-x64.exe" "MasterLens-${APP_VERSION}-Windows-ARM64.exe"; do
             test -s "$asset"
@@ -218,7 +306,33 @@ jobs:
           case "$RELEASE_TAG" in
             *-*) PRERELEASE="--prerelease" ;;
           esac
+
+          NOTES="../docs/release-${APP_VERSION}.md"
+          test -f "$NOTES" || { echo "::error::missing release notes: $NOTES"; exit 1; }
+
+          RUNTIME_MISSING=0
+          shopt -s nullglob
+          for report in runtime-*.json; do
+            if grep -q '"present": *false' "$report"; then RUNTIME_MISSING=1; fi
+          done
+          shopt -u nullglob
+
+          if [ "$RUNTIME_MISSING" = "1" ]; then
+            case "$RELEASE_TAG" in
+              *-*)
+                cp "$NOTES" notes.md
+                printf '\n\n> **Prerelease note:** this build was produced without a bundled FFmpeg runtime, so AAC/MP3 codec A/B needs a local ffmpeg or a build with the runtime. The runtime packaging and release gate are implemented; the binary is the only missing piece.\n' >> notes.md
+                NOTES="notes.md"
+                echo "::warning::Publishing prerelease without bundled FFmpeg runtime."
+                ;;
+              *)
+                echo "::error::Stable release is missing the bundled FFmpeg runtime."
+                exit 1
+                ;;
+            esac
+          fi
+
           gh release create "$RELEASE_TAG" *.dmg *.exe SHA256SUMS.txt \
             --verify-tag --title "MasterLens ${APP_VERSION}" \
             $PRERELEASE \
-            --notes-file ../docs/release-3.0.0.md
+            --notes-file "$NOTES"

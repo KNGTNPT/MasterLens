@@ -1,11 +1,11 @@
 ; MasterLens Windows installer (NSIS)
 ; 由 CI 调用：
-;   makensis /DVERSION=3.0.0 /DARCH=x64 /DSTAGE=<abs stage> /DOUTFILE=<abs out> packaging/installer.nsi
+;   makensis /DVERSION=3.0.1 /DARCH=x64 /DSTAGE=<abs stage> /DOUTFILE=<abs out> packaging/installer.nsi
 Unicode true
 !include "MUI2.nsh"
 
 !ifndef VERSION
-  !define VERSION "3.0.0"
+  !define VERSION "3.0.1"
 !endif
 !ifndef ARCH
   !define ARCH "x64"
@@ -15,6 +15,15 @@ Unicode true
 !endif
 !ifndef OUTFILE
   !define OUTFILE "MasterLens-${VERSION}-Windows-${ARCH}.exe"
+!endif
+
+; The release package must contain the FFmpeg runtime (guide §三 / §六).
+!if /FILEEXISTS "${STAGE}\ffmpeg\ffmpeg.exe"
+  !define HAVE_FFMPEG
+!else
+  !ifndef ALLOW_MISSING_RUNTIME
+    !error "FFmpeg runtime missing in ${STAGE}\ffmpeg. Run scripts/fetch-ffmpeg.sh first, or pass /DALLOW_MISSING_RUNTIME=1 for a validation-only build."
+  !endif
 !endif
 
 Name "MasterLens ${VERSION} — BerryStudio (${ARCH})"
@@ -44,6 +53,11 @@ Section "MasterLens (VST3 + Standalone + CLI)"
   File "${STAGE}\MasterLens.exe"
   File "${STAGE}\MasterLensCli.exe"
 
+!ifdef HAVE_FFMPEG
+  SetOutPath "$INSTDIR\ffmpeg"
+  File "${STAGE}\ffmpeg\ffmpeg.exe"
+!endif
+
   SetOutPath "$INSTDIR\Licenses"
   File /r "${STAGE}\Licenses\*.*"
 
@@ -56,5 +70,6 @@ Section "Uninstall"
   Delete "$INSTDIR\MasterLensCli.exe"
   Delete "$INSTDIR\Uninstall.exe"
   RMDir /r "$INSTDIR\Licenses"
+  RMDir /r "$INSTDIR\ffmpeg"
   RMDir "$INSTDIR"
 SectionEnd
