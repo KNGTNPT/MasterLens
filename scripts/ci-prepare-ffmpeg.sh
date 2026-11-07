@@ -55,9 +55,14 @@ if [ -n "${!URL_VAR:-}" ] && [ -n "${!SHA_VAR:-}" ]; then
     exit 0
 fi
 
-if [ "${GITHUB_REF_TYPE:-}" = "tag" ] && [ "${GITHUB_REF_NAME:-}" != *-* ]; then
-    echo "::error::Stable releases require $URL_VAR and $SHA_VAR (LGPL FFmpeg archive)."
-    exit 1
+if [ "${GITHUB_REF_TYPE:-}" = "tag" ]; then
+    case "${GITHUB_REF_NAME:-}" in
+        *-*) : ;;
+        *)
+            echo "::error::Stable releases require $URL_VAR and $SHA_VAR (LGPL FFmpeg archive)."
+            exit 1
+            ;;
+    esac
 fi
 
 echo "::warning::No FFmpeg runtime configured; development build will use system ffmpeg for tests."
