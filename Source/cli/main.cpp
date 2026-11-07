@@ -7,9 +7,40 @@
 #include "file/FileAnalyzer.h"
 #include "file/DeliverySpec.h"
 #include "file/CodecCheck.h"
+#include "file/FFmpegRuntime.h"
+
+#if JUCE_WINDOWS
+ #include <windows.h>
+ #include <shellapi.h>
+#endif
 
 namespace
 {
+/** UTF-8 safe argv access: Windows main() hands over the ANSI code page, so a
+    Chinese or space-containing path would otherwise arrive as mojibake. */
+juce::StringArray commandLineArguments (int argc, char** argv)
+{
+    juce::StringArray out;
+
+#if JUCE_WINDOWS
+    int wideCount = 0;
+
+    if (auto** wide = CommandLineToArgvW (GetCommandLineW(), &wideCount))
+    {
+        for (int i = 0; i < wideCount; ++i)
+            out.add (juce::String (wide[i]));
+
+        LocalFree (wide);
+        return out;
+    }
+#endif
+
+    for (int i = 0; i < argc; ++i)
+        out.add (juce::String::fromUTF8 (argv[i]));
+
+    return out;
+}
+
 bool number (const char* text, float& out)
 {
     char* end = nullptr;
@@ -23,14 +54,17 @@ bool number (const char* text, float& out)
 
 int main (int argc, char** argv)
 {
+    const auto arguments = commandLineArguments (argc, argv);
+    const int argumentCount = arguments.size();
+
     juce::StringArray paths;
     juce::String jsonPath, failOn, specPath, codec;
     bool csv = false, options = true;
     float target = -14.0f, ceiling = -1.0f;
     ml::DeliverySpec deliverySpec;
-    for (int i = 1; i < argc; ++i)
+    for (int i = 1; i < argumentCount; ++i)
     {
-        const juce::String arg (argv[i]);
+        const juce::String arg = arguments[i];
         if (options && (arg == "--help" || arg == "-h"))
         {
             std::printf ("MasterLens CLI %s\n"
@@ -42,7 +76,8 @@ int main (int argc, char** argv)
                          "  --fail-on error     Exit 2 for QC blockers / peaks over ceiling\n"
                          "  --fail-on warning   Also fail on review findings / mono loss >= 6 dB\n"
                          "  --spec spec.json    Client sample-rate / bit-depth / loudness / naming spec\n"
-                         "  --codec aac|mp3     Optional ffmpeg round-trip true-peak recheck\n"
+                         "  --codec aac|mp3     Round-trip through the bundled FFmpeg runtime\n"
+                         "                      (dev builds: set MASTERLENS_FFMPEG or ALLOW_SYSTEM_FFMPEG=1)\n"
                          "  --                  End options (for paths starting with -)\n"
                          "Exit 0=analysed, 1=input / decode / report error, 2=QC gate failed.\n"
                          "Gain budgets estimate constant gain only; no audio is written.\n", ml::kVersion);
@@ -54,12 +89,12 @@ int main (int argc, char** argv)
         if (options && (arg == "--json" || arg == "--target" || arg == "--ceiling"
                         || arg == "--fail-on" || arg == "--spec" || arg == "--codec"))
         {
-            if (++i >= argc) { std::fprintf (stderr, "Missing value for %s\n", arg.toRawUTF8()); return 1; }
-            if (arg == "--json") jsonPath = argv[i];
-            else if (arg == "--fail-on") failOn = argv[i];
-            else if (arg == "--spec") specPath = argv[i];
-            else if (arg == "--codec") codec = argv[i];
-            else if (! number (argv[i], arg == "--target" ? target : ceiling))
+            if (++i >= argumentCount) { std::fprintf (stderr, "Missing value for %s\n", arg.toRawUTF8()); return 1; }
+            if (arg == "--json") jsonPath = arguments[i];
+            else if (arg == "--fail-on") failOn = arguments[i];
+            else if (arg == "--spec") specPath = arguments[i];
+            else if (arg == "--codec") codec = arguments[i];
+            else if (! number (arguments[i].toRawUTF8(), arg == "--target" ? target : ceiling))
             { std::fprintf (stderr, "Invalid number for %s\n", arg.toRawUTF8()); return 1; }
             continue;
         }
@@ -124,6 +159,10 @@ int main (int argc, char** argv)
 
     if (codec.isNotEmpty())
     {
+        auto& runtime = ml::FFmpegRuntime::get();
+        runtime.resolve();
+        std::fprintf (stderr, "Codec backend: %s\n", runtime.getStatusText().toRawUTF8());
+
         const auto tempDir = juce::File::getSpecialLocation (juce::File::tempDirectory);
         for (const auto& r : results)
         {
@@ -149,6 +188,8 @@ int main (int argc, char** argv)
             o->setProperty ("decodedPath", cc.decodedPath);
             o->setProperty ("integratedLufs", cc.integratedLufs);
             o->setProperty ("truePeakDbtp", cc.truePeakDbtp);
+            o->setProperty ("backend", cc.backend);
+            o->setProperty ("ffmpegVersion", cc.ffmpegVersion);
             codecChecks.add (juce::var (o));
         }
     }

@@ -83,6 +83,10 @@ public:
     bool applyCodecReadyForSnapshot (const juce::String& label, float lufs, float tp,
                                      juce::int64 bytes);
 
+    /** Headless evidence for the encoding / failure states. */
+    void applyCodecEncodingForSnapshot (bool aac);
+    void applyCodecFailureForSnapshot (const juce::String& error);
+
     void writeReportPdfForSnapshot (const juce::File& file)
     {
         const auto pdf = buildReportPdf();

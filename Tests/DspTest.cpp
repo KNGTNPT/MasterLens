@@ -16,12 +16,33 @@
 #include "file/FileAnalyzer.h"
 #include "file/DeliverySpec.h"
 #include "file/CodecCheck.h"
+#include "file/FFmpegRuntime.h"
 #include "Delivery.h"
 #include "album/AlbumSession.h"
 
 #include <juce_audio_formats/juce_audio_formats.h>
 
+#include <cstdlib>
+
+#if ! JUCE_WINDOWS
+ #include <sys/stat.h>
+ #include <unistd.h>
+#endif
+
 static int failures = 0;
+static int skipped = 0;
+
+static void setEnv (const char* name, const char* value)
+{
+#if JUCE_WINDOWS
+    _putenv_s (name, value != nullptr ? value : "");
+#else
+    if (value == nullptr || *value == '\0')
+        unsetenv (name);
+    else
+        setenv (name, value, 1);
+#endif
+}
 
 static void check (const juce::String& name, double actual, double expected, double tolerance)
 {
@@ -1301,34 +1322,147 @@ int main (int argc, char** argv)
             }
         }
 
+        auto& runtime = ml::FFmpegRuntime::get();
+        runtime.resolve();
+        const bool runtimeOk = runtime.isAvailable();
+        const bool requireRuntime = ml::FFmpegRuntime::runtimeRequiredForRelease();
         const auto parent = juce::File::getSpecialLocation (juce::File::tempDirectory)
                                 .getChildFile ("MasterLensCodecTest");
-        auto preview = ml::createCodecPreview (source, "aac", parent);
 
-        if (! preview.ok)
+        if (! runtimeOk)
         {
-            // ffmpeg is an optional local dependency: report why we skipped
-            // instead of failing the DSP suite on machines without it.
-            std::printf ("codec preview            skipped: %s\n",
-                         preview.error.toRawUTF8());
+            if (requireRuntime)
+                check ("bundled ffmpeg runtime", 0.0, 1.0, 0.0);
+            else
+            {
+                ++skipped;
+                std::printf ("codec runtime            skipped: %s\n",
+                             runtime.getStatusText().toRawUTF8());
+            }
         }
         else
         {
-            check ("codec preview ok", 1.0, 1.0, 0.0);
-            check ("codec preview bytes", preview.encodedBytes > 0 ? 1.0 : 0.0, 1.0, 0.0);
+            std::printf ("codec runtime            %s\n", runtime.getStatusText().toRawUTF8());
 
-            const auto measured = ml::measureFileRangeLufs (preview.decodedFile, 0.0, 4.0);
-            check ("codec decoded measurable", measured.ok ? 1.0 : 0.0, 1.0, 0.0);
-            check ("codec delta <= 0.6 LU", std::abs (measured.lufs + 20.0) <= 0.6 ? 1.0 : 0.0,
+            auto aac = ml::createCodecPreview (source, "aac", parent);
+            check ("codec aac preview ok", aac.ok ? 1.0 : 0.0, 1.0, 0.0);
+
+            if (aac.ok)
+            {
+                check ("codec aac bytes", aac.encodedBytes > 100 ? 1.0 : 0.0, 1.0, 0.0);
+                check ("codec aac backend", aac.backend.isNotEmpty() ? 1.0 : 0.0, 1.0, 0.0);
+
+                const auto measured = ml::measureFileRangeLufs (aac.decodedFile, 0.0, 4.0);
+                check ("codec aac measurable", measured.ok ? 1.0 : 0.0, 1.0, 0.0);
+                check ("codec aac delta <= 0.6 LU", std::abs (measured.lufs + 20.0) <= 0.6 ? 1.0 : 0.0,
+                       1.0, 0.0);
+            }
+
+            if (aac.workDirectory != juce::File())
+                aac.workDirectory.deleteRecursively();
+
+            if (runtime.supports ("mp3"))
+            {
+                auto mp3 = ml::createCodecPreview (source, "mp3", parent);
+                check ("codec mp3 preview ok", mp3.ok ? 1.0 : 0.0, 1.0, 0.0);
+
+                if (mp3.ok)
+                {
+                    check ("codec mp3 bytes", mp3.encodedBytes > 100 ? 1.0 : 0.0, 1.0, 0.0);
+                    check ("codec mp3 container", mp3.container == "mp3" ? 1.0 : 0.0, 1.0, 0.0);
+                }
+
+                if (mp3.workDirectory != juce::File())
+                    mp3.workDirectory.deleteRecursively();
+            }
+            else
+            {
+                ++skipped;
+                std::printf ("codec mp3                skipped: encoder not in this runtime\n");
+            }
+
+            // Unicode / spaces in every path.
+            const auto spacedDir = juce::File::getSpecialLocation (juce::File::tempDirectory)
+                                       .getChildFile (juce::String::fromUTF8 ("MasterLens 编码 测试"));
+            spacedDir.createDirectory();
+            const auto spaced = spacedDir.getChildFile (juce::String::fromUTF8 ("素材 01.wav"));
+            source.copyFileTo (spaced);
+
+            auto spacedPreview = ml::createCodecPreview (spaced, "aac", parent);
+            check ("codec unicode path", spacedPreview.ok ? 1.0 : 0.0, 1.0, 0.0);
+
+            if (spacedPreview.workDirectory != juce::File())
+                spacedPreview.workDirectory.deleteRecursively();
+
+            spaced.deleteFile();
+            spacedDir.deleteRecursively();
+
+            // Corrupt input must be an error, never a pass.
+            const auto corrupt = juce::File::getSpecialLocation (juce::File::tempDirectory)
+                                     .getChildFile ("masterlens-codec-corrupt.wav");
+            corrupt.replaceWithText ("not a wav");
+            auto bad = ml::createCodecPreview (corrupt, "aac", parent);
+            check ("codec corrupt input fails", bad.ok ? 0.0 : 1.0, 1.0, 0.0);
+
+            if (bad.workDirectory != juce::File())
+                bad.workDirectory.deleteRecursively();
+
+            corrupt.deleteFile();
+
+            // An explicit but unusable runtime must fail loudly, with no PATH fallback.
+            setEnv ("MASTERLENS_FFMPEG", "/nonexistent/ffmpeg");
+            runtime.refresh();
+            auto invalid = ml::createCodecPreview (source, "aac", parent);
+            check ("codec invalid runtime fails", invalid.ok ? 0.0 : 1.0, 1.0, 0.0);
+            check ("codec invalid runtime report",
+                   invalid.error.containsIgnoreCase ("ffmpeg unavailable") ? 1.0 : 0.0, 1.0, 0.0);
+
+            if (invalid.workDirectory != juce::File())
+                invalid.workDirectory.deleteRecursively();
+
+            setEnv ("MASTERLENS_FFMPEG", nullptr);
+            runtime.refresh();
+
+            // A runtime that answers the probes but hangs on encode must time out.
+#if ! JUCE_WINDOWS
+            const auto fake = juce::File::getSpecialLocation (juce::File::tempDirectory)
+                                  .getChildFile ("masterlens-hung-ffmpeg");
+            fake.replaceWithText ("#!/bin/sh\n"
+                                  "for a in \"$@\"; do\n"
+                                  "  if [ \"$a\" = \"-version\" ]; then\n"
+                                  "    echo 'ffmpeg version 0.0-test'; echo 'configuration: --disable-gpl'; exit 0\n"
+                                  "  fi\n"
+                                  "  if [ \"$a\" = \"-encoders\" ]; then\n"
+                                  "    echo ' A....D aac native AAC encoder'; echo ' A....D libmp3lame libmp3lame MP3'; exit 0\n"
+                                  "  fi\n"
+                                  "done\n"
+                                  "exec sleep 10\n",
+                                  false, false, "\n");
+            const int chmodResult = ::chmod (fake.getFullPathName().toRawUTF8(), 0755);
+            juce::ignoreUnused (chmodResult);
+            setEnv ("MASTERLENS_FFMPEG", fake.getFullPathName().toRawUTF8());
+            setEnv ("MASTERLENS_CODEC_TIMEOUT_MS", "100");
+            runtime.refresh();
+
+            auto slow = ml::createCodecPreview (source, "aac", parent);
+            check ("codec timeout fails", slow.ok ? 0.0 : 1.0, 1.0, 0.0);
+            check ("codec timeout classified", slow.error.containsIgnoreCase ("timeout") ? 1.0 : 0.0,
                    1.0, 0.0);
-        }
 
-        if (preview.workDirectory != juce::File())
-            preview.workDirectory.deleteRecursively();
+            if (slow.workDirectory != juce::File())
+                slow.workDirectory.deleteRecursively();
+
+            setEnv ("MASTERLENS_CODEC_TIMEOUT_MS", nullptr);
+            setEnv ("MASTERLENS_FFMPEG", nullptr);
+            runtime.refresh();
+            fake.deleteFile();
+#endif
+        }
 
         source.deleteFile();
     }
 
-    std::printf ("\n%s\n", failures == 0 ? "ALL CHECKS PASSED" : "SOME CHECKS FAILED");
+    std::printf ("\n%s (%d failed, %d skipped)\n",
+                 failures == 0 ? "ALL CHECKS PASSED" : "SOME CHECKS FAILED", failures, skipped);
     return failures == 0 ? 0 : 1;
 }

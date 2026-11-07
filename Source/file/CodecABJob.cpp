@@ -33,6 +33,8 @@ void CodecABJob::start (const juce::File& source, const juce::String& codec)
 
     busy.store (true, std::memory_order_release);
     pending.store (true, std::memory_order_release);
+    cancelFlag.store (false, std::memory_order_release);
+    progress.store (0.0, std::memory_order_relaxed);
     request.fetch_add (1, std::memory_order_acq_rel);
 
     if (! isThreadRunning())
@@ -44,6 +46,7 @@ void CodecABJob::start (const juce::File& source, const juce::String& codec)
 void CodecABJob::cancel()
 {
     pending.store (false, std::memory_order_release);
+    cancelFlag.store (true, std::memory_order_release);
     request.fetch_add (1, std::memory_order_acq_rel);
     busy.store (false, std::memory_order_release);
 
@@ -55,6 +58,7 @@ void CodecABJob::cancel()
 void CodecABJob::clear()
 {
     cancel();
+    cancelFlag.store (true, std::memory_order_release);
     signalThreadShouldExit();
     notify();
     stopThread (4000);
@@ -119,21 +123,43 @@ void CodecABJob::run()
 
         const auto parent = juce::File::getSpecialLocation (juce::File::tempDirectory)
                                 .getChildFile ("MasterLensCodec");
-        auto preview = createCodecPreview (source, codec, parent);
 
-        if (request.load() != serial)
+        double duration = 0.0;
+        {
+            juce::AudioFormatManager formats;
+            formats.registerBasicFormats();
+            std::unique_ptr<juce::AudioFormatReader> reader (formats.createReaderFor (source));
+
+            if (reader != nullptr && reader->sampleRate > 0.0)
+                duration = (double) reader->lengthInSamples / reader->sampleRate;
+        }
+
+        auto preview = createCodecPreview (source, codec, parent, &cancelFlag, duration,
+                                           [this] (double fraction)
+                                           {
+                                               progress.store (fraction, std::memory_order_relaxed);
+                                           });
+
+        if (request.load() != serial || cancelFlag.load (std::memory_order_acquire))
         {
             if (preview.workDirectory != juce::File())
                 preview.workDirectory.deleteRecursively();
 
+            const juce::SpinLock::ScopedLockType sl (lock);
+            statusText = "cancelled";
+            busy.store (false, std::memory_order_release);
             continue;
         }
+
+        progress.store (1.0, std::memory_order_relaxed);
 
         CodecABResult measured;
         measured.codec = preview.codec;
         measured.label = preview.codec == "aac" ? "AAC 256k" : "MP3 320k";
         measured.decodedFile = preview.decodedFile;
         measured.encodedBytes = preview.encodedBytes;
+        measured.backend = preview.backend;
+        measured.ffmpegVersion = preview.ffmpegVersion;
 
         if (! preview.ok)
         {

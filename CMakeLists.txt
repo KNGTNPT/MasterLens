@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.22)
 
-project(MasterLens VERSION 3.0.0 LANGUAGES C CXX)
+project(MasterLens VERSION 3.0.1 LANGUAGES C CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -29,7 +29,7 @@ if(MASTERLENS_ENABLE_INSPECTOR)
 endif()
 
 juce_add_plugin(MasterLens
-    VERSION 3.0.0
+    VERSION 3.0.1
     COMPANY_NAME "BerryStudio"
     BUNDLE_ID "com.berrystudio.masterlens"
     PLUGIN_MANUFACTURER_CODE OrcA
@@ -68,6 +68,7 @@ set(MASTERLENS_SOURCES
     Source/EditorSelectionMatch.cpp
     Source/EditorCodecAB.cpp
     Source/file/CodecPreview.cpp
+    Source/file/FFmpegRuntime.cpp
     Source/file/CodecABJob.cpp
 
     Source/EditorPaint.cpp
@@ -158,6 +159,7 @@ target_sources(MasterLensDspTest PRIVATE
     Source/audio/StreamingPreviewPlayer.cpp
     Source/audio/FilePreviewPlayer.cpp
     Source/file/CodecPreview.cpp
+    Source/file/FFmpegRuntime.cpp
     Source/file/FileAnalyzer.cpp
     Source/file/FileForensics.cpp
     Source/file/FileReport.cpp
@@ -197,9 +199,16 @@ target_sources(MasterLensCli PRIVATE
     Source/file/FileReport.cpp
     Source/file/DeliverySpec.cpp
     Source/file/CodecCheck.cpp
+    Source/file/CodecPreview.cpp
+    Source/file/FFmpegRuntime.cpp
 )
 
 target_include_directories(MasterLensCli PRIVATE Source)
+
+if (WIN32)
+    # CommandLineToArgvW for UTF-8 safe CLI paths
+    target_link_libraries(MasterLensCli PRIVATE shell32)
+endif()
 
 target_compile_definitions(MasterLensCli PRIVATE
     JUCE_WEB_BROWSER=0

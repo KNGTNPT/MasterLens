@@ -184,11 +184,11 @@ void AboutPanel::paint (juce::Graphics& g)
     inner.removeFromBottom (12);
     g.drawFittedText (T ("测量标准：ITU-R BS.1770-4 · EBU R128 · EBU Tech 3342\n"
                          "真峰值 192 kHz 插值基准 · 零延迟 · 不修改音频\n"
-                         "选区等响需先播放该段 · 编码 A/B 需本机 ffmpeg\n"
+                         "选区等响需先播放该段 · 编码 A/B 使用随包 FFmpeg\n"
                          "Built with JUCE 8",
                          "Standards: ITU-R BS.1770-4 · EBU R128 · EBU Tech 3342\n"
                          "True peak at a 192 kHz target · zero latency · never alters audio\n"
-                         "Selection match needs the section played first · codec A/B needs local ffmpeg\n"
+                         "Selection match needs the section played first · codec A/B uses the bundled FFmpeg\n"
                          "Built with JUCE 8"),
                       inner, juce::Justification::topLeft, 5);
 }

@@ -1,20 +1,26 @@
 #include "CodecCheck.h"
-#include "FileAnalyzer.h"
+
+#include <juce_audio_formats/juce_audio_formats.h>
 #include <juce_cryptography/juce_cryptography.h>
+
+#include "FFmpegRuntime.h"
+#include "FileAnalyzer.h"
 
 namespace ml
 {
 namespace
 {
-juce::String findFfmpeg()
+double sourceDuration (const juce::File& file)
 {
-    for (const auto& candidate : { "/opt/homebrew/bin/ffmpeg", "/usr/local/bin/ffmpeg" })
-        if (juce::File (candidate).existsAsFile())
-            return candidate;
+    juce::AudioFormatManager formats;
+    formats.registerBasicFormats();
+    std::unique_ptr<juce::AudioFormatReader> reader (formats.createReaderFor (file));
 
-    return "ffmpeg";
+    if (reader == nullptr || reader->sampleRate <= 0.0)
+        return 0.0;
+
+    return (double) reader->lengthInSamples / reader->sampleRate;
 }
-
 } // namespace
 
 CodecCheckResult runCodecCheck (const juce::File& input, const juce::String& codec,
@@ -35,45 +41,49 @@ CodecCheckResult runCodecCheck (const juce::File& input, const juce::String& cod
         return r;
     }
 
-    r.sourceSha256 = juce::SHA256 (input).toHexString();
-    outputDirectory.createDirectory();
-    const auto work = outputDirectory.getNonexistentChildFile ("masterlens-codec", "", false);
-    if (! work.createDirectory()) { r.error = "temporary directory unavailable"; return r; }
-    struct Cleanup { juce::File path; ~Cleanup() { path.deleteRecursively(); } } cleanup { work };
-    const auto encoded = work.getChildFile (r.codec == "aac" ? "encoded.m4a" : "encoded.mp3");
-    const auto out = work.getChildFile ("decoded.wav");
-    const auto executable = juce::SystemStats::getEnvironmentVariable ("MASTERLENS_FFMPEG", findFfmpeg());
-    const auto execute = [&] (juce::StringArray args, const char* stage)
+    auto& runtime = FFmpegRuntime::get();
+    runtime.resolve();
+    r.backend = runtime.getSource();
+    r.ffmpegVersion = runtime.getCapabilities().version;
+
+    if (! runtime.isAvailable())
     {
-        juce::ChildProcess process;
-        if (! process.start (args, 0)) { r.error = juce::String (stage) + ": ffmpeg unavailable"; return false; }
-        const int timeout = juce::jlimit (100, 120000, juce::SystemStats::getEnvironmentVariable (
-            "MASTERLENS_CODEC_TIMEOUT_MS", "120000").getIntValue());
-        const double deadline = juce::Time::getMillisecondCounterHiRes() + timeout;
-        while (process.isRunning())
-        {
-            if (juce::Time::getMillisecondCounterHiRes() > deadline)
-            { process.kill(); process.waitForProcessToFinish (1000); r.error = juce::String (stage) + ": timeout"; return false; }
-            juce::Thread::sleep (5);
-        }
-        if (process.getExitCode() != 0)
-        { r.error = juce::String (stage) + ": failed, exit " + juce::String ((int) process.getExitCode()); return false; }
-        return true;
-    };
-    juce::StringArray encode;
-    encode.addArray ({ executable, "-nostdin", "-hide_banner", "-loglevel", "quiet", "-y",
-                      "-i", input.getFullPathName(), "-vn", "-c:a", r.codec == "aac" ? "aac" : "libmp3lame",
-                      "-b:a", r.codec == "aac" ? "256k" : "320k", encoded.getFullPathName() });
-    if (! execute (encode, "encode") || ! encoded.existsAsFile()) return r;
-    r.encodedBytes = encoded.getSize();
+        r.error = "encode: ffmpeg unavailable (" + runtime.getStatusText() + ")";
+        return r;
+    }
+
+    if (! runtime.supports (r.codec))
+    {
+        r.error = "encode: ffmpeg has no " + r.codec + " encoder ("
+                  + runtime.getStatusText() + ")";
+        return r;
+    }
+
+    r.sourceSha256 = juce::SHA256 (input).toHexString();
+
+    auto preview = createCodecPreview (input, r.codec, outputDirectory, nullptr,
+                                       sourceDuration (input));
+
+    struct Cleanup
+    {
+        juce::File path;
+        ~Cleanup() { if (path != juce::File()) path.deleteRecursively(); }
+    } cleanup { preview.workDirectory };
+
+    if (! preview.ok)
+    {
+        r.error = preview.error;
+        return r;
+    }
+
+    const auto encoded = preview.workDirectory.getChildFile (r.codec == "aac" ? "encoded.m4a"
+                                                                             : "encoded.mp3");
+    r.encodedBytes = preview.encodedBytes;
+    r.encodedContainer = preview.container;
     r.encodedSha256 = juce::SHA256 (encoded).toHexString();
-    r.encodedContainer = r.codec == "aac" ? "m4a" : "mp3";
-    juce::StringArray decode;
-    decode.addArray ({ executable, "-nostdin", "-hide_banner", "-loglevel", "quiet", "-y",
-                      "-i", encoded.getFullPathName(), "-vn", "-c:a", "pcm_f32le", out.getFullPathName() });
-    if (! execute (decode, "decode") || ! out.existsAsFile()) return r;
+
     FileAnalyzer analyzer;
-    analyzer.analyse ({ out.getFullPathName() });
+    analyzer.analyse ({ preview.decodedFile.getFullPathName() });
 
     for (int wait = 0; wait < 1200 && analyzer.isBusy(); ++wait)
         juce::Thread::sleep (10);
@@ -87,8 +97,13 @@ CodecCheckResult runCodecCheck (const juce::File& input, const juce::String& cod
     }
 
     r.decodedSha256 = results[0].forensic.sha256;
+
     if (! input.existsAsFile() || juce::SHA256 (input).toHexString() != r.sourceSha256)
-    { r.error = "source changed during codec check"; return r; }
+    {
+        r.error = "source changed during codec check";
+        return r;
+    }
+
     r.ok = true;
     r.integratedLufs = results[0].stats.integrated;
     r.truePeakDbtp = results[0].stats.truePeakDb;

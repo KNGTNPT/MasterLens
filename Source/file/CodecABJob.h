@@ -18,6 +18,8 @@ struct CodecABResult
     juce::int64 encodedBytes = 0;
     float decodedLufs = kSilentDb;
     float decodedTp = kSilentDb;
+    juce::String backend;
+    juce::String ffmpegVersion;
 };
 
 /** Background encode -> decode -> measure for the file QC A/B.
@@ -39,6 +41,7 @@ public:
     void clear();
 
     bool isBusy() const noexcept { return busy.load (std::memory_order_acquire); }
+    double getProgress() const noexcept { return progress.load (std::memory_order_relaxed); }
     juce::String getStatus() const;
     bool takeResult (CodecABResult& out);
     juce::File getDecodedFile() const;
@@ -53,6 +56,8 @@ private:
     juce::String statusText { "idle" };
     std::atomic<bool> busy { false };
     std::atomic<bool> pending { false };
+    std::atomic<bool> cancelFlag { false };
+    std::atomic<double> progress { 0.0 };
     std::atomic<unsigned> request { 0 };
     bool hasResult = false;
     CodecABResult result;

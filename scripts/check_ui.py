@@ -48,6 +48,8 @@ cases += [
     ['page9', 'selectionset', 'size1120'],
     ['page10', 'fileqc', 'codecstate', 'standalone', 'size1120'],
     ['page10', 'fileqc', 'codecstate', 'standalone', 'minsize'],
+    ['page10', 'fileqc', 'codecencoding', 'standalone', 'size1120'],
+    ['page10', 'fileqc', 'codecfail', 'standalone', 'size1120'],
 ]
 def run_case(index, flags):
     tag = f'qa{VERSION.replace(".", "")}_{index:02d}'

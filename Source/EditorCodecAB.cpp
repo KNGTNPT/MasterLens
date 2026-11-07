@@ -1,4 +1,5 @@
 #include "PluginEditor.h"
+#include "file/FFmpegRuntime.h"
 
 using ml::T;
 
@@ -16,6 +17,14 @@ void MasterLensAudioProcessorEditor::showCodecMenu()
 
     juce::PopupMenu menu;
 
+    auto& runtime = ml::FFmpegRuntime::get();
+    runtime.resolve();
+    const bool aacReady = runtime.supports ("aac");
+    const bool mp3Ready = runtime.supports ("mp3");
+
+    menu.addSectionHeader (T ("编码后端 / BACKEND", "CODEC BACKEND"));
+    menu.addItem (100, runtime.getStatusText(), false, false);
+
     if (hasCodecPreview)
     {
         const int side = processor.getCodecSide();
@@ -23,16 +32,19 @@ void MasterLensAudioProcessorEditor::showCodecMenu()
         menu.addItem (2, T ("监听 B 编码后 ", "Monitor B encoded ") + codecResult.label,
                       true, side == 1);
         menu.addSeparator();
-        menu.addItem (3, T ("重新编码 AAC 256k", "Re-encode AAC 256k"));
-        menu.addItem (4, T ("重新编码 MP3 320k", "Re-encode MP3 320k"));
+    }
+
+    menu.addItem (3, T ("编码 AAC 256k", "Encode AAC 256k"), aacReady);
+    menu.addItem (4, T ("编码 MP3 320k", "Encode MP3 320k"), mp3Ready);
+
+    if (! aacReady && ! mp3Ready)
+        menu.addItem (6, T ("编码不可用：", "Codec unavailable: ") + runtime.getStatusText(), false);
+
+    if (hasCodecPreview)
+    {
         menu.addSeparator();
         menu.addItem (5, T ("停止编码 A/B 并删除临时文件",
                             "Stop codec A/B and delete temporary files"));
-    }
-    else
-    {
-        menu.addItem (3, T ("编码 AAC 256k", "Encode AAC 256k"));
-        menu.addItem (4, T ("编码 MP3 320k", "Encode MP3 320k"));
     }
 
     juce::Component::SafePointer<MasterLensAudioProcessorEditor> safe (this);
@@ -71,6 +83,17 @@ void MasterLensAudioProcessorEditor::startCodecAB (const juce::String& codec)
 
     stopCodecAB();
 
+    auto& runtime = ml::FFmpegRuntime::get();
+    runtime.resolve();
+
+    if (! runtime.supports (codec))
+    {
+        footerStatusText = T ("编码不可用：", "Codec unavailable: ") + runtime.getStatusText();
+        footerStatusColour = ml::theme::bad;
+        repaint();
+        return;
+    }
+
     codecSourcePath = selected->path;
     codecSourceLufs = selected->stats.integrated;
     codecSourceTp = selected->stats.truePeakDb;
@@ -79,7 +102,7 @@ void MasterLensAudioProcessorEditor::startCodecAB (const juce::String& codec)
 
     footerStatusText = T ("编码中：", "Encoding: ")
                        + (codec == "aac" ? juce::String ("AAC 256k") : juce::String ("MP3 320k"))
-                       + T (" · 使用本机 ffmpeg", " · local ffmpeg");
+                       + " · " + runtime.getStatusText();
     footerStatusColour = ml::theme::cyan;
     repaint();
 
@@ -104,7 +127,10 @@ void MasterLensAudioProcessorEditor::applyCodecResult (const ml::CodecABResult& 
     footerStatusText = measured.label + T (" 就绪 · ", " ready · ")
                        + T ("ΔLUFS ", "ΔLUFS ") + ml::sgn (measured.decodedLufs - codecSourceLufs, 1)
                        + T (" · ΔTP ", " · ΔTP ") + ml::sgn (measured.decodedTp - codecSourceTp, 1)
-                       + " dB" + T (" · 点按钮或按 B 切换", " · click or press B to switch");
+                       + " dB" + (measured.backend.isNotEmpty()
+                                      ? " · " + measured.backend + " " + measured.ffmpegVersion
+                                      : juce::String())
+                       + T (" · 点按钮或按 B 切换", " · click or press B to switch");
     footerStatusColour = ml::theme::good;
     repaint();
 }
@@ -131,6 +157,25 @@ bool MasterLensAudioProcessorEditor::applyCodecReadyForSnapshot (const juce::Str
 
     applyCodecResult (measured);
     return hasCodecPreview && detail.isCodecABReady();
+}
+
+void MasterLensAudioProcessorEditor::applyCodecEncodingForSnapshot (bool aac)
+{
+    detail.setCodecABState (aac ? T ("编码中 AAC…", "Encoding AAC…")
+                                : T ("编码中 MP3…", "Encoding MP3…"), false);
+    footerStatusText = T ("编码中：", "Encoding: ")
+                       + (aac ? juce::String ("AAC 256k") : juce::String ("MP3 320k"));
+    footerStatusColour = ml::theme::cyan;
+    repaint();
+}
+
+void MasterLensAudioProcessorEditor::applyCodecFailureForSnapshot (const juce::String& error)
+{
+    hasCodecPreview = false;
+    detail.setCodecABState (T ("编码 A/B", "Codec A/B"), true);
+    footerStatusText = T ("编码 A/B 失败：", "Codec A/B failed: ") + error;
+    footerStatusColour = ml::theme::bad;
+    repaint();
 }
 
 void MasterLensAudioProcessorEditor::pollCodecAB()

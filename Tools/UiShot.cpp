@@ -232,6 +232,12 @@ public:
             std::printf ("STATE codec %s\n", ready ? "ready" : "FAILED");
         }
 
+        if (commandLine.containsIgnoreCase ("codecencoding"))
+            editor->applyCodecEncodingForSnapshot (true);
+
+        if (commandLine.containsIgnoreCase ("codecfail"))
+            editor->applyCodecFailureForSnapshot ("encode: ffmpeg unavailable (not bundled)");
+
         // Run the layout assertions after the scenario flags, so pages, overlays
         // and the two 3.0 state machines are all exercised before checking bounds.
         if (commandLine.containsIgnoreCase ("layoutcheck"))

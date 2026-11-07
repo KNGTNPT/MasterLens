@@ -1,93 +1,57 @@
 #include "CodecCheck.h"
 
-#include <juce_cryptography/juce_cryptography.h>
+#include <cmath>
+
+#include <juce_audio_formats/juce_audio_formats.h>
+
+#include "FFmpegRuntime.h"
 
 namespace ml
 {
 namespace
 {
-juce::String findFfmpegExecutable()
+double codecTimeoutSeconds (double durationSeconds)
 {
-    for (const auto& candidate : { "/opt/homebrew/bin/ffmpeg", "/usr/local/bin/ffmpeg" })
-        if (juce::File (candidate).existsAsFile())
-            return candidate;
+    const int envMs = juce::SystemStats::getEnvironmentVariable (
+        "MASTERLENS_CODEC_TIMEOUT_MS", {}).getIntValue();
 
-    return "ffmpeg";
+    if (envMs > 0)
+        return juce::jlimit (0.1, 3600.0, envMs / 1000.0);
+
+    // Long files get more room, but never an unbounded wait.
+    return juce::jlimit (120.0, 3600.0, 120.0 + juce::jmax (0.0, durationSeconds) * 3.0);
 }
 
-/** Resolves a bare executable name through PATH so a missing ffmpeg is reported
-    as unavailable instead of a mysterious exit code from the child process. */
-juce::String resolveExecutable (const juce::String& name)
+bool looksLikeValidWav (const juce::File& file)
 {
-    if (name.isEmpty())
-        return {};
+    if (! file.existsAsFile() || file.getSize() <= 44)
+        return false;
 
-    if (juce::File (name).existsAsFile())
-        return juce::File (name).getFullPathName();
+    juce::AudioFormatManager formats;
+    formats.registerBasicFormats();
+    std::unique_ptr<juce::AudioFormatReader> reader (formats.createReaderFor (file));
 
-    const auto path = juce::SystemStats::getEnvironmentVariable ("PATH", {});
-   #if JUCE_WINDOWS
-    const juce::String separator (";");
-   #else
-    const juce::String separator (":");
-   #endif
-
-    for (const auto& dir : juce::StringArray::fromTokens (path, separator, ""))
-    {
-        if (dir.isEmpty())
-            continue;
-
-        for (const auto& candidate : { name, name + ".exe" })
-        {
-            const juce::File file (juce::File (dir).getChildFile (candidate));
-
-            if (file.existsAsFile())
-                return file.getFullPathName();
-        }
-    }
-
-    return {};
+    return reader != nullptr && reader->lengthInSamples > 0
+           && reader->numChannels >= 1 && reader->numChannels <= 2
+           && std::isfinite (reader->sampleRate) && reader->sampleRate >= 1000.0;
 }
 
-bool runFfmpeg (const juce::StringArray& args, const juce::String& stage, juce::String& error)
+juce::String unavailableMessage()
 {
-    juce::ChildProcess process;
+    const auto status = FFmpegRuntime::get().getStatusText();
 
-    if (! process.start (args, 0))
-    {
-        error = stage + ": ffmpeg unavailable";
-        return false;
-    }
+    if (FFmpegRuntime::runtimeRequiredForRelease())
+        return "encode: required bundled ffmpeg unavailable (" + status + ")";
 
-    const int timeout = juce::jlimit (100, 120000, juce::SystemStats::getEnvironmentVariable (
-        "MASTERLENS_CODEC_TIMEOUT_MS", "120000").getIntValue());
-    const double deadline = juce::Time::getMillisecondCounterHiRes() + timeout;
-
-    while (process.isRunning())
-    {
-        if (juce::Time::getMillisecondCounterHiRes() > deadline)
-        {
-            process.kill();
-            process.waitForProcessToFinish (1000);
-            error = stage + ": timeout";
-            return false;
-        }
-
-        juce::Thread::sleep (5);
-    }
-
-    if (process.getExitCode() != 0)
-    {
-        error = stage + ": failed, exit " + juce::String ((int) process.getExitCode());
-        return false;
-    }
-
-    return true;
+    return "encode: ffmpeg unavailable (" + status + ")";
 }
 } // namespace
 
 CodecPreview createCodecPreview (const juce::File& input, const juce::String& codec,
-                                 const juce::File& parentDirectory)
+                                 const juce::File& parentDirectory,
+                                 const std::atomic<bool>* cancelFlag,
+                                 double durationSeconds,
+                                 const std::function<void (double)>& onProgress)
 {
     CodecPreview preview;
     preview.codec = codec.toLowerCase();
@@ -104,6 +68,24 @@ CodecPreview createCodecPreview (const juce::File& input, const juce::String& co
         return preview;
     }
 
+    auto& runtime = FFmpegRuntime::get();
+    runtime.resolve();
+    preview.backend = runtime.getSource();
+    preview.ffmpegVersion = runtime.getCapabilities().version;
+
+    if (! runtime.isAvailable())
+    {
+        preview.error = unavailableMessage();
+        return preview;
+    }
+
+    if (! runtime.supports (preview.codec))
+    {
+        preview.error = "encode: ffmpeg has no " + preview.codec + " encoder ("
+                        + runtime.getStatusText() + ")";
+        return preview;
+    }
+
     parentDirectory.createDirectory();
     preview.workDirectory = parentDirectory.getNonexistentChildFile ("masterlens-codec", "", false);
 
@@ -116,24 +98,32 @@ CodecPreview createCodecPreview (const juce::File& input, const juce::String& co
     const auto isAac = preview.codec == "aac";
     const auto encoded = preview.workDirectory.getChildFile (isAac ? "encoded.m4a" : "encoded.mp3");
     const auto decoded = preview.workDirectory.getChildFile ("decoded.wav");
-    const auto executable = resolveExecutable (
-        juce::SystemStats::getEnvironmentVariable ("MASTERLENS_FFMPEG", findFfmpegExecutable()));
+    const double timeout = codecTimeoutSeconds (durationSeconds);
 
-    if (executable.isEmpty())
+    const auto progressFor = [durationSeconds, &onProgress] (juce::int64 micros)
     {
-        preview.error = "encode: ffmpeg unavailable";
+        if (onProgress && durationSeconds > 0.0)
+            onProgress (juce::jlimit (0.0, 1.0, (double) micros / 1.0e6 / durationSeconds));
+    };
+
+    juce::StringArray encode;
+    encode.addArray ({ "-y", "-nostdin", "-hide_banner", "-loglevel", "error",
+                       "-nostats", "-progress", "pipe:1",
+                       "-i", input.getFullPathName(), "-vn",
+                       "-c:a", isAac ? "aac" : "libmp3lame",
+                       "-b:a", isAac ? "256k" : "320k",
+                       encoded.getFullPathName() });
+
+    const auto encodeRun = runtime.run (encode, timeout, cancelFlag, progressFor);
+
+    if (! encodeRun.ok)
+    {
+        preview.error = "encode: " + encodeRun.error
+                        + (encodeRun.error == "failed" ? "" : ": " + encodeRun.message);
         return preview;
     }
 
-    juce::StringArray encode;
-    encode.addArray ({ executable, "-nostdin", "-hide_banner", "-loglevel", "quiet", "-y",
-                      "-i", input.getFullPathName(), "-vn", "-c:a", isAac ? "aac" : "libmp3lame",
-                      "-b:a", isAac ? "256k" : "320k", encoded.getFullPathName() });
-
-    if (! runFfmpeg (encode, "encode", preview.error))
-        return preview;
-
-    if (! encoded.existsAsFile())
+    if (! encoded.existsAsFile() || encoded.getSize() <= 0)
     {
         preview.error = "encode: no output";
         return preview;
@@ -143,16 +133,24 @@ CodecPreview createCodecPreview (const juce::File& input, const juce::String& co
     preview.container = isAac ? "m4a" : "mp3";
 
     juce::StringArray decode;
-    decode.addArray ({ executable, "-nostdin", "-hide_banner", "-loglevel", "quiet", "-y",
-                      "-i", encoded.getFullPathName(), "-vn", "-c:a", "pcm_f32le",
-                      decoded.getFullPathName() });
+    decode.addArray ({ "-y", "-nostdin", "-hide_banner", "-loglevel", "error",
+                       "-nostats", "-progress", "pipe:1",
+                       "-i", encoded.getFullPathName(), "-vn",
+                       "-c:a", "pcm_f32le",
+                       decoded.getFullPathName() });
 
-    if (! runFfmpeg (decode, "decode", preview.error))
-        return preview;
+    const auto decodeRun = runtime.run (decode, timeout, cancelFlag, progressFor);
 
-    if (! decoded.existsAsFile())
+    if (! decodeRun.ok)
     {
-        preview.error = "decode: no output";
+        preview.error = "decode: " + decodeRun.error
+                        + (decodeRun.error == "failed" ? "" : ": " + decodeRun.message);
+        return preview;
+    }
+
+    if (! looksLikeValidWav (decoded))
+    {
+        preview.error = "decode: invalid output";
         return preview;
     }
 
