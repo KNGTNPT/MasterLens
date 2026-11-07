@@ -45,7 +45,7 @@
 | CLI | **74 项通过**（0 skipped）；无运行时 → 58 通过 + 1 skipped；`REQUIRE` → 失败 |
 | UI 布局 | **46/46 场景**（每场景先跑 `layoutcheck` 断言再渲染；新增编码中/失败状态） |
 | 编码分类 | 缺失 / 无效 / 超时 / 损坏输入 / Unicode 路径均有断言 |
-| macOS | Universal 构建、DMG 3.0.1、`auval` PASS（aufx Maln OrcA）；DMG SHA-256 `f5969a2a6db552abeeba6f789f7fa2e615c53513e53cb67a09715646bcf18ea3` |
+| macOS | Universal 构建、DMG 3.0.1、`auval` PASS（aufx Maln OrcA）；DMG SHA-256 `dfb5afb0ca2b927ab9a37f3d1effecfeb8b6ef798c1394282fbbe69e1b846644` |
 | 截图 | 8 张（6 主图 + 编码就绪/失败），`docs/screenshots-3.0.1.json` 记录版本、尺寸、参数与 SHA-256 |
 | 运行时验证 | `verify-runtime.sh` 正确拒绝 Homebrew 的 `--enable-gpl` 构建 |
 

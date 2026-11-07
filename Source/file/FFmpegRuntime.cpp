@@ -54,28 +54,48 @@ int captureOutput (const juce::String& executable, const juce::StringArray& argu
     if (! process.start (args, juce::ChildProcess::wantStdOut | juce::ChildProcess::wantStdErr))
         return -1;
 
-    // Probe output is small (< 64 KB pipe buffer), so wait for exit first and then
-    // drain synchronously. A reader thread used to race very short scripts: the
-    // child could exit before the thread performed its first read.
+    // Read concurrently: `-encoders` is larger than the Windows pipe buffer and
+    // would deadlock if the child were allowed to block before we drain it.
+    struct Drain final : juce::Thread
+    {
+        Drain (juce::ChildProcess& p, juce::String& sink)
+            : juce::Thread ("ffmpeg probe"), process (p), output (sink) {}
+
+        void run() override
+        {
+            char buffer[2048];
+
+            for (;;)
+            {
+                const int n = process.readProcessOutput (buffer, (int) sizeof (buffer));
+
+                if (n > 0)
+                {
+                    output << juce::String::fromUTF8 (buffer, n);
+                    continue;
+                }
+
+                if (! process.isRunning())
+                    break;
+            }
+        }
+
+        juce::ChildProcess& process;
+        juce::String& output;
+    };
+
+    Drain drain (process, output);
+    drain.startThread();
+
     if (! process.waitForProcessToFinish (timeoutMs))
     {
         process.kill();
         process.waitForProcessToFinish (1000);
+        drain.stopThread (1000);
         return -2;
     }
 
-    char buffer[4096];
-
-    for (;;)
-    {
-        const int n = process.readProcessOutput (buffer, (int) sizeof (buffer));
-
-        if (n <= 0)
-            break;
-
-        output << juce::String::fromUTF8 (buffer, n);
-    }
-
+    drain.stopThread (2000);
     return (int) process.getExitCode();
 }
 } // namespace
@@ -200,7 +220,7 @@ bool FFmpegRuntime::probe (juce::String& why)
 
     juce::String versionOut;
     const int versionCode = captureOutput (executable.getFullPathName(),
-                                           { "-hide_banner", "-version" }, 8000, versionOut);
+                                           { "-hide_banner", "-version" }, 15000, versionOut);
 
     if (versionCode != 0 || versionOut.isEmpty())
     {
@@ -221,7 +241,7 @@ bool FFmpegRuntime::probe (juce::String& why)
 
     juce::String encoderOut;
     const int encoderCode = captureOutput (executable.getFullPathName(),
-                                           { "-hide_banner", "-encoders" }, 8000, encoderOut);
+                                           { "-hide_banner", "-encoders" }, 15000, encoderOut);
 
     if (encoderCode != 0)
     {
