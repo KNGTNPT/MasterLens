@@ -44,7 +44,9 @@ jobs:
 
       - name: FFmpeg test dependency
         run: |
-          if [ -z "${MASTERLENS_FFMPEG:-}" ]; then command -v ffmpeg || brew install ffmpeg; fi
+          # Independent measurement needs a full ffmpeg; the bundled runtime is
+          # deliberately trimmed and lives behind MASTERLENS_FFMPEG.
+          command -v ffmpeg || brew install ffmpeg
 
       - name: File QC integration
         run: python3 Tests/test_cli.py build/MasterLensCli_artefacts/Release/MasterLensCli
