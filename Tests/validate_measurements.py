@@ -6,7 +6,7 @@ import argparse, array, hashlib, json, math, os, re, shutil, struct, subprocess,
 from pathlib import Path
 p=argparse.ArgumentParser();p.add_argument('probe');p.add_argument('--output',default='docs/measurement-2.3.2.json');p.add_argument('--ebu-dir');a=p.parse_args()
 probe=str(Path(a.probe).resolve()); ffmpeg=shutil.which('ffmpeg')
-if not ffmpeg: raise SystemExit('ffmpeg is required for independent verification')
+if not ffmpeg: raise SystemExit('a full ffmpeg (ebur128 / astats) is required for independent verification')
 rows=[]; failures=[]
 def measure(path,seed=0):
  r=subprocess.run([probe,'--measure',str(path),str(seed)],capture_output=True,text=True,check=True)

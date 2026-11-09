@@ -54,9 +54,9 @@ jobs:
 
       - name: FFmpeg test dependency
         run: |
-          if [ -z "${MASTERLENS_FFMPEG:-}" ]; then
-            command -v ffmpeg || brew install ffmpeg
-          fi
+          # The independent measurement check needs a full ffmpeg (ebur128 /
+          # astats filters are intentionally absent from the bundled runtime).
+          command -v ffmpeg || brew install ffmpeg
 
       - name: File QC integration
         run: python3 Tests/test_cli.py build/MasterLensCli_artefacts/Release/MasterLensCli
@@ -144,8 +144,15 @@ jobs:
           FFMPEG_WINDOWS_ARM64_SHA256: ${{ vars.FFMPEG_WINDOWS_ARM64_SHA256 }}
           ARCH: ${{ matrix.arch }}
         run: |
-          if [ "$ARCH" = "x64" ]; then P=windows-x64; else P=windows-arm64; fi
-          scripts/ci-prepare-ffmpeg.sh "$P" "third_party/ffmpeg/$P"
+          if [ "$ARCH" = "x64" ]; then
+            scripts/ci-prepare-ffmpeg.sh windows-x64 third_party/ffmpeg/windows-x64
+          else
+            # ARM64 installers are built on x64 runners, so the ARM64 binary
+            # cannot be executed here. Verify the PE machine field instead and
+            # leave runtime execution to x64 and to the packaged artifact.
+            python -c "import sys; d=open('third_party/ffmpeg/windows-arm64/ffmpeg.exe','rb').read(0x400); o=int.from_bytes(d[0x3c:0x40],'little'); m=int.from_bytes(d[o+4:o+6],'little'); print('ARM64 runtime PE machine=0x%04x' % m); sys.exit(0 if m==0xaa64 else 1)"
+            echo "::warning::ARM64 runtime is cross-built; x64 hosts execute it and the installer carries the same binary."
+          fi
 
       - name: Detect Visual Studio generator
         shell: pwsh
