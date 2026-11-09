@@ -16,7 +16,7 @@ Homebrew、PATH 或手动配置即可使用 AAC 256k / MP3 320k 编码 A/B 与 C
   AAC / libmp3lame / `pcm_f32le` 编码，WAV / AIFF / FLAC / MP3 / MOV / OGG /
   ADTS 解封装，MP3 / MP4 / iPod / WAV 封装，`file` / `pipe` 协议与
   `aresample` / `aformat` / `anull` 滤镜；无网络、无视频、无 ffplay / ffprobe。
-- **体积**：macOS Universal 约 6.6 MB；Windows x64 约 3.4 MB，ARM64 约 2.8 MB。DMG 约 35 MB。
+- **体积**：macOS Universal 约 6.6 MB；Windows x64 约 3.4 MB，ARM64 约 2.8 MB。DMG 约 37 MB。
 - **可复现构建**：`scripts/build-ffmpeg-runtime.sh` 固定源码 URL 与 SHA-256、
   LAME 补丁和 configure 参数；`third_party/ffmpeg/<平台>/build-info.txt` 记录
   实际构建参数。
@@ -44,7 +44,7 @@ macOS 仍为 ad-hoc 签名、未公证；首次打开如被拦截，请右键 �
 完整记录见 [performance-3.0.2.md](performance-3.0.2.md)。摘要：
 
 - DSP / 可靠性断言 **178 passed / 0 failed / 0 skipped**（`REQUIRE_RUNTIME=1`）。
-- CLI 集成 **74 passed**（随包运行时）。
+- CLI 集成 **76 passed**（随包运行时）。
 - UI 布局 **46/46 场景**。
 - `auval` PASS；DMG 内三份插件包各自携带运行时，签名顺序为内部运行时 → 插件包 → DMG。
 - 安装包内运行时通过 `scripts/verify-runtime.sh` 的版本、LGPL、AAC 与

@@ -18,7 +18,7 @@ MasterLens 是放在母带链末尾的小检查员：这首歌有多响、峰值
 3.0.2 只做一件事：把 3.0.1 准备好的运行时结构和门禁真正填满。安装后直接可用 AAC 256k / MP3 320k 编码 A/B，不需要 Homebrew、PATH 或手动安装 FFmpeg。
 
 - **随包运行时**：macOS Universal（arm64 + x86_64）与 Windows x64 / ARM64 各带一份精简 LGPL FFmpeg 9.0.2（含 libmp3lame 3.100）。只保留 PCM / FLAC / MP3 / AAC / ALAC / Vorbis / Opus 解码，AAC / LAME 编码，以及 WAV / M4A / MP3 封装。
-- **体积**：macOS Universal 约 6.6 MB，Windows x64 约 3.4 MB、ARM64 约 2.8 MB；DMG 约 35 MB（运行时随三份插件包与安装根目录各放一份）。
+- **体积**：macOS Universal 约 6.6 MB，Windows x64 约 3.4 MB、ARM64 约 2.8 MB；DMG 约 37 MB（运行时随三份插件包与安装根目录各放一份）。
 - **来源可复现**：`scripts/build-ffmpeg-runtime.sh` 固定源码 URL、SHA-256、LAME 补丁与 configure 参数；产物旁附 `build-info.txt` 与 LGPL 许可证。
 - **门禁**：CI 直接校验仓库内运行时并设置 `MASTERLENS_REQUIRE_RUNTIME=1`；稳定版缺少运行时仍会拒绝发布。
 - **路径**：macOS 插件包内 `Contents/Resources/ffmpeg`；Windows 的 `ffmpeg.exe` 位于安装目录的 `ffmpeg` 子目录与 VST3 包的 `Contents/Resources/ffmpeg`。
@@ -28,7 +28,7 @@ MasterLens 是放在母带链末尾的小检查员：这首歌有多响、峰值
 详细结果见 [3.0.2 验证记录](docs/performance-3.0.2.md)。
 
 - DSP / 可靠性断言：**178 项通过**（`MASTERLENS_REQUIRE_RUNTIME=1`，无跳过）。
-- CLI 集成检查：**74 项通过**（随包运行时，无跳过）。
+- CLI 集成检查：**76 项通过**（随包运行时，无跳过）。
 - UI 布局：**46/46 场景**（每场景先跑边界断言再渲染，含编码中 / 失败状态）。
 - `auval` 通过；DMG 内三份插件包的嵌套运行时签名与能力校验通过。
 - 6 张主截图 + 2 张编码状态证据，记录在 `docs/screenshots-3.0.2.json`。

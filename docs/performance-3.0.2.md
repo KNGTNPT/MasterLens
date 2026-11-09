@@ -12,7 +12,7 @@
 | CLI 集成 | **76 passed / 0 failed / 0 skipped**（随包运行时，PATH 中无 ffmpeg） |
 | UI 布局 | **46/46 场景**，`docs/layout-3.0.2.json` 共 92 条记录，0 失败 |
 | `auval` | **PASS**（aufx Maln OrcA，DMG 内 AU 复制后 ad-hoc 重签） |
-| DMG | 约 35 MB，三份插件包与安装根目录各带 `ffmpeg`，内部签名有效 |
+| DMG | 本地 36.6 MB / 发布产物 39.0 MB，三份插件包与安装根目录各带 `ffmpeg`，内部签名有效 |
 | DMG 内 CLI | 无需 `MASTERLENS_FFMPEG` / PATH，AAC 编码成功，`backend=bundled`，版本 9.0.2 |
 
 ## 二、随包运行时
@@ -63,7 +63,8 @@ DEVELOPER_DIR=/Library/Developer/CommandLineTools bash scripts/make_dmg.sh
 - `auval`：将 DMG 内 AU 复制到 `~/Library/Audio/Plug-Ins/Components` 后
   `codesign --force --deep -s -` 重签，`auval -v aufx Maln OrcA` 输出
   `AU VALIDATION SUCCEEDED`。
-- DMG SHA-256：`31f2a7effa225f8b38348f7fccebdd15a4618460fca3f31a312f15d9cce1171e`。
+- 本地 DMG SHA-256：`31f2a7effa225f8b38348f7fccebdd15a4618460fca3f31a312f15d9cce1171e`。
+- 发布 DMG SHA-256：`c513b143d0a53ea281494a3548e12cc012c543bbc46e3d8269c4b8c74b4b8c08`（下载后已重新挂载复核）。
 
 ### 一个测试稳定性修正
 
@@ -80,7 +81,28 @@ DSP 的 “stream reports buffering” 在并发构建时偶发失败：原用�
 - macOS 发布任务校验 Universal 双架构；Windows 任务在原生 x64 上执行
   `ffmpeg.exe -encoders`，缺失 AAC 会直接失败；ARM64 安装包仍为交叉构建。
 - 稳定 tag 缺少运行时仍会被拒绝（`ci-prepare-ffmpeg.sh` 的 tag 分支）。
-- 本次 tag 的实际运行与产物校验结果在发布后补记于本节。
+- **tag `v3.0.2`**：run [42592870592](https://github.com/KNGTNPT/MasterLens/actions/runs/42592870592)
+  全绿 —— macOS、Windows x64、Windows ARM64 与 `Publish verified installers` 均成功。
+- **push 门禁**：run [42593018249](https://github.com/KNGTNPT/MasterLens/actions/runs/42593018249)
+  全绿（macOS 快速门禁 + Windows x64）。
+- **发布**：<https://github.com/KNGTNPT/MasterLens/releases/tag/v3.0.2>（稳定版，
+  `prerelease=false`），资产与 `SHA256SUMS.txt`：
+
+  | 资产 | SHA-256 |
+  | --- | --- |
+  | `MasterLens-3.0.2-macOS.dmg` | `c513b143d0a53ea281494a3548e12cc012c543bbc46e3d8269c4b8c74b4b8c08` |
+  | `MasterLens-3.0.2-Windows-x64.exe` | `7b007eaea64ce823ba04ddb5ea468614ef9374e7e9994494602c9ccb84f3f09a` |
+  | `MasterLens-3.0.2-Windows-ARM64.exe` | `6939bb788d766cf8d7f9999ab6d1739db84707e85efe3d41ac7f007d11260f5b` |
+
+- 下载产物后重新 `shasum -a 256 -c SHA256SUMS.txt`：三项全部 OK；重新挂载发布 DMG，
+  三份插件包的运行时 `codesign -v` 通过，`ffmpeg -version` 为 9.0.2；从 DMG 复制
+  `MasterLensCli` 与 `ffmpeg` 到空目录，在无 PATH 的情况下 `--codec mp3` 成功，
+  `backend=bundled`。
+- 首次 tag 尝试（run 42590219562）暴露两个只在 CI 出现的问题，修复后重建了 tag
+  （当时尚未创建 Release）：ARM64 运行时不能在 x64 runner 上执行（改为校验 PE
+  `machine=0xAA64`），以及独立测量步骤需要完整 ffmpeg（brew 安装，与随包精简运行时分离）。
+- Windows ARM64 运行时未在 ARM64 实机运行；x64 安装器冒烟测试验证了安装目录与
+  VST3 内的 `ffmpeg.exe` 均存在并可执行。
 
 ## 五、未完成项与限制
 
