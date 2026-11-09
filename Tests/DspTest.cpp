@@ -812,6 +812,9 @@ int main (int argc, char** argv)
         check ("stream duration 2 h", stream.getDurationSeconds(), 7200.0, 0.05);
 
         stream.start (0.0);
+        // start() marks buffering synchronously; sampling it after a render
+        // races with a fast reader on cached files, so latch it right away.
+        const bool bufferingAtStart = stream.isBuffering();
 
         juce::AudioBuffer<float> block (2, 512);
         const auto energyOf = [&block]
@@ -827,7 +830,7 @@ int main (int argc, char** argv)
 
         double energy = 0.0;
         unsigned allocations = 0, releases = 0;
-        bool sawBuffering = false;
+        bool sawBuffering = bufferingAtStart;
 
         for (int i = 0; i < 2000 && energy <= 1.0e-6; ++i)
         {

@@ -5,7 +5,7 @@
 **母带响度 / 文件 QC / 频谱 / 声场 / 专辑交付 / CLI**<br>
 by **BerryStudio** · developer **KNGTNPT 兰**<br>
 macOS / Windows · VST3 / AU / 独立版 · C++17 + JUCE 8<br>
-当前版本：**3.0.1**（pre-release）
+当前版本：**3.0.2**（安装包自带 FFmpeg）
 
 MasterLens 是放在母带链末尾的小检查员：这首歌有多响、峰值会不会顶过头、立体声合成单声道后会不会变薄、交出去之前还有哪里值得听一遍，它都帮你留意着。把它插在 Master / Stereo Out 的最后一级就好。
 
@@ -13,48 +13,45 @@ MasterLens 是放在母带链末尾的小检查员：这首歌有多响、峰值
 
 歌该做成什么样，还是你的耳朵说了算。数字有点多也没关系，我们一项项看；它负责把容易漏掉的小细节摊开，陪你把交付前的最后一遍检查做完。
 
-## 3.0.1：编码后端统一，发布门禁补齐
+## 3.0.2：安装包自带 FFmpeg
 
-3.0.1 不改测量与监听，只把编码链路和发布流程做实。
+3.0.2 只做一件事：把 3.0.1 准备好的运行时结构和门禁真正填满。安装后直接可用 AAC 256k / MP3 320k 编码 A/B，不需要 Homebrew、PATH 或手动安装 FFmpeg。
 
-- **统一 `FFmpegRuntime`**：GUI、文件 QC 后台任务和 CLI 共用一份解析 / 探测 / 进程管理。默认只认**随包运行时**；`MASTERLENS_FFMPEG` 可显式覆盖；PATH 只在开发构建（`MASTERLENS_ALLOW_SYSTEM_FFMPEG=1`）下可用，且失败不会静默回退。
-- **能力与来源可见**：编码菜单、就绪提示、CLI `Codec backend:` 和 JSON 都显示实际版本与后端；GPL/nonfree 构建会标记「do not redistribute」。
-- **失败分类**：缺失 / 无法启动 / 编码失败 / 解码失败 / 超时 / 取消 / 无效输出分别报告；20 s 无输出视为停滞。
-- **Unicode 路径**：CLI 使用 UTF-8（Windows 宽字符）argv，中文与空格路径可正常编码。
-- **不把跳过当通过**：开发环境缺失运行时只计入 `skipped`；发布门禁 `MASTERLENS_REQUIRE_RUNTIME=1` 下直接失败。
-- **打包与 CI**：新增 `scripts/fetch-ffmpeg.sh`、`scripts/verify-runtime.sh`、`scripts/ci-prepare-ffmpeg.sh`；macOS DMG 与 Windows 安装器带嵌套运行时并先签内部；push/PR 有快速门禁，稳定版缺少运行时会被拒绝发布。
+- **随包运行时**：macOS Universal（arm64 + x86_64）与 Windows x64 / ARM64 各带一份精简 LGPL FFmpeg 9.0.2（含 libmp3lame 3.100）。只保留 PCM / FLAC / MP3 / AAC / ALAC / Vorbis / Opus 解码，AAC / LAME 编码，以及 WAV / M4A / MP3 封装。
+- **体积**：macOS Universal 约 6.6 MB，Windows x64 约 3.4 MB、ARM64 约 2.8 MB；DMG 约 35 MB（运行时随三份插件包与安装根目录各放一份）。
+- **来源可复现**：`scripts/build-ffmpeg-runtime.sh` 固定源码 URL、SHA-256、LAME 补丁与 configure 参数；产物旁附 `build-info.txt` 与 LGPL 许可证。
+- **门禁**：CI 直接校验仓库内运行时并设置 `MASTERLENS_REQUIRE_RUNTIME=1`；稳定版缺少运行时仍会拒绝发布。
+- **路径**：macOS 插件包内 `Contents/Resources/ffmpeg`；Windows 的 `ffmpeg.exe` 位于安装目录的 `ffmpeg` 子目录与 VST3 包的 `Contents/Resources/ffmpeg`。
 
-### 这个 prerelease 的说明
+### 3.0.2 验证
 
-构建环境没有网络与交叉工具链，且本机 ffmpeg 是 GPL 构建，无法随包分发。因此 **3.0.1 prerelease 的安装包不包含 FFmpeg**：编码 A/B 需要本机 ffmpeg 或自行设置 `MASTERLENS_FFMPEG`。随包结构、验证脚本、安装器与 CI 门禁已经完成，补齐运行时即可产出满足指南的稳定版。
+详细结果见 [3.0.2 验证记录](docs/performance-3.0.2.md)。
 
-使用前提：选区等响要先播过那一段；编码 A/B 需要可用的 FFmpeg（发布包为随包运行时，本 prerelease 为系统 ffmpeg）。
-
-### 3.0.1 验证
-
-详细结果见 [3.0.1 验证记录](docs/performance-3.0.1.md)。
-
-- DSP / 可靠性断言：**178 项通过**；无运行时路径单独验证为 `178 passed + 1 skipped`，`REQUIRE` 下失败。
-- CLI 集成检查：**74 项通过**；无运行时为 `58 passed + 1 skipped`。
+- DSP / 可靠性断言：**178 项通过**（`MASTERLENS_REQUIRE_RUNTIME=1`，无跳过）。
+- CLI 集成检查：**74 项通过**（随包运行时，无跳过）。
 - UI 布局：**46/46 场景**（每场景先跑边界断言再渲染，含编码中 / 失败状态）。
-- 编码失败分类：缺失、无效、超时、损坏输入、Unicode 路径均有断言。
-- 6 张主截图 + 2 张编码状态证据，记录在 `docs/screenshots-3.0.1.json`。
+- `auval` 通过；DMG 内三份插件包的嵌套运行时签名与能力校验通过。
+- 6 张主截图 + 2 张编码状态证据，记录在 `docs/screenshots-3.0.2.json`。
 
-![MasterLens 3.0.1 响度与动态](docs/screenshot-3.0.1.png)
+![MasterLens 3.0.2 响度与动态](docs/screenshot-3.0.2.png)
 
-![MasterLens 3.0.1 信号健康](docs/signal-3.0.1.png)
+![MasterLens 3.0.2 信号健康](docs/signal-3.0.2.png)
 
-![MasterLens 3.0.1 频谱平衡](docs/spectrum-3.0.1.png)
+![MasterLens 3.0.2 频谱平衡](docs/spectrum-3.0.2.png)
 
-![MasterLens 3.0.1 声场与相位](docs/stereo-3.0.1.png)
+![MasterLens 3.0.2 声场与相位](docs/stereo-3.0.2.png)
 
-![MasterLens 3.0.1 文件 QC](docs/fileqc-3.0.1.png)
+![MasterLens 3.0.2 文件 QC](docs/fileqc-3.0.2.png)
 
-![MasterLens 3.0.1 关于页原始 SVG](docs/about-3.0.1.png)
+![MasterLens 3.0.2 关于页原始 SVG](docs/about-3.0.2.png)
 
-![MasterLens 3.0.1 编码就绪状态](docs/codec-ready-3.0.1.png)
+![MasterLens 3.0.2 编码就绪状态](docs/codec-ready-3.0.2.png)
 
-![MasterLens 3.0.1 编码失败状态](docs/codec-failed-3.0.1.png)
+![MasterLens 3.0.2 编码失败状态](docs/codec-failed-3.0.2.png)
+
+## 3.0.1：编码后端统一，发布门禁补齐（历史）
+
+3.0.1 不改测量与监听，只把编码链路和发布流程做实：GUI、文件 QC 与 CLI 共用 `FFmpegRuntime`，失败分类、Unicode 路径、`REQUIRE_RUNTIME` 门禁与打包结构都在这一版完成。该 prerelease 未携带二进制，详细记录见 [3.0.1 验证记录](docs/performance-3.0.1.md) 与 [发布说明](docs/release-3.0.1.md)。
 
 ## 3.0.0：四种比较一起听，读数也回到一条基线
 
@@ -380,7 +377,7 @@ Windows ARM64 安装包由交叉构建生成；**手头没有 Windows on ARM 设
 
 ### 先装好，再播一首
 
-[下载 3.0.1-rc.1](https://github.com/KNGTNPT/MasterLens/releases/tag/v3.0.1-rc.1)。macOS 打开 DMG，运行「安装 Install.command」；Windows 运行对应 x64 / ARM64 的 EXE，然后重启 DAW。
+[下载 3.0.2](https://github.com/KNGTNPT/MasterLens/releases/tag/v3.0.2)。macOS 打开 DMG，运行「安装 Install.command」；Windows 运行对应 x64 / ARM64 的 EXE，然后重启 DAW。
 
 把 MasterLens 插在母带链最后，先播 20–30 秒，跟它打个招呼。左侧的综合响度看整体有多响，真峰值看最高处有没有越线；LRA 看强弱变化的范围，PLR 看峰值与平均响度之间还留了多少空间。中央曲线会把变化过程画出来。
 

@@ -1,0 +1,11 @@
+MasterLens bundled FFmpeg runtime
+platform: windows-arm64
+ffmpeg: 9.0.2  (https://codeload.github.com/FFmpeg/FFmpeg/tar.gz/refs/tags/n9.0.2)
+ffmpeg source sha256: 6e374ed621e48faa40639307dff48ba6fe574a509977956d2cce9669b7cc27e9
+lame: 3.100  (https://downloads.sourceforge.net/project/lame/lame/3.100/lame-3.100.tar.gz)
+lame source sha256: ddfe36cab873794038ae2c1210557ad34857a4b6bdc515785d1da9e175b1da1e
+lame patch: packaging/patches/lame-3.100-c-only-xrpow-init.patch
+licence: LGPL-2.1-or-later (no --enable-gpl / --enable-nonfree)
+
+configure:
+--prefix=/Users/orch/Documents/github/vst/.tools/ffmpeg-build/bld-aarch64-w64-mingw32/out --disable-autodetect --disable-network --disable-doc --disable-ffplay --disable-ffprobe --disable-avdevice --disable-swscale --enable-static --disable-shared --disable-everything --enable-ffmpeg --enable-libmp3lame --enable-protocol='file,pipe' --enable-demuxer='wav,aiff,flac,mp3,mov,ogg,adts,opus' --enable-decoder='pcm_u8,pcm_s16le,pcm_s24le,pcm_s32le,pcm_f32le,pcm_f64le,pcm_s16be,pcm_s24be,pcm_s32be,pcm_f32be,flac,mp3,aac,alac,vorbis,opus' --enable-encoder='aac,libmp3lame,pcm_f32le' --enable-muxer='mp3,mp4,ipod,wav' --enable-parser='aac,flac,mpegaudio,opus,vorbis' --enable-bsf='aac_adtstoasc,extract_extradata,null' --enable-filter='aresample,aformat,anull' --extra-cflags='-I/Users/orch/Documents/github/vst/.tools/ffmpeg-build/out/lame-aarch64-w64-mingw32/include ' --extra-ldflags='-L/Users/orch/Documents/github/vst/.tools/ffmpeg-build/out/lame-aarch64-w64-mingw32/lib -static' --enable-cross-compile --target-os=mingw32 --arch=aarch64 --cc=aarch64-w64-mingw32-clang --cxx=aarch64-w64-mingw32-clang++ --ld=aarch64-w64-mingw32-clang --ar=aarch64-w64-mingw32-ar --ranlib=aarch64-w64-mingw32-ranlib --strip=aarch64-w64-mingw32-strip --nm=aarch64-w64-mingw32-nm

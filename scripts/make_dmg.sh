@@ -52,7 +52,7 @@ if [ -f "$FFMPEG_RUNTIME" ]; then
     chmod +x "$STAGE/ffmpeg"
 
     RUNTIME_DIR="$(dirname "$FFMPEG_RUNTIME")"
-    for f in FFmpeg-LGPL.txt FFmpeg-LICENSE.md; do
+    for f in FFmpeg-COPYING.LGPLv2.1 FFmpeg-COPYING.LGPLv3 LAME-COPYING FFmpeg-LGPL.txt FFmpeg-LICENSE.md; do
         [ -f "$RUNTIME_DIR/$f" ] && cp "$RUNTIME_DIR/$f" "$STAGE/Licenses/"
     done
     cp "$ROOT/packaging/THIRD-PARTY-NOTICES.md" "$STAGE/Licenses/"

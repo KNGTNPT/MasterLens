@@ -196,6 +196,24 @@ exec sleep 10
         report=root/'codec-unicode.json';run(short,'--codec','aac','--json',report,env=codec_env)
         cc=json.loads(report.read_text(encoding='utf-8'))['codecChecks'][0]
         check(cc['ok'],'codec works with unicode / spaces / mono / 44.1 kHz')
+        # The shipped DMG / installer places the CLI next to the runtime; the
+        # CLI must resolve it without MASTERLENS_FFMPEG or a system PATH entry.
+        stage=Path(tempfile.mkdtemp(dir=root))
+        exe_name='MasterLensCli.exe' if os.name=='nt' else 'MasterLensCli'
+        shutil.copy2(cli,stage/exe_name)
+        runtime=str(runtime_env()['MASTERLENS_FFMPEG'])
+        if os.name=='nt':
+            (stage/'ffmpeg').mkdir();shutil.copy2(runtime,stage/'ffmpeg'/'ffmpeg.exe')
+        else:
+            shutil.copy2(runtime,stage/'ffmpeg')
+        sibling_env={k:v for k,v in os.environ.items() if k!='MASTERLENS_FFMPEG'}
+        sibling_env.pop('MASTERLENS_ALLOW_SYSTEM_FFMPEG',None)
+        sibling_src=stage/'sibling.wav';write(sibling_src,48000)
+        sibling=subprocess.run([str(stage/exe_name),'analyze',str(sibling_src),'--codec','aac','--json',str(stage/'sibling.json')],
+                               capture_output=True,text=True,encoding='utf-8',errors='replace',env=sibling_env)
+        check(sibling.returncode==0,f'sibling runtime: exit {sibling.returncode}: {sibling.stderr}')
+        sibling_cc=json.loads((stage/'sibling.json').read_text(encoding='utf-8'))['codecChecks'][0]
+        check(sibling_cc['ok'] and sibling_cc['backend']=='bundled','CLI resolves the runtime next to the executable')
         # Corrupt input must fail even when the runtime is healthy.
         corrupt=root/'corrupt-codec.wav';corrupt.write_bytes(b'not a wav')
         run(corrupt,'--codec','aac','--json',root/'codec-corrupt.json',code=1,env=codec_env)

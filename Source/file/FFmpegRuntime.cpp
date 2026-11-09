@@ -383,6 +383,21 @@ juce::File FFmpegRuntime::findBundledExecutable()
             if (candidate.existsAsFile())
                 return candidate;
         }
+
+        if (depth == 0)
+        {
+            // The DMG installs MasterLensCli next to a plain `ffmpeg` file; also
+            // accept a nested ffmpeg/ffmpeg directory for staged layouts.
+            const auto sibling = dir.getChildFile ("ffmpeg");
+
+            if (sibling.existsAsFile())
+                return sibling;
+
+            const auto nested = sibling.getChildFile ("ffmpeg");
+
+            if (nested.existsAsFile())
+                return nested;
+        }
 #elif JUCE_WINDOWS
         if (dir.getFileName().endsWithIgnoreCase (".vst3"))
         {

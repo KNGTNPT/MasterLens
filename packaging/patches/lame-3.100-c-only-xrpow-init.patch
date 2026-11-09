@@ -1,0 +1,21 @@
+LAME 3.100 on x86_64 macOS: `quantize.c` selects an SSE helper even when the
+vector sources / NASM objects are not part of the static archive, so linking
+`-lmp3lame` fails with `_init_xrpow_core_sse` undefined. The patch keeps the
+plain C initialiser, which is what LAME uses on every platform without SSE.
+
+--- a/libmp3lame/quantize.c
++++ b/libmp3lame/quantize.c
+@@ -93,14 +93,6 @@
+ {
+     gfc->init_xrpow_core = init_xrpow_core_c;
+ 
+-#if defined(HAVE_XMMINTRIN_H)
+-    if (gfc->CPU_features.SSE)
+-        gfc->init_xrpow_core = init_xrpow_core_sse;
+-#endif
+-#ifndef HAVE_NASM
+-#ifdef MIN_ARCH_SSE
+-    gfc->init_xrpow_core = init_xrpow_core_sse;
+-#endif
+-#endif
+ }

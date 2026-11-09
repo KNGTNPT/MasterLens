@@ -1,0 +1,95 @@
+{
+  "version": "3.0.2",
+  "platform": "Darwin",
+  "architecture": "universal (x86_64 + arm64)",
+  "renderer": "MasterLensUiShot 3.0.2",
+  "rendererSha256": "ca31e7f11fcc9609ea55b954fa8bb400e34b753b4cbec566a24c85e5e8afae4d",
+  "images": [
+    {
+      "path": "docs/screenshot-3.0.2.png",
+      "sha256": "d617eaf6c95e44667a6b16eed6254486654dc835a93ca90f110828f16838b2f1",
+      "width": 2240,
+      "height": 1400,
+      "arguments": [
+        "page0",
+        "size1120"
+      ]
+    },
+    {
+      "path": "docs/signal-3.0.2.png",
+      "sha256": "1aed7a4c35e221a2fff6cbeaebecfbd9234c579d4e31fadd0193696ca7344c2d",
+      "width": 2240,
+      "height": 1400,
+      "arguments": [
+        "page6",
+        "size1120"
+      ]
+    },
+    {
+      "path": "docs/spectrum-3.0.2.png",
+      "sha256": "cd0c0daaadc5e90c24b7136ac1db078154e6536216ba71d49a0e2a0a807ddd4f",
+      "width": 2240,
+      "height": 1400,
+      "arguments": [
+        "page2",
+        "size1120"
+      ]
+    },
+    {
+      "path": "docs/stereo-3.0.2.png",
+      "sha256": "0ca595e841e7e88446212b33e5cfbbdf1431794dd22023c85650806ad2e9ac55",
+      "width": 2240,
+      "height": 1400,
+      "arguments": [
+        "page3",
+        "size1120"
+      ]
+    },
+    {
+      "path": "docs/fileqc-3.0.2.png",
+      "sha256": "d897b04818d4ce506d6cb3db7cdc0ff59e8c94011197df22906c2c814d9b23c3",
+      "width": 2240,
+      "height": 1400,
+      "arguments": [
+        "page10",
+        "fileqc",
+        "size1120"
+      ]
+    },
+    {
+      "path": "docs/about-3.0.2.png",
+      "sha256": "7ee1f2571e3cd7b3ae06073db4a95859ffe4d6f7ea67fb5f82f48a944ab0768b",
+      "width": 2240,
+      "height": 1400,
+      "arguments": [
+        "page0",
+        "about",
+        "size1120"
+      ]
+    },
+    {
+      "path": "docs/codec-ready-3.0.2.png",
+      "sha256": "0b3aa21dce07ea725c2fe9a5b2697450e5e47026a9ccdb5b960b723a51452ba4",
+      "width": 2240,
+      "height": 1400,
+      "arguments": [
+        "page10",
+        "fileqc",
+        "codecstate",
+        "size1120"
+      ]
+    },
+    {
+      "path": "docs/codec-failed-3.0.2.png",
+      "sha256": "f01a7490ec07e939be4fda4dbddcb2633ca6b2d8a3f7772cdb83c7ffd431d352",
+      "width": 2240,
+      "height": 1400,
+      "arguments": [
+        "page10",
+        "fileqc",
+        "codecfail",
+        "size1120"
+      ]
+    }
+  ]
+}

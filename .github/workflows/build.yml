@@ -14,7 +14,7 @@ concurrency:
 
 env:
   JUCE_TAG: "8.0.15"
-  APP_VERSION: "3.0.1"
+  APP_VERSION: "3.0.2"
 
 jobs:
   macos:
@@ -91,7 +91,7 @@ jobs:
             done
             cp "$MASTERLENS_FFMPEG" stage/ffmpeg
             chmod +x stage/ffmpeg
-            cp third_party/ffmpeg/macos-universal/FFmpeg-* stage/Licenses/ 2>/dev/null || true
+            cp third_party/ffmpeg/macos-universal/FFmpeg-* third_party/ffmpeg/macos-universal/LAME-* stage/Licenses/ 2>/dev/null || true
             cp packaging/THIRD-PARTY-NOTICES.md stage/Licenses/
             printf '{"present":true,"version":"%s"}\n' "$("$MASTERLENS_FFMPEG" -hide_banner -version | head -1)" > runtime-macos.json
           elif [ "${ALLOW_MISSING_RUNTIME:-0}" = "1" ]; then
@@ -212,6 +212,7 @@ jobs:
             Copy-Item $runtime "$vstRes/ffmpeg.exe"
             Copy-Item "packaging/THIRD-PARTY-NOTICES.md" "$stage/Licenses/"
             Copy-Item "third_party/ffmpeg/windows-${{ matrix.arch }}/FFmpeg-*" "$stage/Licenses/" -ErrorAction SilentlyContinue
+            Copy-Item "third_party/ffmpeg/windows-${{ matrix.arch }}/LAME-*" "$stage/Licenses/" -ErrorAction SilentlyContinue
             '{"present":true}' | Out-File -Encoding ascii "runtime-windows-${{ matrix.arch }}.json"
             Write-Host "Bundled FFmpeg runtime staged"
           } elseif ($env:ALLOW_MISSING_RUNTIME -eq "1") {

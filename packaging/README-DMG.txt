@@ -1,4 +1,4 @@
-MasterLens 3.0.1 —— 编码后端统一，门禁补齐喵
+MasterLens 3.0.2 —— 安装包自带 FFmpeg 喵
 by BerryStudio · 开发者 KNGTNPT 兰
 =====================================================================
 
@@ -6,6 +6,13 @@ by BerryStudio · 开发者 KNGTNPT 兰
 1. 运行「安装 Install.command」。首次运行未公证版本，可能需要右键 → 打开。
 2. VST3 / AU 复制到用户 Library/Audio/Plug-Ins；独立版放入 ~/Applications。
 3. 重启 DAW，在 BerryStudio 下搜索 MasterLens，并放到母带链最后。
+
+【3.0.2】
+- 安装包自带精简 LGPL FFmpeg 9.0.2（含 libmp3lame 3.100）：AAC 256k / MP3 320k 编码 A/B 不再需要 Homebrew、PATH 或手动安装 FFmpeg。
+- macOS 包为 Universal 运行时（约 6.6 MB），随插件包放在 Contents/Resources/ffmpeg，并先签内部代码再签外层。
+- Windows 安装器写入安装目录的 ffmpeg 子目录与 VST3 的 Contents/Resources/ffmpeg，卸载时一并清理。
+- 运行时只保留 PCM / FLAC / MP3 / AAC / ALAC / Vorbis / Opus 解码，AAC / LAME 编码与 WAV / M4A / MP3 封装；源码、校验值与构建参数见 third_party/ffmpeg/<平台>/build-info.txt。
+- 使用前提：选区等响要先播过那一段。
 
 【3.0.1】
 - 编码后端统一：GUI、文件 QC 与 CLI 共用 FFmpegRuntime；发布包优先使用随包运行时，不再要求 Homebrew / PATH；MASTERLENS_FFMPEG 可显式覆盖。
@@ -122,7 +129,7 @@ CLI：MasterLensCli analyze <文件或文件夹> --json out.json
 
 【限制】
 单声道 / 立体声；选区响度为 BS.1770 门限积分（实时侧基于 100 ms 快照），长选区的循环交给宿主。
-参考轨仍整段解码，超过 1 小时或 512 MB 会明确拒绝；编码 A/B 需要本机 ffmpeg。
+参考轨仍整段解码，超过 1 小时或 512 MB 会明确拒绝；编码 A/B 使用随包 FFmpeg（macOS 约 6.6 MB，Windows 约 3 MB）。
 频段独听不做等响补偿，窄频段可能很轻；长文件播放启动时会先缓冲约 3 s。
 平台规则与曲风目标是参照，交付前仍请核对发行方要求。
 未做 Apple 公证 / 商业代码签名，DAW 与音频硬件仍需实机回归。
