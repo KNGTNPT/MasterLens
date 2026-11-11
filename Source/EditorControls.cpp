@@ -71,6 +71,9 @@ void MasterLensAudioProcessorEditor::buildControls()
 
     monitorButton.setClickingTogglesState (true);
     monitorButton.setColour (juce::TextButton::buttonOnColourId, ml::theme::accentSoft);
+    // accent-on-accentSoft is 3.49:1 in dark; the ink variant keeps the toggled
+    // label readable on the tinted button face.
+    monitorButton.setColour (juce::TextButton::textColourOnId, ml::theme::accentInk);
     monitorAttachment = std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment> (
         processor.apvts, "monitorMatch", monitorButton);
     addAndMakeVisible (monitorButton);

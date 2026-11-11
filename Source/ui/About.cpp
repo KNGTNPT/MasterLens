@@ -36,7 +36,7 @@ void SnapshotChip::paint (juce::Graphics& g)
     g.setColour (active ? theme::accent.withAlpha (0.75f) : theme::border);
     g.drawRoundedRectangle (r, tokens::radiusControl, 1.0f);
 
-    g.setColour (active ? theme::accent : (filled ? theme::text : theme::textDim));
+    g.setColour (active ? theme::accentInk : (filled ? theme::text : theme::textDim));
     g.setFont (getValueFont());
     g.drawText (letter, getLocalBounds(), juce::Justification::centred);
 
@@ -81,7 +81,7 @@ juce::String SnapshotChip::getTooltip()
 static juce::Rectangle<int> aboutCardBounds (juce::Rectangle<int> area)
 {
     const int w = juce::jmin (640, area.getWidth() - 64);
-    const int h = juce::jmin (520, area.getHeight() - 64);
+    const int h = juce::jmin (350, area.getHeight() - 64);
 
     return area.withSizeKeepingCentre (w, h);
 }
@@ -149,10 +149,7 @@ void AboutPanel::paint (juce::Graphics& g)
                 (int) logo.getRight() + 16, (int) logo.getY() + 44, 360, 18,
                 juce::Justification::centredLeft, false);
 
-    paintBerryWordmark (g, inner.removeFromTop (20), theme::textFaint, 9.0f,
-                        juce::Justification::right);
-
-    inner.removeFromTop (8);
+    inner.removeFromTop (10);
 
     g.setColour (theme::divider);
     g.drawHorizontalLine (inner.getY(), (float) inner.getX(), (float) inner.getRight());
@@ -171,26 +168,24 @@ void AboutPanel::paint (juce::Graphics& g)
     };
 
     drawRow (T ("版本", "Version"), kVersion, theme::text);
-    drawRow (T ("机构", "Organisation"), kOrganisation, theme::violet);
 
     inner.removeFromTop (8);
 
-    g.setColour (theme::textFaint);
-    g.setFont (getLabelFont());
-    auto studioArea = inner.removeFromBottom (80).removeFromLeft (300)
-        .withSizeKeepingCentre (300, 56);
+    juce::StringArray standards;
+    standards.add (T ("测量标准：ITU-R BS.1770-4 · EBU R128 · EBU Tech 3342",
+                      "Standards: ITU-R BS.1770-4 · EBU R128 · EBU Tech 3342"));
+    standards.add (T ("真峰值 192 kHz 插值基准 · 零延迟 · 不修改音频",
+                      "True peak at a 192 kHz target · zero latency · never alters audio"));
+    standards.add (T ("选区等响需先播放该段 · 编码 A/B 使用随包 FFmpeg",
+                      "Selection match needs the section played first · codec A/B uses FFmpeg"));
+    standards.add (T ("构建于 JUCE 8", "Built with JUCE 8"));
+    text::drawLines (g, getLabelFont(), theme::textFaint, standards,
+                     inner.removeFromTop (80), 20);
+
+    inner.removeFromTop (20);
+    auto studioArea = inner.removeFromTop (40).removeFromLeft (220);
     if (auto* studio = theme::dark ? studioDark.get() : studioLight.get())
-        studio->drawWithin (g, studioArea.toFloat(), juce::RectanglePlacement::centred, 1.0f);
-    inner.removeFromBottom (12);
-    g.drawFittedText (T ("测量标准：ITU-R BS.1770-4 · EBU R128 · EBU Tech 3342\n"
-                         "真峰值 192 kHz 插值基准 · 零延迟 · 不修改音频\n"
-                         "选区等响需先播放该段 · 编码 A/B 使用随包 FFmpeg\n"
-                         "Built with JUCE 8",
-                         "Standards: ITU-R BS.1770-4 · EBU R128 · EBU Tech 3342\n"
-                         "True peak at a 192 kHz target · zero latency · never alters audio\n"
-                         "Selection match needs the section played first · codec A/B uses the bundled FFmpeg\n"
-                         "Built with JUCE 8"),
-                      inner, juce::Justification::topLeft, 5);
+        studio->drawWithin (g, studioArea.toFloat(), juce::RectanglePlacement::xLeft, 1.0f);
 }
 
 void AboutPanel::resized()

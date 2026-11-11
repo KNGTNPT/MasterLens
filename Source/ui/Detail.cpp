@@ -116,7 +116,7 @@ DetailArea::DetailArea()
     warSlider.setTextBoxStyle (juce::Slider::TextBoxRight, false, 62, 24);
     warSlider.setRange (0.0, 100.0, 1.0);
     warSlider.setDoubleClickReturnValue (true, 50.0);
-    warSlider.setTextValueSuffix (" %");
+    warSlider.setTextValueSuffix ("%");
     warSlider.onValueChange = [this]
     {
         if (onTargetWarChanged != nullptr)
@@ -528,6 +528,7 @@ void DetailArea::setReferencePlaybackState (bool playing, const juce::String&)
                                       : T ("监听参考", "Monitor reference")));
     refPlay.setColour (juce::TextButton::buttonOnColourId,
                        refPlaying ? theme::accentSoft : theme::cardAlt);
+    refPlay.setColour (juce::TextButton::textColourOnId, theme::accentInk);
     repaint();
 }
 
@@ -624,7 +625,7 @@ void DetailArea::mouseDown (const juce::MouseEvent& e)
                 && onAuditionBand != nullptr)
             {
                 const juce::String label = i == 0 ? T ("低频 < 150 Hz", "LOW < 150 Hz")
-                                          : i == 1 ? T ("中频 150 Hz – 2 kHz", "MID 150 Hz - 2 kHz")
+                                          : i == 1 ? T ("中频 150 Hz – 2 kHz", "MID 150 Hz – 2 kHz")
                                                    : T ("高频 > 2 kHz", "HIGH > 2 kHz");
                 onAuditionBand (edges[i], edges[i + 1], label);
                 return;
@@ -810,11 +811,14 @@ void DetailArea::resized()
 
         case PageId::spectrum:
         {
-            // The editor owns the 56/44 vertical split. Keep controls in one
-            // compact row; the graph retains its own protected 32-point anchors.
-            auto graph = getLocalBounds().withHeight (spectrumSplit);
+            // The editor owns the 56/44 vertical split. The page keeps the same
+            // 16 px inset + 32 px title row as every other page; the graph takes
+            // the rest and keeps its own protected 32-point anchors.
+            const int headerH = tokens::margin + tokens::rowHeight;
+            auto graph = getLocalBounds().withTrimmedTop (headerH)
+                             .withHeight (juce::jmax (0, spectrumSplit - headerH));
             auto controls = getLocalBounds().withTrimmedTop (spectrumSplit + 8).withHeight (24).reduced (16, 0);
-            controls.removeFromLeft (112);
+            controls.removeFromLeft (64);
             spectrumSideArea = spectrumBandHeight > 0
                 ? getLocalBounds().removeFromBottom (spectrumBandHeight).reduced (16, 0) : juce::Rectangle<int>();
             spectrumBandGroupBounds = spectrumGroupRects (spectrumSideArea);

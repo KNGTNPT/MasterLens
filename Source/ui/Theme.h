@@ -10,13 +10,14 @@ namespace ml
 {
 /** Design tokens shared by every module.
 
-    Base sizes shared by the graphite instrument surface. Fonts are supplied by the three semantic accessors below.
+    Base sizes shared by the graphite instrument surface. Fonts are supplied by the four semantic accessors below: label, value, title, critical.
 */
 namespace tokens
 {
-inline constexpr float display = 26.0f;   // main readout
-inline constexpr float value   = 16.0f;   // secondary readings
-inline constexpr float section = 14.0f;   // page / group title
+inline constexpr float display = 30.0f;   // main readout
+inline constexpr float title   = 20.0f;   // page title
+inline constexpr float value   = 18.0f;   // secondary readings
+inline constexpr float section = 14.0f;   // group title / control label
 inline constexpr float label   = 14.0f;   // control label
 inline constexpr float aux     = 14.0f;   // secondary copy
 inline constexpr float unit    = 14.0f;   // units, axis labels, time codes
@@ -42,10 +43,10 @@ inline constexpr int spectrumAnchor = 32;
 */
 namespace ui
 {
-inline constexpr float minScale = 0.8f;
+inline constexpr float minScale = 1.0f;
 inline constexpr float maxScale = 2.0f;
 
-inline constexpr std::array<float, 5> scaleSteps { 0.8f, 1.0f, 1.25f, 1.5f, 2.0f };
+inline constexpr std::array<float, 5> scaleSteps { 1.0f, 1.25f, 1.5f, 1.75f, 2.0f };
 
 inline float scale = 1.0f;
 
@@ -92,6 +93,7 @@ inline juce::Colour text       { 0xff969c98 };
 inline juce::Colour textDim    { 0xff909994 };
 inline juce::Colour textFaint  { 0xff858f89 };
 inline juce::Colour accent     { 0xff819e90 };
+inline juce::Colour accentInk  { 0xff9fc0b0 };   // accent as text on accentSoft
 inline juce::Colour accentSoft { 0xff30463e };
 inline juce::Colour cyan       { 0xff80989f };
 inline juce::Colour good       { 0xff819e90 };
@@ -99,6 +101,7 @@ inline juce::Colour info       { 0xff819e90 };
 inline juce::Colour warn       { 0xffb19870 };
 inline juce::Colour bad        { 0xffc08278 };
 inline juce::Colour violet     { 0xff94949c };
+inline juce::Colour track      { 0xff343a3b };   // empty meter track / progress rail
 
 inline bool dark { true };
 inline int revisionCounter { 0 };
@@ -133,8 +136,14 @@ void glow (juce::Graphics&, juce::Rectangle<float> area, juce::Colour, float rad
 
 juce::String typefaceName();
 juce::Font getLabelFont();
+juce::Font getLabelTrackedFont();
 juce::Font getValueFont();
+juce::Font getTitleFont();
 juce::Font getCriticalFont();
+
+/** Label font for a specific run: uppercase Latin keeps the 0.04em tracking,
+    anything containing CJK or lowercase body copy drops it. */
+juce::Font labelFontFor (const juce::String& text);
 const juce::GlyphArrangement& getMasterWordmark();
 const juce::GlyphArrangement& getBrandByline (bool english);
 juce::Colour severityColour (Severity s);
@@ -163,9 +172,10 @@ inline juce::String times() { return juce::String::charToString (0x00D7); }
 /** ASCII "+/-": U+00B1 renders as "Â±" in some font/codepage combinations. */
 inline juce::String plusMinus() { return juce::String ("+/-"); }
 
-/** Inline separator. ASCII only: some UI fonts in the wild map U+00B7 through a
-    Latin-1 codepage and render it as "Â·". */
-inline juce::String sep() { return "  |  "; }
+/** Inline separator for meta / list lines. One style only: `|` and `·` mixed
+    on the same screen made the reader re-parse every line. The middle dot is
+    built from a code point rather than a literal to stay codepage-safe. */
+inline juce::String sep() { return "  " + midDot() + "  "; }
 
 /** Formats a value with fixed decimals and a typographic minus. */
 inline juce::String num (float v, int decimals = 1)
@@ -208,7 +218,7 @@ inline juce::String fmtTime (double seconds)
 /** Baseline-correct text runs.
 
     JUCE vertically centres a glyph run inside a rectangle using the font's own
-    ascent and descent, so a 26 px reading and its 14 px unit placed in the same
+    ascent and descent, so a 30 px reading and its 14 px unit placed in the same
     rectangle share a box, not a baseline: the unit floats inside the value's
     line box and drifts as soon as either size changes. Every value / unit pair
     is drawn through these helpers instead, which anchor both runs to one
@@ -232,6 +242,56 @@ inline int drawRun (juce::Graphics& g, const juce::Font& font, juce::Colour colo
     g.drawSingleLineText (run, x, juce::roundToInt (baseline));
 
     return juce::roundToInt (juce::GlyphArrangement::getStringWidth (font, run));
+}
+
+/** Draws `value` and its `unit` right-aligned on one baseline.
+
+    Used by table cells where the unit should stay a step smaller than the
+    number instead of sharing the value run.
+*/
+inline int drawValueUnitRight (juce::Graphics& g, juce::Rectangle<int> box,
+                               const juce::String& value, const juce::String& unit,
+                               const juce::Font& valueFont, const juce::Font& unitFont,
+                               juce::Colour valueColour, juce::Colour unitColour,
+                               int gap = 6)
+{
+    const float baseline = centredBaseline (valueFont, box);
+    const int valueWidth = juce::roundToInt (juce::GlyphArrangement::getStringWidth (valueFont, value));
+    const int unitWidth = unit.isEmpty() ? 0
+        : juce::roundToInt (juce::GlyphArrangement::getStringWidth (unitFont, unit));
+    const int total = valueWidth + (unit.isEmpty() ? 0 : gap + unitWidth);
+
+    drawRun (g, valueFont, valueColour, value, box.getRight() - total, baseline);
+
+    if (unit.isNotEmpty())
+        drawRun (g, unitFont, unitColour, unit, box.getRight() - unitWidth, baseline);
+
+    return total;
+}
+
+/** Draws already-split lines at a fixed pitch.
+
+    JUCE's drawFittedText uses one font height as the line box, which is too
+    tight for multi-line CJK copy. Paragraph blocks pass an explicit pitch
+    (1.4-1.5x the font height) instead.
+*/
+inline void drawLines (juce::Graphics& g, const juce::Font& font, juce::Colour colour,
+                       const juce::StringArray& lines, juce::Rectangle<int> area, int pitch)
+{
+    g.setColour (colour);
+    g.setFont (font);
+
+    auto y = area.getY();
+
+    for (const auto& line : lines)
+    {
+        if (y + pitch > area.getBottom())
+            break;
+
+        g.drawText (line, area.getX(), y, area.getWidth(), pitch,
+                    juce::Justification::centredLeft, false);
+        y += pitch;
+    }
 }
 
 /** Draws `value` and `unit` on one shared baseline inside `box`.

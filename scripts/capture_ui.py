@@ -24,11 +24,31 @@ SHOTS = [
     ('stereo', ['page3'], 'ui_shot_page3_stereo'),
     ('fileqc', ['page10', 'fileqc', 'standalone'], 'ui_shot_page10_fileqc'),
     ('about', ['page0', 'about'], 'ui_shot_page0_about_about'),
+    ('codec-ready', ['page10', 'fileqc', 'codecstate'], 'ui_shot_page10_codec-ready'),
+    ('codec-failed', ['page10', 'fileqc', 'codecfail'], 'ui_shot_page10_codec-failed'),
 ]
 
 
 def digest(path):
     return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def renderer_architecture(path):
+    """Report the slices actually inside the renderer, not the host CPU."""
+    try:
+        out = subprocess.run(['lipo', '-info', str(path)], capture_output=True,
+                             text=True, check=True).stdout
+        has_x86 = 'x86_64' in out
+        has_arm = 'arm64' in out
+        if has_x86 and has_arm:
+            return 'universal (x86_64 + arm64)'
+        if has_arm:
+            return 'arm64'
+        if has_x86:
+            return 'x86_64'
+    except Exception:
+        pass
+    return platform.machine()
 
 
 def main():
@@ -43,7 +63,8 @@ def main():
         renderer = build / 'MasterLensUiShot_artefacts/Release/MasterLensUiShot.app/Contents/MacOS/MasterLensUiShot'
     renderer = renderer.resolve(strict=True)
     provenance = {'version': VERSION, 'platform': platform.system(),
-                  'architecture': platform.machine(), 'renderer': f'MasterLensUiShot {VERSION}',
+                  'architecture': renderer_architecture(renderer),
+                  'renderer': f'MasterLensUiShot {VERSION}',
                   'rendererSha256': digest(renderer), 'images': []}
     for name, flags, stem in SHOTS:
         suffix = f'{name}{SUFFIX}'

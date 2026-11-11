@@ -1,4 +1,5 @@
 #include "Advisor.h"
+#include "Theme.h"
 #include "../Delivery.h"
 #include "../Basis.h"
 #include "../Text.h"
@@ -9,9 +10,9 @@
 
 namespace ml
 {
-static juce::String one (double v) { return juce::String (v, 1); }
-static juce::String oneSigned (double v) { return (v >= 0.0 ? "+" : "") + juce::String (v, 1); }
-static juce::String twoSigned (double v) { return (v >= 0.0 ? "+" : "") + juce::String (v, 2); }
+static juce::String one (double v) { return ml::num ((float) v, 1); }
+static juce::String oneSigned (double v) { return ml::sgn ((float) v, 1); }
+static juce::String twoSigned (double v) { return ml::sgn ((float) v, 2); }
 
 void Advisor::reset()
 {

@@ -181,7 +181,7 @@ MasterLensAudioProcessorEditor::MasterLensAudioProcessorEditor (MasterLensAudioP
         (float) processor.apvts.state.getProperty ("targetWarPct", 50.0));
 
     setResizable (true, true);
-    setResizeLimits (896, 560, 2240, 1400);
+    setResizeLimits (1120, 700, 2240, 1400);
     if (auto* limits = getConstrainer()) limits->setFixedAspectRatio (1.6);
     setSize (juce::roundToInt (1120.0f * uiScale), juce::roundToInt (700.0f * uiScale));
 

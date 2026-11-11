@@ -320,6 +320,7 @@ void DetailArea::paintFiles (juce::Graphics& g)
         auto cell = cols.cells[(size_t) i];
         auto arrow = cell.removeFromRight (i == fileSortColumn ? 12 : 0);
 
+        g.setFont (labelFontFor (T (labelsZh[i], labelsEn[i])));
         g.drawText (T (labelsZh[i], labelsEn[i]),
                     cell.withTrimmedRight (i == 6 ? 0 : 8),
                     numeric ? juce::Justification::centredRight : juce::Justification::centredLeft);
@@ -468,9 +469,13 @@ void DetailArea::paintFileInspector (juce::Graphics& g)
         auto summary = area.removeFromTop (24);
         g.setFont (getValueFont());
         g.setColour (theme::textDim);
-        g.drawText (T ("头 / 尾 ", "HEAD / TAIL ") + juce::String (q.leadingSilenceSeconds, 3)
-                    + " / " + juce::String (q.trailingSilenceSeconds, 3) + " s   DC "
-                    + juce::String (100.0 * q.dcOffset[0], 2) + " / " + juce::String (100.0 * q.dcOffset[1], 2)
+        const auto dcPct = [] (double v)
+        {
+            return num (std::abs (v) < 0.00005 ? 0.0f : (float) (100.0 * v), 2);
+        };
+        g.drawText (T ("头 / 尾 ", "HEAD / TAIL ") + num ((float) q.leadingSilenceSeconds, 3)
+                    + " / " + num ((float) q.trailingSilenceSeconds, 3) + " s   DC "
+                    + dcPct (q.dcOffset[0]) + " / " + dcPct (q.dcOffset[1])
                     + "%   " + T ("满刻度段 ", "FS RUNS ") + juce::String (q.clippedRunCount),
                     summary, juce::Justification::centredLeft, true);
         if (spec.enabled)

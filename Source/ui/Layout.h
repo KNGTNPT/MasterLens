@@ -41,7 +41,8 @@ inline void alignChildren (juce::Component& parent)
         if (dynamic_cast<juce::ResizableCornerComponent*> (child) != nullptr) continue;
         child->setBounds (bounds (child->getBounds()));
         child->getProperties().set ("mlGrid", 4);
-        if (auto* label = dynamic_cast<juce::Label*> (child)) label->setFont (getLabelFont());
+        if (auto* label = dynamic_cast<juce::Label*> (child))
+            label->setFont (labelFontFor (label->getText()));
         if (auto* text = dynamic_cast<juce::TextEditor*> (child)) text->setFont (getValueFont());
     }
 }

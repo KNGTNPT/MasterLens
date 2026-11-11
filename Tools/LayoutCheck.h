@@ -18,14 +18,40 @@ public:
         {
             if (! pass) { ++failures; std::fprintf (stderr, "INSTRUMENT_FAIL %s\n", label); }
         };
-        const auto label = ml::getLabelFont(), value = ml::getValueFont(), critical = ml::getCriticalFont();
-        check (label.getHeight() == 14.0f && value.getHeight() == 16.0f && critical.getHeight() == 26.0f,
-               "font tiers must be 14 / 16 / 26");
-        check (value.getHeight() - label.getHeight() >= 2.0f, "label/value separation");
+        const auto label = ml::getLabelFont(), value = ml::getValueFont();
+        const auto title = ml::getTitleFont(), critical = ml::getCriticalFont();
+        check (label.getHeight() == 14.0f && value.getHeight() == 18.0f
+                   && title.getHeight() == 20.0f && critical.getHeight() == 30.0f,
+               "font tiers must be 14 / 18 / 20 / 30");
+        check (value.getHeight() - label.getHeight() >= 4.0f, "label/value separation");
+        check (title.getHeight() > value.getHeight() && critical.getHeight() > title.getHeight(),
+               "title and critical ordering");
+
+        // The host window (standalone / DAW) drives the editor through this
+        // constrainer, so its limits are what the user can actually resize to.
+        if (auto* constrainer = editor.getConstrainer())
+        {
+            check (constrainer->getMinimumWidth() == 1120 && constrainer->getMinimumHeight() == 700,
+                   "host minimum editor size 1120x700");
+            check (constrainer->getMaximumWidth() == 2240 && constrainer->getMaximumHeight() == 1400,
+                   "host maximum editor size 2240x1400");
+        }
+        else
+        {
+            check (false, "editor constrainer missing");
+        }
+
+        editor.setBoundsConstrained (juce::Rectangle<int> (0, 0, 800, 500));
+        check (editor.getWidth() >= 1120 && editor.getHeight() >= 700,
+               "shrinking below the canvas is refused");
+        editor.setBoundsConstrained (juce::Rectangle<int> (0, 0, 4000, 3000));
+        check (editor.getWidth() <= 2240 && editor.getHeight() <= 1400,
+               "growing beyond 200% is refused");
         const auto zeros = juce::GlyphArrangement::getStringWidth (value, "000000");
         const auto ones = juce::GlyphArrangement::getStringWidth (value, "111111");
         check (std::abs (zeros - ones) < 0.01f, "tabular numerals");
-        check (! banned (label) && ! banned (value) && ! banned (critical), "font family");
+        check (! banned (label) && ! banned (value) && ! banned (title) && ! banned (critical),
+               "font family");
         // Playback rotates around a fixed centre; a stopped/stale stream freezes.
         juce::AudioBuffer<float> block (2, 512); block.clear();
         editor.processor.hostTransportPlaying.store (true);
@@ -104,9 +130,10 @@ public:
         visit (editor, failures, checked);
         editor.hideOverlay (editor.genrePanel);
         editor.setPage ((int) ml::PageId::spectrum);
-        std::printf ("INSTRUMENT_LAYOUT %s boundaries=%d failures=%d fonts=%s/%s/%s sizes=14/16/26\n",
+        std::printf ("INSTRUMENT_LAYOUT %s boundaries=%d failures=%d fonts=%s/%s/%s/%s sizes=14/18/20/30\n",
             failures == 0 ? "PASS" : "FAIL", checked, failures,
-            label.getTypefaceName().toRawUTF8(), value.getTypefaceName().toRawUTF8(), critical.getTypefaceName().toRawUTF8());
+            label.getTypefaceName().toRawUTF8(), value.getTypefaceName().toRawUTF8(),
+            title.getTypefaceName().toRawUTF8(), critical.getTypefaceName().toRawUTF8());
         return failures == 0;
     }
 

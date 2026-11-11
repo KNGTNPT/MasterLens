@@ -1,0 +1,1151 @@
+{
+  "platform": "Darwin",
+  "cases": [
+    {
+      "arguments": [
+        "page0",
+        "minsize",
+        "layoutcheck"
+      ],
+      "mode": "layout",
+      "returncode": 0,
+      "stdout": "UiShot 3.0.3 page=0 scale=1.00 size=880x560\nINSTRUMENT_LAYOUT PASS boundaries=13752 failures=0 fonts=Geist/Geist/Geist/Geist sizes=14/18/20/30\n",
+      "stderr": ""
+    },
+    {
+      "arguments": [
+        "page0",
+        "minsize",
+        "out=qa303_00"
+      ],
+      "mode": "render",
+      "returncode": 0,
+      "stdout": "UiShot 3.0.3 page=0 scale=1.00 size=880x560\ncurve points=1800 valid=1800 min=-18.19 max=-13.42 last=-17.68\nintegrated=-15.39  tp=-1.46  lra=4.60  corr=0.79  width=34.2  lowside=1.7\n",
+      "stderr": ""
+    },
+    {
+      "arguments": [
+        "page1",
+        "minsize",
+        "layoutcheck"
+      ],
+      "mode": "layout",
+      "returncode": 0,
+      "stdout": "UiShot 3.0.3 page=1 scale=1.00 size=880x560\nINSTRUMENT_LAYOUT PASS boundaries=13752 failures=0 fonts=Geist/Geist/Geist/Geist sizes=14/18/20/30\n",
+      "stderr": ""
+    },
+    {
+      "arguments": [
+        "page1",
+        "minsize",
+        "out=qa303_01"
+      ],
+      "mode": "render",
+      "returncode": 0,
+      "stdout": "UiShot 3.0.3 page=1 scale=1.00 size=880x560\ncurve points=1800 valid=1800 min=-18.19 max=-13.42 last=-17.68\nintegrated=-15.39  tp=-1.46  lra=4.60  corr=0.79  width=34.2  lowside=1.7\n",
+      "stderr": ""
+    },
+    {
+      "arguments": [
+        "page2",
+        "minsize",
+        "layoutcheck"
+      ],
+      "mode": "layout",
+      "returncode": 0,
+      "stdout": "UiShot 3.0.3 page=2 scale=1.00 size=880x560\nINSTRUMENT_LAYOUT PASS boundaries=13752 failures=0 fonts=Geist/Geist/Geist/Geist sizes=14/18/20/30\n",
+      "stderr": ""
+    },
+    {
+      "arguments": [
+        "page2",
+        "minsize",
+        "out=qa303_02"
+      ],
+      "mode": "render",
+      "returncode": 0,
+      "stdout": "UiShot 3.0.3 page=2 scale=1.00 size=880x560\ncurve points=1800 valid=1800 min=-18.19 max=-13.42 last=-17.68\nintegrated=-15.39  tp=-1.46  lra=4.60  corr=0.79  width=34.2  lowside=1.7\n",
+      "stderr": ""
+    },
+    {
+      "arguments": [
+        "page3",
+        "minsize",
+        "layoutcheck"
+      ],
+      "mode": "layout",
+      "returncode": 0,
+      "stdout": "UiShot 3.0.3 page=3 scale=1.00 size=880x560\nINSTRUMENT_LAYOUT PASS boundaries=13752 failures=0 fonts=Geist/Geist/Geist/Geist sizes=14/18/20/30\n",
+      "stderr": ""
+    },
+    {
+      "arguments": [
+        "page3",
+        "minsize",
+        "out=qa303_03"
+      ],
+      "mode": "render",
+      "returncode": 0,
+      "stdout": "UiShot 3.0.3 page=3 scale=1.00 size=880x560\ncurve points=1800 valid=1800 min=-18.19 max=-13.42 last=-17.68\nintegrated=-15.39  tp=-1.46  lra=4.60  corr=0.79  width=34.2  lowside=1.7\n",
+      "stderr": ""
+    },
+    {
+      "arguments": [
+        "page4",
+        "minsize",
+        "layoutcheck"
+      ],
+      "mode": "layout",
+      "returncode": 0,
+      "stdout": "UiShot 3.0.3 page=4 scale=1.00 size=880x560\nINSTRUMENT_LAYOUT PASS boundaries=13752 failures=0 fonts=Geist/Geist/Geist/Geist sizes=14/18/20/30\n",
+      "stderr": ""
+    },
+    {
+      "arguments": [
+        "page4",
+        "minsize",
+        "out=qa303_04"
+      ],
+      "mode": "render",
+      "returncode": 0,
+      "stdout": "UiShot 3.0.3 page=4 scale=1.00 size=880x560\ncurve points=1800 valid=1800 min=-18.19 max=-13.42 last=-17.68\nintegrated=-15.39  tp=-1.46  lra=4.60  corr=0.79  width=34.2  lowside=1.7\n",
+      "stderr": ""
+    },
+    {
+      "arguments": [
+        "page5",
+        "minsize",
+        "layoutcheck"
+      ],
+      "mode": "layout",
+      "returncode": 0,
+      "stdout": "UiShot 3.0.3 page=5 scale=1.00 size=880x560\nINSTRUMENT_LAYOUT PASS boundaries=13752 failures=0 fonts=Geist/Geist/Geist/Geist sizes=14/18/20/30\n",
+      "stderr": ""
+    },
+    {
+      "arguments": [
+        "page5",
+        "minsize",
+        "out=qa303_05"
+      ],
+      "mode": "render",
+      "returncode": 0,
+      "stdout": "UiShot 3.0.3 page=5 scale=1.00 size=880x560\ncurve points=1800 valid=1800 min=-18.19 max=-13.42 last=-17.68\nintegrated=-15.39  tp=-1.46  lra=4.60  corr=0.79  width=34.2  lowside=1.7\n",
+      "stderr": ""
+    },
+    {
+      "arguments": [
+        "page6",
+        "minsize",
+        "layoutcheck"
+      ],
+      "mode": "layout",
+      "returncode": 0,
+      "stdout": "UiShot 3.0.3 page=6 scale=1.00 size=880x560\nINSTRUMENT_LAYOUT PASS boundaries=13752 failures=0 fonts=Geist/Geist/Geist/Geist sizes=14/18/20/30\n",
+      "stderr": ""
+    },
+    {
+      "arguments": [
+        "page6",
+        "minsize",
+        "out=qa303_06"
+      ],
+      "mode": "render",
+      "returncode": 0,
+      "stdout": "UiShot 3.0.3 page=6 scale=1.00 size=880x560\ncurve points=1800 valid=1800 min=-18.19 max=-13.42 last=-17.68\nintegrated=-15.39  tp=-1.46  lra=4.60  corr=0.79  width=34.2  lowside=1.7\n",
+      "stderr": ""
+    },
+    {
+      "arguments": [
+        "page7",
+        "minsize",
+        "layoutcheck"
+      ],
+      "mode": "layout",
+      "returncode": 0,
+      "stdout": "UiShot 3.0.3 page=7 scale=1.00 size=880x560\nINSTRUMENT_LAYOUT PASS boundaries=13752 failures=0 fonts=Geist/Geist/Geist/Geist sizes=14/18/20/30\n",
+      "stderr": ""
+    },
+    {
+      "arguments": [
+        "page7",
+        "minsize",
+        "out=qa303_07"
+      ],
+      "mode": "render",
+      "returncode": 0,
+      "stdout": "UiShot 3.0.3 page=7 scale=1.00 size=880x560\ncurve points=1800 valid=1800 min=-18.19 max=-13.42 last=-17.68\nintegrated=-15.39  tp=-1.46  lra=4.60  corr=0.79  width=34.2  lowside=1.7\n",
+      "stderr": ""
+    },
+    {
+      "arguments": [
+        "page8",
+        "minsize",
+        "layoutcheck"
+      ],
+      "mode": "layout",
+      "returncode": 0,
+      "stdout": "UiShot 3.0.3 page=8 scale=1.00 size=880x560\nINSTRUMENT_LAYOUT PASS boundaries=13752 failures=0 fonts=Geist/Geist/Geist/Geist sizes=14/18/20/30\n",
+      "stderr": ""
+    },
+    {
+      "arguments": [
+        "page8",
+        "minsize",
+        "out=qa303_08"
+      ],
+      "mode": "render",
+      "returncode": 0,
+      "stdout": "UiShot 3.0.3 page=8 scale=1.00 size=880x560\ncurve points=1800 valid=1800 min=-18.19 max=-13.42 last=-17.68\nintegrated=-15.39  tp=-1.46  lra=4.60  corr=0.79  width=34.2  lowside=1.7\n",
+      "stderr": ""
+    },
+    {
+      "arguments": [
+        "page9",
+        "minsize",
+        "layoutcheck"
+      ],
+      "mode": "layout",
+      "returncode": 0,
+      "stdout": "UiShot 3.0.3 page=9 scale=1.00 size=880x560\nINSTRUMENT_LAYOUT PASS boundaries=13752 failures=0 fonts=Geist/Geist/Geist/Geist sizes=14/18/20/30\n",
+      "stderr": ""
+    },
+    {
+      "arguments": [
+        "page9",
+        "minsize",
+        "out=qa303_09"
+      ],
+      "mode": "render",
+      "returncode": 0,
+      "stdout": "UiShot 3.0.3 page=9 scale=1.00 size=880x560\ncurve points=1800 valid=1800 min=-18.19 max=-13.42 last=-17.68\nintegrated=-15.39  tp=-1.46  lra=4.60  corr=0.79  width=34.2  lowside=1.7\n",
+      "stderr": ""
+    },
+    {
+      "arguments": [
+        "page10",
+        "minsize",
+        "fileqc",
+        "layoutcheck"
+      ],
+      "mode": "layout",
+      "returncode": 0,
+      "stdout": "UiShot 3.0.3 page=10 scale=1.00 size=880x560\nINSTRUMENT_LAYOUT PASS boundaries=13920 failures=0 fonts=Geist/Geist/Geist/Geist sizes=14/18/20/30\n",
+      "stderr": ""
+    },
+    {
+      "arguments": [
+        "page10",
+        "minsize",
+        "fileqc",
+        "out=qa303_10"
+      ],
+      "mode": "render",
+      "returncode": 0,
+      "stdout": "UiShot 3.0.3 page=10 scale=1.00 size=880x560\ncurve points=1800 valid=1800 min=-18.19 max=-13.42 last=-17.68\nintegrated=-15.39  tp=-1.46  lra=4.60  corr=0.79  width=34.2  lowside=1.7\n",
+      "stderr": ""
+    },
+    {
+      "arguments": [
+        "page0",
+        "size1120",
+        "scale100",
+        "layoutcheck"
+      ],
+      "mode": "layout",
+      "returncode": 0,
+      "stdout": "UiShot 3.0.3 page=0 scale=1.00 size=1120x700\nINSTRUMENT_LAYOUT PASS boundaries=13752 failures=0 fonts=Geist/Geist/Geist/Geist sizes=14/18/20/30\n",
+      "stderr": ""
+    },
+    {
+      "arguments": [
+        "page0",
+        "size1120",
+        "scale100",
+        "out=qa303_11"
+      ],
+      "mode": "render",
+      "returncode": 0,
+      "stdout": "UiShot 3.0.3 page=0 scale=1.00 size=1120x700\ncurve points=1800 valid=1800 min=-18.19 max=-13.42 last=-17.68\nintegrated=-15.39  tp=-1.46  lra=4.60  corr=0.79  width=34.2  lowside=1.7\n",
+      "stderr": ""
+    },
+    {
+      "arguments": [
+        "page0",
+        "settings",
+        "size1120",
+        "scale100",
+        "layoutcheck"
+      ],
+      "mode": "layout",
+      "returncode": 0,
+      "stdout": "UiShot 3.0.3 page=0 scale=1.00 size=1120x700\nINSTRUMENT_LAYOUT PASS boundaries=17392 failures=0 fonts=Geist/Geist/Geist/Geist sizes=14/18/20/30\n",
+      "stderr": ""
+    },
+    {
+      "arguments": [
+        "page0",
+        "settings",
+        "size1120",
+        "scale100",
+        "out=qa303_12"
+      ],
+      "mode": "render",
+      "returncode": 0,
+      "stdout": "UiShot 3.0.3 page=0 scale=1.00 size=1120x700\ncurve points=1800 valid=1800 min=-18.19 max=-13.42 last=-17.68\nintegrated=-15.39  tp=-1.46  lra=4.60  corr=0.79  width=34.2  lowside=1.7\n",
+      "stderr": ""
+    },
+    {
+      "arguments": [
+        "page10",
+        "fileqc",
+        "fileview2",
+        "size1120",
+        "scale100",
+        "layoutcheck"
+      ],
+      "mode": "layout",
+      "returncode": 0,
+      "stdout": "UiShot 3.0.3 page=10 scale=1.00 size=1120x700\nINSTRUMENT_LAYOUT PASS boundaries=13920 failures=0 fonts=Geist/Geist/Geist/Geist sizes=14/18/20/30\n",
+      "stderr": ""
+    },
+    {
+      "arguments": [
+        "page10",
+        "fileqc",
+        "fileview2",
+        "size1120",
+        "scale100",
+        "out=qa303_13"
+      ],
+      "mode": "render",
+      "returncode": 0,
+      "stdout": "UiShot 3.0.3 page=10 scale=1.00 size=1120x700\ncurve points=1800 valid=1800 min=-18.19 max=-13.42 last=-17.68\nintegrated=-15.39  tp=-1.46  lra=4.60  corr=0.79  width=34.2  lowside=1.7\n",
+      "stderr": ""
+    },
+    {
+      "arguments": [
+        "page0",
+        "size1120",
+        "scale125",
+        "layoutcheck"
+      ],
+      "mode": "layout",
+      "returncode": 0,
+      "stdout": "UiShot 3.0.3 page=0 scale=1.25 size=1400x875\nINSTRUMENT_LAYOUT PASS boundaries=13752 failures=0 fonts=Geist/Geist/Geist/Geist sizes=14/18/20/30\n",
+      "stderr": ""
+    },
+    {
+      "arguments": [
+        "page0",
+        "size1120",
+        "scale125",
+        "out=qa303_14"
+      ],
+      "mode": "render",
+      "returncode": 0,
+      "stdout": "UiShot 3.0.3 page=0 scale=1.25 size=1400x875\ncurve points=1800 valid=1800 min=-18.19 max=-13.42 last=-17.68\nintegrated=-15.39  tp=-1.46  lra=4.60  corr=0.79  width=34.2  lowside=1.7\n",
+      "stderr": ""
+    },
+    {
+      "arguments": [
+        "page0",
+        "settings",
+        "size1120",
+        "scale125",
+        "layoutcheck"
+      ],
+      "mode": "layout",
+      "returncode": 0,
+      "stdout": "UiShot 3.0.3 page=0 scale=1.25 size=1400x875\nINSTRUMENT_LAYOUT PASS boundaries=17392 failures=0 fonts=Geist/Geist/Geist/Geist sizes=14/18/20/30\n",
+      "stderr": ""
+    },
+    {
+      "arguments": [
+        "page0",
+        "settings",
+        "size1120",
+        "scale125",
+        "out=qa303_15"
+      ],
+      "mode": "render",
+      "returncode": 0,
+      "stdout": "UiShot 3.0.3 page=0 scale=1.25 size=1400x875\ncurve points=1800 valid=1800 min=-18.19 max=-13.42 last=-17.68\nintegrated=-15.39  tp=-1.46  lra=4.60  corr=0.79  width=34.2  lowside=1.7\n",
+      "stderr": ""
+    },
+    {
+      "arguments": [
+        "page10",
+        "fileqc",
+        "fileview2",
+        "size1120",
+        "scale125",
+        "layoutcheck"
+      ],
+      "mode": "layout",
+      "returncode": 0,
+      "stdout": "UiShot 3.0.3 page=10 scale=1.25 size=1400x875\nINSTRUMENT_LAYOUT PASS boundaries=13920 failures=0 fonts=Geist/Geist/Geist/Geist sizes=14/18/20/30\n",
+      "stderr": ""
+    },
+    {
+      "arguments": [
+        "page10",
+        "fileqc",
+        "fileview2",
+        "size1120",
+        "scale125",
+        "out=qa303_16"
+      ],
+      "mode": "render",
+      "returncode": 0,
+      "stdout": "UiShot 3.0.3 page=10 scale=1.25 size=1400x875\ncurve points=1800 valid=1800 min=-18.19 max=-13.42 last=-17.68\nintegrated=-15.39  tp=-1.46  lra=4.60  corr=0.79  width=34.2  lowside=1.7\n",
+      "stderr": ""
+    },
+    {
+      "arguments": [
+        "page0",
+        "size1120",
+        "scale150",
+        "layoutcheck"
+      ],
+      "mode": "layout",
+      "returncode": 0,
+      "stdout": "UiShot 3.0.3 page=0 scale=1.50 size=1680x1050\nINSTRUMENT_LAYOUT PASS boundaries=13752 failures=0 fonts=Geist/Geist/Geist/Geist sizes=14/18/20/30\n",
+      "stderr": ""
+    },
+    {
+      "arguments": [
+        "page0",
+        "size1120",
+        "scale150",
+        "out=qa303_17"
+      ],
+      "mode": "render",
+      "returncode": 0,
+      "stdout": "UiShot 3.0.3 page=0 scale=1.50 size=1680x1050\ncurve points=1800 valid=1800 min=-18.19 max=-13.42 last=-17.68\nintegrated=-15.39  tp=-1.46  lra=4.60  corr=0.79  width=34.2  lowside=1.7\n",
+      "stderr": ""
+    },
+    {
+      "arguments": [
+        "page0",
+        "settings",
+        "size1120",
+        "scale150",
+        "layoutcheck"
+      ],
+      "mode": "layout",
+      "returncode": 0,
+      "stdout": "UiShot 3.0.3 page=0 scale=1.50 size=1680x1050\nINSTRUMENT_LAYOUT PASS boundaries=17392 failures=0 fonts=Geist/Geist/Geist/Geist sizes=14/18/20/30\n",
+      "stderr": ""
+    },
+    {
+      "arguments": [
+        "page0",
+        "settings",
+        "size1120",
+        "scale150",
+        "out=qa303_18"
+      ],
+      "mode": "render",
+      "returncode": 0,
+      "stdout": "UiShot 3.0.3 page=0 scale=1.50 size=1680x1050\ncurve points=1800 valid=1800 min=-18.19 max=-13.42 last=-17.68\nintegrated=-15.39  tp=-1.46  lra=4.60  corr=0.79  width=34.2  lowside=1.7\n",
+      "stderr": ""
+    },
+    {
+      "arguments": [
+        "page10",
+        "fileqc",
+        "fileview2",
+        "size1120",
+        "scale150",
+        "layoutcheck"
+      ],
+      "mode": "layout",
+      "returncode": 0,
+      "stdout": "UiShot 3.0.3 page=10 scale=1.50 size=1680x1050\nINSTRUMENT_LAYOUT PASS boundaries=13920 failures=0 fonts=Geist/Geist/Geist/Geist sizes=14/18/20/30\n",
+      "stderr": ""
+    },
+    {
+      "arguments": [
+        "page10",
+        "fileqc",
+        "fileview2",
+        "size1120",
+        "scale150",
+        "out=qa303_19"
+      ],
+      "mode": "render",
+      "returncode": 0,
+      "stdout": "UiShot 3.0.3 page=10 scale=1.50 size=1680x1050\ncurve points=1800 valid=1800 min=-18.19 max=-13.42 last=-17.68\nintegrated=-15.39  tp=-1.46  lra=4.60  corr=0.79  width=34.2  lowside=1.7\n",
+      "stderr": ""
+    },
+    {
+      "arguments": [
+        "page0",
+        "size1120",
+        "scale175",
+        "layoutcheck"
+      ],
+      "mode": "layout",
+      "returncode": 0,
+      "stdout": "UiShot 3.0.3 page=0 scale=1.75 size=1960x1225\nINSTRUMENT_LAYOUT PASS boundaries=13752 failures=0 fonts=Geist/Geist/Geist/Geist sizes=14/18/20/30\n",
+      "stderr": ""
+    },
+    {
+      "arguments": [
+        "page0",
+        "size1120",
+        "scale175",
+        "out=qa303_20"
+      ],
+      "mode": "render",
+      "returncode": 0,
+      "stdout": "UiShot 3.0.3 page=0 scale=1.75 size=1960x1225\ncurve points=1800 valid=1800 min=-18.19 max=-13.42 last=-17.68\nintegrated=-15.39  tp=-1.46  lra=4.60  corr=0.79  width=34.2  lowside=1.7\n",
+      "stderr": ""
+    },
+    {
+      "arguments": [
+        "page0",
+        "settings",
+        "size1120",
+        "scale175",
+        "layoutcheck"
+      ],
+      "mode": "layout",
+      "returncode": 0,
+      "stdout": "UiShot 3.0.3 page=0 scale=1.75 size=1960x1225\nINSTRUMENT_LAYOUT PASS boundaries=17392 failures=0 fonts=Geist/Geist/Geist/Geist sizes=14/18/20/30\n",
+      "stderr": ""
+    },
+    {
+      "arguments": [
+        "page0",
+        "settings",
+        "size1120",
+        "scale175",
+        "out=qa303_21"
+      ],
+      "mode": "render",
+      "returncode": 0,
+      "stdout": "UiShot 3.0.3 page=0 scale=1.75 size=1960x1225\ncurve points=1800 valid=1800 min=-18.19 max=-13.42 last=-17.68\nintegrated=-15.39  tp=-1.46  lra=4.60  corr=0.79  width=34.2  lowside=1.7\n",
+      "stderr": ""
+    },
+    {
+      "arguments": [
+        "page10",
+        "fileqc",
+        "fileview2",
+        "size1120",
+        "scale175",
+        "layoutcheck"
+      ],
+      "mode": "layout",
+      "returncode": 0,
+      "stdout": "UiShot 3.0.3 page=10 scale=1.75 size=1960x1225\nINSTRUMENT_LAYOUT PASS boundaries=13920 failures=0 fonts=Geist/Geist/Geist/Geist sizes=14/18/20/30\n",
+      "stderr": ""
+    },
+    {
+      "arguments": [
+        "page10",
+        "fileqc",
+        "fileview2",
+        "size1120",
+        "scale175",
+        "out=qa303_22"
+      ],
+      "mode": "render",
+      "returncode": 0,
+      "stdout": "UiShot 3.0.3 page=10 scale=1.75 size=1960x1225\ncurve points=1800 valid=1800 min=-18.19 max=-13.42 last=-17.68\nintegrated=-15.39  tp=-1.46  lra=4.60  corr=0.79  width=34.2  lowside=1.7\n",
+      "stderr": ""
+    },
+    {
+      "arguments": [
+        "page0",
+        "size1120",
+        "scale200",
+        "layoutcheck"
+      ],
+      "mode": "layout",
+      "returncode": 0,
+      "stdout": "UiShot 3.0.3 page=0 scale=2.00 size=2240x1400\nINSTRUMENT_LAYOUT PASS boundaries=13752 failures=0 fonts=Geist/Geist/Geist/Geist sizes=14/18/20/30\n",
+      "stderr": ""
+    },
+    {
+      "arguments": [
+        "page0",
+        "size1120",
+        "scale200",
+        "out=qa303_23"
+      ],
+      "mode": "render",
+      "returncode": 0,
+      "stdout": "UiShot 3.0.3 page=0 scale=2.00 size=2240x1400\ncurve points=1800 valid=1800 min=-18.19 max=-13.42 last=-17.68\nintegrated=-15.39  tp=-1.46  lra=4.60  corr=0.79  width=34.2  lowside=1.7\n",
+      "stderr": ""
+    },
+    {
+      "arguments": [
+        "page0",
+        "settings",
+        "size1120",
+        "scale200",
+        "layoutcheck"
+      ],
+      "mode": "layout",
+      "returncode": 0,
+      "stdout": "UiShot 3.0.3 page=0 scale=2.00 size=2240x1400\nINSTRUMENT_LAYOUT PASS boundaries=17392 failures=0 fonts=Geist/Geist/Geist/Geist sizes=14/18/20/30\n",
+      "stderr": ""
+    },
+    {
+      "arguments": [
+        "page0",
+        "settings",
+        "size1120",
+        "scale200",
+        "out=qa303_24"
+      ],
+      "mode": "render",
+      "returncode": 0,
+      "stdout": "UiShot 3.0.3 page=0 scale=2.00 size=2240x1400\ncurve points=1800 valid=1800 min=-18.19 max=-13.42 last=-17.68\nintegrated=-15.39  tp=-1.46  lra=4.60  corr=0.79  width=34.2  lowside=1.7\n",
+      "stderr": ""
+    },
+    {
+      "arguments": [
+        "page10",
+        "fileqc",
+        "fileview2",
+        "size1120",
+        "scale200",
+        "layoutcheck"
+      ],
+      "mode": "layout",
+      "returncode": 0,
+      "stdout": "UiShot 3.0.3 page=10 scale=2.00 size=2240x1400\nINSTRUMENT_LAYOUT PASS boundaries=13920 failures=0 fonts=Geist/Geist/Geist/Geist sizes=14/18/20/30\n",
+      "stderr": ""
+    },
+    {
+      "arguments": [
+        "page10",
+        "fileqc",
+        "fileview2",
+        "size1120",
+        "scale200",
+        "out=qa303_25"
+      ],
+      "mode": "render",
+      "returncode": 0,
+      "stdout": "UiShot 3.0.3 page=10 scale=2.00 size=2240x1400\ncurve points=1800 valid=1800 min=-18.19 max=-13.42 last=-17.68\nintegrated=-15.39  tp=-1.46  lra=4.60  corr=0.79  width=34.2  lowside=1.7\n",
+      "stderr": ""
+    },
+    {
+      "arguments": [
+        "page10",
+        "fileqc",
+        "fileview1",
+        "minsize",
+        "layoutcheck"
+      ],
+      "mode": "layout",
+      "returncode": 0,
+      "stdout": "UiShot 3.0.3 page=10 scale=1.00 size=880x560\nINSTRUMENT_LAYOUT PASS boundaries=13920 failures=0 fonts=Geist/Geist/Geist/Geist sizes=14/18/20/30\n",
+      "stderr": ""
+    },
+    {
+      "arguments": [
+        "page10",
+        "fileqc",
+        "fileview1",
+        "minsize",
+        "out=qa303_26"
+      ],
+      "mode": "render",
+      "returncode": 0,
+      "stdout": "UiShot 3.0.3 page=10 scale=1.00 size=880x560\ncurve points=1800 valid=1800 min=-18.19 max=-13.42 last=-17.68\nintegrated=-15.39  tp=-1.46  lra=4.60  corr=0.79  width=34.2  lowside=1.7\n",
+      "stderr": ""
+    },
+    {
+      "arguments": [
+        "page10",
+        "fileqc",
+        "fileview2",
+        "minsize",
+        "layoutcheck"
+      ],
+      "mode": "layout",
+      "returncode": 0,
+      "stdout": "UiShot 3.0.3 page=10 scale=1.00 size=880x560\nINSTRUMENT_LAYOUT PASS boundaries=13920 failures=0 fonts=Geist/Geist/Geist/Geist sizes=14/18/20/30\n",
+      "stderr": ""
+    },
+    {
+      "arguments": [
+        "page10",
+        "fileqc",
+        "fileview2",
+        "minsize",
+        "out=qa303_27"
+      ],
+      "mode": "render",
+      "returncode": 0,
+      "stdout": "UiShot 3.0.3 page=10 scale=1.00 size=880x560\ncurve points=1800 valid=1800 min=-18.19 max=-13.42 last=-17.68\nintegrated=-15.39  tp=-1.46  lra=4.60  corr=0.79  width=34.2  lowside=1.7\n",
+      "stderr": ""
+    },
+    {
+      "arguments": [
+        "page10",
+        "fileqc",
+        "en",
+        "minsize",
+        "layoutcheck"
+      ],
+      "mode": "layout",
+      "returncode": 0,
+      "stdout": "UiShot 3.0.3 page=10 scale=1.00 size=880x560\nINSTRUMENT_LAYOUT PASS boundaries=13920 failures=0 fonts=Geist/Geist/Geist/Geist sizes=14/18/20/30\n",
+      "stderr": ""
+    },
+    {
+      "arguments": [
+        "page10",
+        "fileqc",
+        "en",
+        "minsize",
+        "out=qa303_28"
+      ],
+      "mode": "render",
+      "returncode": 0,
+      "stdout": "UiShot 3.0.3 page=10 scale=1.00 size=880x560\ncurve points=1800 valid=1800 min=-18.19 max=-13.42 last=-17.68\nintegrated=-15.39  tp=-1.46  lra=4.60  corr=0.79  width=34.2  lowside=1.7\n",
+      "stderr": ""
+    },
+    {
+      "arguments": [
+        "page9",
+        "en",
+        "minsize",
+        "layoutcheck"
+      ],
+      "mode": "layout",
+      "returncode": 0,
+      "stdout": "UiShot 3.0.3 page=9 scale=1.00 size=880x560\nINSTRUMENT_LAYOUT PASS boundaries=13752 failures=0 fonts=Geist/Geist/Geist/Geist sizes=14/18/20/30\n",
+      "stderr": ""
+    },
+    {
+      "arguments": [
+        "page9",
+        "en",
+        "minsize",
+        "out=qa303_29"
+      ],
+      "mode": "render",
+      "returncode": 0,
+      "stdout": "UiShot 3.0.3 page=9 scale=1.00 size=880x560\ncurve points=1800 valid=1800 min=-18.19 max=-13.42 last=-17.68\nintegrated=-15.39  tp=-1.46  lra=4.60  corr=0.79  width=34.2  lowside=1.7\n",
+      "stderr": ""
+    },
+    {
+      "arguments": [
+        "page4",
+        "en",
+        "minsize",
+        "layoutcheck"
+      ],
+      "mode": "layout",
+      "returncode": 0,
+      "stdout": "UiShot 3.0.3 page=4 scale=1.00 size=880x560\nINSTRUMENT_LAYOUT PASS boundaries=13752 failures=0 fonts=Geist/Geist/Geist/Geist sizes=14/18/20/30\n",
+      "stderr": ""
+    },
+    {
+      "arguments": [
+        "page4",
+        "en",
+        "minsize",
+        "out=qa303_30"
+      ],
+      "mode": "render",
+      "returncode": 0,
+      "stdout": "UiShot 3.0.3 page=4 scale=1.00 size=880x560\ncurve points=1800 valid=1800 min=-18.19 max=-13.42 last=-17.68\nintegrated=-15.39  tp=-1.46  lra=4.60  corr=0.79  width=34.2  lowside=1.7\n",
+      "stderr": ""
+    },
+    {
+      "arguments": [
+        "page0",
+        "about",
+        "minsize",
+        "layoutcheck"
+      ],
+      "mode": "layout",
+      "returncode": 0,
+      "stdout": "UiShot 3.0.3 page=0 scale=1.00 size=880x560\nINSTRUMENT_LAYOUT PASS boundaries=14796 failures=0 fonts=Geist/Geist/Geist/Geist sizes=14/18/20/30\n",
+      "stderr": ""
+    },
+    {
+      "arguments": [
+        "page0",
+        "about",
+        "minsize",
+        "out=qa303_31"
+      ],
+      "mode": "render",
+      "returncode": 0,
+      "stdout": "UiShot 3.0.3 page=0 scale=1.00 size=880x560\ncurve points=1800 valid=1800 min=-18.19 max=-13.42 last=-17.68\nintegrated=-15.39  tp=-1.46  lra=4.60  corr=0.79  width=34.2  lowside=1.7\n",
+      "stderr": ""
+    },
+    {
+      "arguments": [
+        "page0",
+        "light",
+        "size1120",
+        "layoutcheck"
+      ],
+      "mode": "layout",
+      "returncode": 0,
+      "stdout": "UiShot 3.0.3 page=0 scale=1.00 size=1120x700\nINSTRUMENT_LAYOUT PASS boundaries=13752 failures=0 fonts=Geist/Geist/Geist/Geist sizes=14/18/20/30\n",
+      "stderr": ""
+    },
+    {
+      "arguments": [
+        "page0",
+        "light",
+        "size1120",
+        "out=qa303_32"
+      ],
+      "mode": "render",
+      "returncode": 0,
+      "stdout": "UiShot 3.0.3 page=0 scale=1.00 size=1120x700\ncurve points=1800 valid=1800 min=-18.19 max=-13.42 last=-17.68\nintegrated=-15.39  tp=-1.46  lra=4.60  corr=0.79  width=34.2  lowside=1.7\n",
+      "stderr": ""
+    },
+    {
+      "arguments": [
+        "page10",
+        "fileqc",
+        "light",
+        "size1120",
+        "layoutcheck"
+      ],
+      "mode": "layout",
+      "returncode": 0,
+      "stdout": "UiShot 3.0.3 page=10 scale=1.00 size=1120x700\nINSTRUMENT_LAYOUT PASS boundaries=13920 failures=0 fonts=Geist/Geist/Geist/Geist sizes=14/18/20/30\n",
+      "stderr": ""
+    },
+    {
+      "arguments": [
+        "page10",
+        "fileqc",
+        "light",
+        "size1120",
+        "out=qa303_33"
+      ],
+      "mode": "render",
+      "returncode": 0,
+      "stdout": "UiShot 3.0.3 page=10 scale=1.00 size=1120x700\ncurve points=1800 valid=1800 min=-18.19 max=-13.42 last=-17.68\nintegrated=-15.39  tp=-1.46  lra=4.60  corr=0.79  width=34.2  lowside=1.7\n",
+      "stderr": ""
+    },
+    {
+      "arguments": [
+        "page10",
+        "empty",
+        "minsize",
+        "layoutcheck"
+      ],
+      "mode": "layout",
+      "returncode": 0,
+      "stdout": "UiShot 3.0.3 page=10 scale=1.00 size=880x560\nINSTRUMENT_LAYOUT PASS boundaries=12432 failures=0 fonts=Geist/Geist/Geist/Geist sizes=14/18/20/30\n",
+      "stderr": ""
+    },
+    {
+      "arguments": [
+        "page10",
+        "empty",
+        "minsize",
+        "out=qa303_34"
+      ],
+      "mode": "render",
+      "returncode": 0,
+      "stdout": "UiShot 3.0.3 page=10 scale=1.00 size=880x560\ncurve points=1800 valid=0 min=0.00 max=-200.00 last=-100.00\nintegrated=-100.00  tp=-100.00  lra=0.00  corr=0.00  width=0.0  lowside=0.0\n",
+      "stderr": ""
+    },
+    {
+      "arguments": [
+        "page0",
+        "settings",
+        "minsize",
+        "layoutcheck"
+      ],
+      "mode": "layout",
+      "returncode": 0,
+      "stdout": "UiShot 3.0.3 page=0 scale=1.00 size=880x560\nINSTRUMENT_LAYOUT PASS boundaries=17392 failures=0 fonts=Geist/Geist/Geist/Geist sizes=14/18/20/30\n",
+      "stderr": ""
+    },
+    {
+      "arguments": [
+        "page0",
+        "settings",
+        "minsize",
+        "out=qa303_35"
+      ],
+      "mode": "render",
+      "returncode": 0,
+      "stdout": "UiShot 3.0.3 page=0 scale=1.00 size=880x560\ncurve points=1800 valid=1800 min=-18.19 max=-13.42 last=-17.68\nintegrated=-15.39  tp=-1.46  lra=4.60  corr=0.79  width=34.2  lowside=1.7\n",
+      "stderr": ""
+    },
+    {
+      "arguments": [
+        "page0",
+        "settings",
+        "size1120",
+        "scale200",
+        "layoutcheck"
+      ],
+      "mode": "layout",
+      "returncode": 0,
+      "stdout": "UiShot 3.0.3 page=0 scale=2.00 size=2240x1400\nINSTRUMENT_LAYOUT PASS boundaries=17392 failures=0 fonts=Geist/Geist/Geist/Geist sizes=14/18/20/30\n",
+      "stderr": ""
+    },
+    {
+      "arguments": [
+        "page0",
+        "settings",
+        "size1120",
+        "scale200",
+        "out=qa303_36"
+      ],
+      "mode": "render",
+      "returncode": 0,
+      "stdout": "UiShot 3.0.3 page=0 scale=2.00 size=2240x1400\ncurve points=1800 valid=1800 min=-18.19 max=-13.42 last=-17.68\nintegrated=-15.39  tp=-1.46  lra=4.60  corr=0.79  width=34.2  lowside=1.7\n",
+      "stderr": ""
+    },
+    {
+      "arguments": [
+        "page0",
+        "about",
+        "size1120",
+        "scale200",
+        "layoutcheck"
+      ],
+      "mode": "layout",
+      "returncode": 0,
+      "stdout": "UiShot 3.0.3 page=0 scale=2.00 size=2240x1400\nINSTRUMENT_LAYOUT PASS boundaries=14796 failures=0 fonts=Geist/Geist/Geist/Geist sizes=14/18/20/30\n",
+      "stderr": ""
+    },
+    {
+      "arguments": [
+        "page0",
+        "about",
+        "size1120",
+        "scale200",
+        "out=qa303_37"
+      ],
+      "mode": "render",
+      "returncode": 0,
+      "stdout": "UiShot 3.0.3 page=0 scale=2.00 size=2240x1400\ncurve points=1800 valid=1800 min=-18.19 max=-13.42 last=-17.68\nintegrated=-15.39  tp=-1.46  lra=4.60  corr=0.79  width=34.2  lowside=1.7\n",
+      "stderr": ""
+    },
+    {
+      "arguments": [
+        "page9",
+        "size1120",
+        "scale200",
+        "layoutcheck"
+      ],
+      "mode": "layout",
+      "returncode": 0,
+      "stdout": "UiShot 3.0.3 page=9 scale=2.00 size=2240x1400\nINSTRUMENT_LAYOUT PASS boundaries=13752 failures=0 fonts=Geist/Geist/Geist/Geist sizes=14/18/20/30\n",
+      "stderr": ""
+    },
+    {
+      "arguments": [
+        "page9",
+        "size1120",
+        "scale200",
+        "out=qa303_38"
+      ],
+      "mode": "render",
+      "returncode": 0,
+      "stdout": "UiShot 3.0.3 page=9 scale=2.00 size=2240x1400\ncurve points=1800 valid=1800 min=-18.19 max=-13.42 last=-17.68\nintegrated=-15.39  tp=-1.46  lra=4.60  corr=0.79  width=34.2  lowside=1.7\n",
+      "stderr": ""
+    },
+    {
+      "arguments": [
+        "page10",
+        "fileqc",
+        "standalone",
+        "size1120",
+        "scale200",
+        "layoutcheck"
+      ],
+      "mode": "layout",
+      "returncode": 0,
+      "stdout": "UiShot 3.0.3 page=10 scale=2.00 size=2240x1400\nINSTRUMENT_LAYOUT PASS boundaries=14088 failures=0 fonts=Geist/Geist/Geist/Geist sizes=14/18/20/30\n",
+      "stderr": ""
+    },
+    {
+      "arguments": [
+        "page10",
+        "fileqc",
+        "standalone",
+        "size1120",
+        "scale200",
+        "out=qa303_39"
+      ],
+      "mode": "render",
+      "returncode": 0,
+      "stdout": "UiShot 3.0.3 page=10 scale=2.00 size=2240x1400\ncurve points=1800 valid=1800 min=-18.19 max=-13.42 last=-17.68\nintegrated=-15.39  tp=-1.46  lra=4.60  corr=0.79  width=34.2  lowside=1.7\n",
+      "stderr": ""
+    },
+    {
+      "arguments": [
+        "page2",
+        "spectrumview2",
+        "size1120",
+        "layoutcheck"
+      ],
+      "mode": "layout",
+      "returncode": 0,
+      "stdout": "UiShot 3.0.3 page=2 scale=1.00 size=1120x700\nINSTRUMENT_LAYOUT PASS boundaries=13752 failures=0 fonts=Geist/Geist/Geist/Geist sizes=14/18/20/30\n",
+      "stderr": ""
+    },
+    {
+      "arguments": [
+        "page2",
+        "spectrumview2",
+        "size1120",
+        "out=qa303_40"
+      ],
+      "mode": "render",
+      "returncode": 0,
+      "stdout": "UiShot 3.0.3 page=2 scale=1.00 size=1120x700\ncurve points=1800 valid=1800 min=-18.19 max=-13.42 last=-17.68\nintegrated=-15.39  tp=-1.46  lra=4.60  corr=0.79  width=34.2  lowside=1.7\n",
+      "stderr": ""
+    },
+    {
+      "arguments": [
+        "page9",
+        "selectionset",
+        "size1120",
+        "layoutcheck"
+      ],
+      "mode": "layout",
+      "returncode": 0,
+      "stdout": "UiShot 3.0.3 page=9 scale=1.00 size=1120x700\nSTATE selection ready\nINSTRUMENT_LAYOUT PASS boundaries=13752 failures=0 fonts=Geist/Geist/Geist/Geist sizes=14/18/20/30\n",
+      "stderr": ""
+    },
+    {
+      "arguments": [
+        "page9",
+        "selectionset",
+        "size1120",
+        "out=qa303_41"
+      ],
+      "mode": "render",
+      "returncode": 0,
+      "stdout": "UiShot 3.0.3 page=9 scale=1.00 size=1120x700\nSTATE selection ready\ncurve points=1800 valid=1800 min=-18.19 max=-13.42 last=-17.68\nintegrated=-15.39  tp=-1.46  lra=4.60  corr=0.79  width=34.2  lowside=1.7\n",
+      "stderr": ""
+    },
+    {
+      "arguments": [
+        "page10",
+        "fileqc",
+        "codecstate",
+        "standalone",
+        "size1120",
+        "layoutcheck"
+      ],
+      "mode": "layout",
+      "returncode": 0,
+      "stdout": "UiShot 3.0.3 page=10 scale=1.00 size=1120x700\nSTATE codec ready\nINSTRUMENT_LAYOUT PASS boundaries=14088 failures=0 fonts=Geist/Geist/Geist/Geist sizes=14/18/20/30\n",
+      "stderr": ""
+    },
+    {
+      "arguments": [
+        "page10",
+        "fileqc",
+        "codecstate",
+        "standalone",
+        "size1120",
+        "out=qa303_42"
+      ],
+      "mode": "render",
+      "returncode": 0,
+      "stdout": "UiShot 3.0.3 page=10 scale=1.00 size=1120x700\nSTATE codec ready\ncurve points=1800 valid=1800 min=-18.19 max=-13.42 last=-17.68\nintegrated=-15.39  tp=-1.46  lra=4.60  corr=0.79  width=34.2  lowside=1.7\n",
+      "stderr": ""
+    },
+    {
+      "arguments": [
+        "page10",
+        "fileqc",
+        "codecstate",
+        "standalone",
+        "minsize",
+        "layoutcheck"
+      ],
+      "mode": "layout",
+      "returncode": 0,
+      "stdout": "UiShot 3.0.3 page=10 scale=1.00 size=880x560\nSTATE codec ready\nINSTRUMENT_LAYOUT PASS boundaries=14088 failures=0 fonts=Geist/Geist/Geist/Geist sizes=14/18/20/30\n",
+      "stderr": ""
+    },
+    {
+      "arguments": [
+        "page10",
+        "fileqc",
+        "codecstate",
+        "standalone",
+        "minsize",
+        "out=qa303_43"
+      ],
+      "mode": "render",
+      "returncode": 0,
+      "stdout": "UiShot 3.0.3 page=10 scale=1.00 size=880x560\nSTATE codec ready\ncurve points=1800 valid=1800 min=-18.19 max=-13.42 last=-17.68\nintegrated=-15.39  tp=-1.46  lra=4.60  corr=0.79  width=34.2  lowside=1.7\n",
+      "stderr": ""
+    },
+    {
+      "arguments": [
+        "page10",
+        "fileqc",
+        "codecencoding",
+        "standalone",
+        "size1120",
+        "layoutcheck"
+      ],
+      "mode": "layout",
+      "returncode": 0,
+      "stdout": "UiShot 3.0.3 page=10 scale=1.00 size=1120x700\nINSTRUMENT_LAYOUT PASS boundaries=14088 failures=0 fonts=Geist/Geist/Geist/Geist sizes=14/18/20/30\n",
+      "stderr": ""
+    },
+    {
+      "arguments": [
+        "page10",
+        "fileqc",
+        "codecencoding",
+        "standalone",
+        "size1120",
+        "out=qa303_44"
+      ],
+      "mode": "render",
+      "returncode": 0,
+      "stdout": "UiShot 3.0.3 page=10 scale=1.00 size=1120x700\ncurve points=1800 valid=1800 min=-18.19 max=-13.42 last=-17.68\nintegrated=-15.39  tp=-1.46  lra=4.60  corr=0.79  width=34.2  lowside=1.7\n",
+      "stderr": ""
+    },
+    {
+      "arguments": [
+        "page10",
+        "fileqc",
+        "codecfail",
+        "standalone",
+        "size1120",
+        "layoutcheck"
+      ],
+      "mode": "layout",
+      "returncode": 0,
+      "stdout": "UiShot 3.0.3 page=10 scale=1.00 size=1120x700\nINSTRUMENT_LAYOUT PASS boundaries=14088 failures=0 fonts=Geist/Geist/Geist/Geist sizes=14/18/20/30\n",
+      "stderr": ""
+    },
+    {
+      "arguments": [
+        "page10",
+        "fileqc",
+        "codecfail",
+        "standalone",
+        "size1120",
+        "out=qa303_45"
+      ],
+      "mode": "render",
+      "returncode": 0,
+      "stdout": "UiShot 3.0.3 page=10 scale=1.00 size=1120x700\ncurve points=1800 valid=1800 min=-18.19 max=-13.42 last=-17.68\nintegrated=-15.39  tp=-1.46  lra=4.60  corr=0.79  width=34.2  lowside=1.7\n",
+      "stderr": ""
+    }
+  ]
+}

@@ -8,12 +8,14 @@ namespace
 {
     juce::String formatFileStatus (bool busy, int done, int total, const juce::String& current)
     {
+        const auto count = juce::String (done) + "/" + juce::String (total);
+
         if (busy)
-            return "Analysing " + juce::String (done) + "/" + juce::String (total)
-                   + (current.isNotEmpty() ? "  |  " + current : juce::String());
+            return T ("分析中 ", "Analysing ") + count
+                   + (current.isNotEmpty() ? "  " + ml::sep() + current : juce::String());
 
         if (total > 0)
-            return "Done  |  " + juce::String (done) + "/" + juce::String (total);
+            return T ("完成 ", "Done ") + count;
 
         return {};
     }

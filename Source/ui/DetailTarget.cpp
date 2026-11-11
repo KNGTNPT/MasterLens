@@ -34,7 +34,7 @@ void DetailArea::paintTarget (juce::Graphics& g)
 
         g.setColour (theme::accent);
         g.setFont (getLabelFont());
-        g.drawText (T ("曲风参照 / LOUDNESS WAR", "GENRE REFERENCE / LOUDNESS WAR"),
+        g.drawText (T ("曲风参照", "GENRE REFERENCE"),
                     inner.removeFromTop (16), juce::Justification::centredLeft, false);
 
         g.setColour (theme::text);
@@ -85,12 +85,12 @@ void DetailArea::paintTarget (juce::Graphics& g)
 
         if (! tiny)
             row (T ("发行观测区间", "Released range"),
-                 num (n.lufsLo) + " … " + num (n.lufsHi) + " LUFS");
+                 num (n.lufsLo) + " " + enDash() + " " + num (n.lufsHi) + " LUFS");
 
         row (T ("目标（滑块）", "Target (slider)"), num (state.targetPlanLufs) + " LUFS");
         row (T ("建议 LRA", "Suggested LRA"), num (state.targetPlanLra) + " LU");
         row (T ("真峰值上限", "True peak"), num (state.targetPlanCeiling) + " dBTP");
-        row (T ("参与度", "War participation"), juce::String (juce::roundToInt (state.targetWarPct)) + " %");
+        row (T ("参与度", "War participation"), juce::String (juce::roundToInt (state.targetWarPct)) + "%");
 
         if (! tiny)
             row (T ("相对目标 Δ", "Δ vs target"),
@@ -131,7 +131,7 @@ void DetailArea::paintTarget (juce::Graphics& g)
 
         g.setColour (theme::accent);
         g.setFont (getLabelFont());
-        g.drawText (T ("平台交付要求 / DELIVERY REQUIREMENTS", "PLATFORM DELIVERY REQUIREMENTS"),
+        g.drawText (T ("平台交付要求", "PLATFORM DELIVERY REQUIREMENTS"),
                     inner.removeFromTop (16), juce::Justification::centredLeft, false);
 
         auto header = inner.removeFromTop (20);
@@ -220,12 +220,13 @@ void DetailArea::paintTarget (juce::Graphics& g)
 
         g.setColour (theme::textFaint);
         g.setFont (getLabelFont());
-        g.drawFittedText (T ("Apple Digital Masters：优先高质量 24-bit 源，使用 Apple 工具检查编码后削波；尾部按发行商规范。"
-                             "Spotify：-14 LUFS；若母带更响，TP 建议低于 -2 dBTP。",
-                             "ADM: use high-quality 24-bit sources and Apple tools to check encoded clipping; follow distributor specs for tail silence. "
-                             "Spotify: -14 LUFS; if the master is louder, keep TP below -2 dBTP."),
-                          inner.removeFromTop (juce::jmin (compact ? 32 : 44, inner.getHeight())),
-                          juce::Justification::topLeft, 3);
+        juce::StringArray note;
+        note.add (T ("Apple Digital Masters：优先高质量 24-bit 源，使用 Apple 工具检查编码后削波；",
+                     "ADM: use high-quality 24-bit sources and Apple tools to check encoded clipping;"));
+        note.add (T ("尾部按发行商规范。Spotify：−14 LUFS；若母带更响，TP 建议低于 −2 dBTP。",
+                     "follow distributor specs for tail silence. Spotify: −14 LUFS; if louder, keep TP below −2 dBTP."));
+        text::drawLines (g, getLabelFont(), theme::textFaint, note,
+                         inner.removeFromTop (juce::jmin (40, inner.getHeight())), 20);
 
         if (inner.getHeight() >= 18)
         {

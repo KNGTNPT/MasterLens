@@ -115,7 +115,7 @@ void DetailArea::paintSpectrumExtras (juce::Graphics& g)
     {
         const int w = area.getWidth() / 3;
         drawBand (area.removeFromLeft (w), T ("低频", "LOW"), "< 150 Hz", low);
-        drawBand (area.removeFromLeft (w), T ("中频", "MID"), "150 Hz - 2 kHz", mid);
+        drawBand (area.removeFromLeft (w), T ("中频", "MID"), "150 Hz " + enDash() + " 2 kHz", mid);
         drawBand (area, T ("高频", "HIGH"), "> 2 kHz", high);
     }
     else
@@ -124,7 +124,7 @@ void DetailArea::paintSpectrumExtras (juce::Graphics& g)
         drawBand (area.removeFromTop (rowH), T ("低频", "LOW"), "< 150 Hz", low);
         surface::hairlineH (g, (float) area.getX(), (float) area.getRight(),
                             (float) area.getY() - 4.0f);
-        drawBand (area.removeFromTop (rowH), T ("中频", "MID"), "150 Hz - 2 kHz", mid);
+        drawBand (area.removeFromTop (rowH), T ("中频", "MID"), "150 Hz " + enDash() + " 2 kHz", mid);
         surface::hairlineH (g, (float) area.getX(), (float) area.getRight(),
                             (float) area.getY() - 4.0f);
         drawBand (area, T ("高频", "HIGH"), "> 2 kHz", high);
@@ -186,7 +186,16 @@ void DetailArea::paintDelivery (juce::Graphics& g)
                 scenario, juce::Justification::centredLeft, true);
     area.removeFromTop (8);
 
-    const int tableW = juce::roundToInt ((float) area.getWidth() * 0.60f);
+    const bool hasRef = state.hasReferenceStats && state.referenceStats.integrated > -70.0f;
+
+    // With no reference loaded the right-hand card would be an empty 300 px box
+    // competing with the table. Give the table the full width and keep a compact
+    // two-line hint underneath.
+    juce::Rectangle<int> refHint;
+    if (! hasRef)
+        refHint = area.removeFromBottom (46);
+
+    const int tableW = juce::roundToInt ((float) area.getWidth() * (hasRef ? 0.60f : 1.0f));
     auto table = area.removeFromLeft (tableW);
     area.removeFromLeft (tokens::gap);
     auto ref = area;
@@ -242,23 +251,22 @@ void DetailArea::paintDelivery (juce::Graphics& g)
         g.drawText (T (p.nameZh, p.nameEn), r0.removeFromLeft (wPlatform),
                     juce::Justification::centredLeft);
 
-        g.setColour (theme::textDim);
-        g.setFont (getValueFont());
-        g.drawText (num (p.targetLufs) + " LUFS", r0.removeFromLeft (wTarget),
-                    juce::Justification::centredRight);
+        const auto valueFont = getValueFont();
+        const auto unitFont = getLabelFont();
 
-        g.setColour (theme::text);
-        g.setFont (getValueFont());
-        g.drawText (sgn (r.gainDb) + " dB", r0.removeFromLeft (wGain),
-                    juce::Justification::centredRight);
+        text::drawValueUnitRight (g, r0.removeFromLeft (wTarget), num (p.targetLufs), "LUFS",
+                                  valueFont, unitFont, theme::textDim, theme::textFaint, 6);
 
-        g.setColour (colour);
-        g.drawText (num (r.predictedTp) + " dBTP", r0.removeFromLeft (wPredicted),
-                    juce::Justification::centredRight);
+        text::drawValueUnitRight (g, r0.removeFromLeft (wGain), sgn (r.gainDb), "dB",
+                                  valueFont, unitFont, theme::text, theme::textFaint, 6);
 
-        g.setColour (r.limitedDb > 0.05f ? theme::bad : theme::textFaint);
-        g.drawText ((r.limitedDb > 0.05f ? num (r.limitedDb) : noValue()) + " LU",
-                    r0.removeFromLeft (wLimited), juce::Justification::centredRight);
+        text::drawValueUnitRight (g, r0.removeFromLeft (wPredicted), num (r.predictedTp), "dBTP",
+                                  valueFont, unitFont, colour, theme::textFaint, 6);
+
+        const auto limitedColour = r.limitedDb > 0.05f ? theme::bad : theme::textFaint;
+        text::drawValueUnitRight (g, r0.removeFromLeft (wLimited),
+                                  r.limitedDb > 0.05f ? num (r.limitedDb) : noValue(), "LU",
+                                  valueFont, unitFont, limitedColour, theme::textFaint, 6);
 
         g.setFont (getLabelFont());
         g.drawText (r.state == DeliveryState::over ? T ("受限", "Gap")
@@ -279,7 +287,20 @@ void DetailArea::paintDelivery (juce::Graphics& g)
                     table.removeFromTop (20), juce::Justification::centredLeft, false);
     }
 
+    if (! hasRef)
+    {
+        juce::StringArray hint;
+        hint.add (T ("在「频谱平衡」页导入 1–4 条参考轨，这里会显示实际差值。",
+                     "Import 1–4 reference tracks on the Spectrum page to compare here."));
+        hint.add (T ("对比响度、动态、峰响比与低频侧向。",
+                     "Loudness, dynamics, PLR and low-end side energy are compared."));
+
+        text::drawLines (g, getLabelFont(), theme::textFaint, hint,
+                         refHint.withTrimmedLeft (2), 20);
+    }
+
     // ---- reference comparison ----------------------------------------------
+    if (hasRef)
     {
         g.setColour (theme::cardAlt);
         g.fillRoundedRectangle (ref.toFloat(), tokens::radiusCard);
@@ -292,19 +313,6 @@ void DetailArea::paintDelivery (juce::Graphics& g)
         g.setFont (getLabelFont());
         g.drawText (T ("参考作品对比", "VS REFERENCE"), inner.removeFromTop (20),
                     juce::Justification::centredLeft, false);
-
-        if (! state.hasReferenceStats || state.referenceStats.integrated <= -70.0f)
-        {
-            g.setColour (theme::textFaint);
-            g.setFont (getLabelFont());
-            g.drawFittedText (T ("在「频谱平衡」页导入 1–4 条参考轨，这里会显示响度、动态、"
-                                 "峰响比与低频侧向的实际差值。",
-                                 "Import 1-4 reference tracks on the Spectrum page to compare "
-                                 "loudness, dynamics, PLR and low-end side energy here."),
-                              inner.removeFromTop (juce::jmin (84, inner.getHeight())),
-                              juce::Justification::topLeft, 3);
-            return;
-        }
 
         const auto& r = state.referenceStats;
 

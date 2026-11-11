@@ -8,3 +8,5 @@ ui_shot*.png
 __pycache__/
 *.code-workspace
 .DS_Store
+
+.oil-ui/

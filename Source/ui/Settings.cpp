@@ -14,7 +14,7 @@ namespace
     juce::Rectangle<int> settingsCard (juce::Rectangle<int> full)
     {
         const int w = juce::jlimit (540, 720, full.getWidth() - 120);
-        const int h = juce::jlimit (400, 520, full.getHeight() - 100);
+        const int h = juce::jlimit (380, 430, full.getHeight() - 100);
         return juce::Rectangle<int> (w, h).withCentre (full.getCentre());
     }
 
@@ -154,8 +154,9 @@ void SettingsPanel::paint (juce::Graphics& g)
 
     g.setColour (theme::textDim);
     g.setFont (getLabelFont());
-    g.drawText ("MasterLens " + juce::String (ml::kVersion) + "  |  A BerryStudio product",
-                textX, l.subtitle.getY(), l.subtitle.getWidth() - 56, 18,
+    const auto subtitle = juce::String ("MasterLens ") + ml::kVersion
+                          + T ("  |  一个 BerryStudio 产品", "  |  A BerryStudio product");
+    g.drawText (subtitle, textX, l.subtitle.getY(), l.subtitle.getWidth() - 56, 18,
                 juce::Justification::centredLeft, false);
 
     g.setColour (theme::divider);
@@ -178,7 +179,7 @@ void SettingsPanel::paint (juce::Graphics& g)
     g.setColour (theme::textFaint);
     g.setFont (getValueFont());
     g.drawText (T ("当前 ", "Now ") + ui::scaleText (scale)
-                    + T ("  ·  等效字号 ", "  |  effective ")
+                    + T ("  ·  字高 ", "  |  type height ")
                     + juce::String (juce::roundToInt (getLabelFont().getHeight() * scale)) + " / "
                     + juce::String (juce::roundToInt (getValueFont().getHeight() * scale)) + " / "
                     + juce::String (juce::roundToInt (getCriticalFont().getHeight() * scale)) + " px",
@@ -198,10 +199,12 @@ void SettingsPanel::paint (juce::Graphics& g)
         g.drawText (value, r, juce::Justification::centredLeft, false);
     };
 
-    row (T ("快捷键", "Shortcuts"), T ("Shift+空格 保持 · R 清零 · 1-9 模块 · 0 曲风目标 · Esc 关闭 · Cmd+E 导出",
-                                        "Shift+Space hold | R clear | 1-9 pages | 0 genre target | Esc close | Cmd+E export"));
-    row (T ("缩放快捷键", "Zoom keys"), T ("Cmd + = 放大 · Cmd + - 缩小",
-                                            "Cmd + = larger | Cmd + - smaller"));
+    row (T ("快捷键", "Shortcuts"), T ("Shift+空格 保持 · R 清零 · 1–9 模块",
+                                        "Shift+Space hold · R clear · 1–9 pages"));
+    row ("", T ("0 曲风目标 · Esc 关闭 · Cmd+E 导出",
+                "0 genre target · Esc close · Cmd+E export"));
+    row (T ("缩放快捷键", "Zoom keys"), T ("Cmd+= 放大 · Cmd+- 缩小",
+                                            "Cmd+= larger · Cmd+- smaller"));
     row (T ("主题 / 语言", "Theme / language"), T ("顶部按钮即时切换，偏好随工程保存",
                                                     "Header buttons; stored with the session"));
     row (T ("测量", "Measurement"), T ("只读分析，零延迟，不修改音频",

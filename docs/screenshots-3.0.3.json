@@ -1,0 +1,104 @@
+{
+  "version": "3.0.3",
+  "platform": "Darwin",
+  "architecture": "universal (x86_64 + arm64)",
+  "renderer": "MasterLensUiShot 3.0.3",
+  "rendererSha256": "74778b43674c6477c506a0affc47a32190e6583a185f2c28235561f637c44020",
+  "images": [
+    {
+      "path": "docs/screenshot-3.0.3.png",
+      "sha256": "037969abacb8056484190243ae5fd3a9a34b82cdb085c3dc982817cb0c895f1a",
+      "width": 2240,
+      "height": 1400,
+      "arguments": [
+        "page0",
+        "size1120",
+        "out=screenshot303"
+      ]
+    },
+    {
+      "path": "docs/signal-3.0.3.png",
+      "sha256": "3f14173749c15eeb612071e199dc1a5d207e580dce5d62233f2e9e1c128f40d5",
+      "width": 2240,
+      "height": 1400,
+      "arguments": [
+        "page6",
+        "size1120",
+        "out=signal303"
+      ]
+    },
+    {
+      "path": "docs/spectrum-3.0.3.png",
+      "sha256": "c73e810b869adbed582a309092d0ed2677f76e367492ddc5a8c30495e1b4fb11",
+      "width": 2240,
+      "height": 1400,
+      "arguments": [
+        "page2",
+        "size1120",
+        "out=spectrum303"
+      ]
+    },
+    {
+      "path": "docs/stereo-3.0.3.png",
+      "sha256": "eb0b53364d6602a265976672bade9d0824c6ff8fb1fb21c746df9e08ff77334a",
+      "width": 2240,
+      "height": 1400,
+      "arguments": [
+        "page3",
+        "size1120",
+        "out=stereo303"
+      ]
+    },
+    {
+      "path": "docs/fileqc-3.0.3.png",
+      "sha256": "ac8898e06c2188df9203c9a94bce71f010c574815c576b718ca48c452d11aaf0",
+      "width": 2240,
+      "height": 1400,
+      "arguments": [
+        "page10",
+        "fileqc",
+        "standalone",
+        "size1120",
+        "out=fileqc303"
+      ]
+    },
+    {
+      "path": "docs/about-3.0.3.png",
+      "sha256": "c55d679565a1d1ca57585d2497d946bcd26a72add81ff58e22a87f70b9e0205e",
+      "width": 2240,
+      "height": 1400,
+      "arguments": [
+        "page0",
+        "about",
+        "size1120",
+        "out=about303"
+      ]
+    },
+    {
+      "path": "docs/codec-ready-3.0.3.png",
+      "sha256": "e698deec55f8b64ba44af8bb2f776ad8461c358b92f5552f2285fd5758457b22",
+      "width": 2240,
+      "height": 1400,
+      "arguments": [
+        "page10",
+        "fileqc",
+        "codecstate",
+        "size1120",
+        "out=codec-ready303"
+      ]
+    },
+    {
+      "path": "docs/codec-failed-3.0.3.png",
+      "sha256": "c88879066c90725696b2543de1c27b3abdd775972bcb7f22334f92252721ba7e",
+      "width": 2240,
+      "height": 1400,
+      "arguments": [
+        "page10",
+        "fileqc",
+        "codecfail",
+        "size1120",
+        "out=codec-failed303"
+      ]
+    }
+  ]
+}

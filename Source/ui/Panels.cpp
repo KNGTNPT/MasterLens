@@ -85,6 +85,10 @@ void ReadoutBand::resized()
 void ReadoutBand::paint (juce::Graphics& g)
 {
     g.fillAll (theme::card);
+
+    const int bandHeight = juce::jmax (
+        24, juce::roundToInt (getCriticalFont().getAscent() + getCriticalFont().getDescent()) + 2);
+
     for (size_t i = 0; i < cells.size(); ++i)
     {
         auto area = cellBounds[i];
@@ -92,19 +96,22 @@ void ReadoutBand::paint (juce::Graphics& g)
         surface::hairlineH (g, (float) area.getX(), (float) area.getRight(), (float) area.getY());
         area.removeFromTop (grid::down (juce::jmax (0, (area.getHeight() - 64) / 2)));
         g.setColour (theme::textDim);
-        g.setFont (getLabelFont());
+        g.setFont (labelFontFor (c.label));
         g.drawText (c.label, area.removeFromTop (16), juce::Justification::centredLeft, false);
         area.removeFromTop (4);
 
-        // The row is sized to the value's own line box: a 26 px reading and a
-        // 24 px row would otherwise clip the descender and pull the baseline
-        // up. Label, number and unit then share one baseline (see theme::text).
+        // One value band for the whole band, not one per cell. The largest
+        // reading defines the optical baseline, so a 30 px number and the other
+        // 18 px readings in the same row finally sit on one line; in the
+        // vertical rail the same rule keeps every label-to-number gap equal.
+        auto valueRow = area.removeFromTop (bandHeight);
+        const float baseline = text::centredBaseline (getCriticalFont(), valueRow);
         const auto valueFont = i == 0 ? getCriticalFont() : getValueFont();
-        auto valueRow = area.removeFromTop (
-            juce::jmax (24, juce::roundToInt (valueFont.getAscent() + valueFont.getDescent()) + 2));
+        const int run = text::drawRun (g, valueFont, c.status, c.value, valueRow.getX(), baseline);
 
-        text::drawValueUnit (g, valueRow, c.value, c.unit, valueFont, getLabelFont(),
-                             c.status, theme::textFaint, 8);
+        if (c.unit.isNotEmpty())
+            text::drawRun (g, getLabelFont(), theme::textFaint, c.unit,
+                           valueRow.getX() + run + 8, baseline);
     }
 }
 
@@ -141,7 +148,7 @@ void MetricGrid::paintCard (juce::Graphics& g, juce::Rectangle<int> area, const 
                                 : 0;
 
     g.setColour (theme::textDim);
-    g.setFont (getLabelFont());
+    g.setFont (labelFontFor (title));
     g.drawFittedText (title, area.getX() + 16, area.getY() + 11,
                       juce::jmax (20, area.getWidth() - 32 - (statusWidth > 0 ? statusWidth + 10 : 0)), 18,
                       juce::Justification::centredLeft, 1);
@@ -156,7 +163,7 @@ void MetricGrid::paintCard (juce::Graphics& g, juce::Rectangle<int> area, const 
     else
     {
         g.setColour (theme::textFaint);
-        g.setFont (getValueFont());
+        g.setFont (getLabelFont());
         g.drawText (unit, area.getRight() - 48, area.getY() + 12, 32, 16,
                     juce::Justification::centredRight, false);
     }
@@ -169,12 +176,12 @@ void MetricGrid::paintCard (juce::Graphics& g, juce::Rectangle<int> area, const 
 
     if (narrow)
     {
-        text::drawValueUnit (g, valueRow, value, {}, valueFont, getValueFont(),
+        text::drawValueUnit (g, valueRow, value, {}, valueFont, getLabelFont(),
                              theme::text, theme::textFaint, 10);
     }
     else
     {
-        text::drawValueUnit (g, valueRow, value, unit, valueFont, getValueFont(),
+        text::drawValueUnit (g, valueRow, value, unit, valueFont, getLabelFont(),
                              theme::text, theme::textFaint, 10);
     }
 

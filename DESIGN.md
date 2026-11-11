@@ -4,12 +4,12 @@
 
 本文是后续 MasterLens 界面设计、代码修改、原型和截图审查的共同约束。规则中的「必须」「禁止」均为硬性要求；当前代码不符合的地方属于待迁移项，不构成例外。本文件定义目标，不表示界面重构已经完成。
 
-> 面向团队其他项目的可迁移版本、当前 3.0.2 明暗 token 与 skill 取舍，见 [FRONTEND-DESIGN.md](FRONTEND-DESIGN.md)。该文件仅作团队参考，不构成 MasterLens 后续前端改动的约束；本文件继续保留 MasterLens 的详细实现和历史验收条款。
+> 面向团队其他项目的可迁移版本、当前 3.0.3 明暗 token 与 skill 取舍，见 [FRONTEND-DESIGN.md](FRONTEND-DESIGN.md)。该文件仅作团队参考，不构成 MasterLens 后续前端改动的约束；本文件继续保留 MasterLens 的详细实现和历史验收条款。
 
 ## 2.3.1 用户修订（优先于本文旧条款）
 
-- 正常布局的三档字号改为 14 / 16 / 26px，优先保证 ARM Mac 等屏幕上的阅读。
-- 固定 1120×700 设计画布，窗口以 1.6 宽高比自由拖动；整张画布、文字及控件采用同一连续缩放，最小 896×560，默认优先 125% 并适配屏幕。旧 11 / 13 / 20px 及自由重排规则仅作历史记录。
+- 正常布局的字号改为四档 **14 / 18 / 20 / 30**（Label / Value / Title / Critical，JUCE 字体高度），优先保证 ARM Mac 等屏幕上的阅读。
+- 固定 1120×700 设计画布，窗口以 1.6 宽高比自由拖动；整张画布、文字及控件采用同一连续缩放，最小 1120×700（100%）；不再提供 80% 档，8.6px 的中文标签不可读。默认优先 125% 并适配屏幕。旧 11 / 13 / 20px 及自由重排规则仅作历史记录。
 - 播放时圆环按真实时间每 8 秒转一圈，中心点不动；按钮允许短促光影与轻微阻尼回弹，命中区不改变。不让动画延迟读数。
 - 主界面副行只展示 BERRYSTUDIO 与版本；开发者移入设置。工作室透明 SVG 放在关于页。
 - 可见量表以至少 60Hz 呈现为目标；GUI 时钟留有 90Hz 调度余量，FFT / 报告工作保持分频。
@@ -60,21 +60,22 @@ audio/ui 的 React/CSS 示例用于提取设计规则。MasterLens 的生产实�
 - 不假设用户机器已经安装目标字体。落地时先核对实际字体文件、字重、数字特性与分发许可，再通过统一主题层加载。
 - 中文缺字由统一主题层选择明确的 CJK fallback，例如 PingFang SC、Microsoft YaHei UI 或 Noto Sans CJK SC；英文、中文的可见字高、基线和单位间距必须一起检查。
 
-### 三档字体访问器
+### 四档字体访问器
 
-以下是统一访问器契约，已由 `Source/ui/Theme.cpp` 实现；逻辑字号以 **100% UI 缩放**为基准。当前选用 11px / 13px / 20px，分别内嵌 Geist Regular / Medium / Bold。
+以下是统一访问器契约，已由 `Source/ui/Theme.cpp` 实现；逻辑字号以 **100% UI 缩放**为基准，数值是 JUCE 字体高度（`Font::getHeight()` = ascent + descent）。当前选用 **14 / 18 / 20 / 30**，分别内嵌 Geist Regular / Medium / Medium / Bold；落屏字形约为高度的 0.79 倍（约 11 / 14 / 16 / 24 px）。
 
 | 访问器 | 字号与字重 | 用途 |
 | --- | --- | --- |
-| `ml::getLabelFont()` | 10–11px，plain，英文全大写并加字距 | 标签、刻度、单位、分区标题与辅助说明 |
-| `ml::getValueFont()` | 12–13px，medium，tabular numerals | 常规数值、可编辑数值、表格数据与操作文字 |
-| `ml::getCriticalFont()` | 18–20px，bold，tabular numerals | 仅真峰值和 LUFS 的关键读数，同屏合计最多两处 |
+| `ml::getLabelFont()` | 14，regular，英文全大写并加 0.04em 字距 | 标签、刻度、单位、表头、按钮、导航与辅助说明 |
+| `ml::getValueFont()` | 18，medium，tabular numerals | 常规数值、可编辑数值、表格数据与操作文字 |
+| `ml::getTitleFont()` | 20，medium | 页面标题 |
+| `ml::getCriticalFont()` | 30，bold，tabular numerals | 仅真峰值和 LUFS 的关键读数，同屏合计最多两处 |
 
-- 标签必须比关联数值**至少小 2px**。允许 10/12px、10/13px、11/13px 配对；禁止 11/12px 配对。
-- 2.3beta 顶栏品牌按用户指定独立收整：MASTERLENS 使用现有 Medium 字标几何放大 130%；副行采用内嵌 Geist Mono 11px、0.12em 字距。品牌字形统一在主题层预缓存，主副行按实际墨迹边界垂直居中，不改变测量三档字体或最高亮度规则。
-- 三档指语义角色，不为每个组件增添独立字号。字体大小不受「间距为 4 的倍数」约束。
+- 标签必须比关联数值**至少小 4px**（14 → 18）；页面标题比标签大，但不借用 Critical 档。
+- 2.3beta 顶栏品牌按用户指定独立收整：MASTERLENS 使用现有 Medium 字标几何放大 130%；副行采用内嵌 Geist Mono 11px、0.12em 字距。品牌字形统一在主题层预缓存，主副行按实际墨迹边界垂直居中，不改变测量四档字体或最高亮度规则。
+- 四档指语义角色，不为每个组件增添独立字号。字体大小不受「间距为 4 的倍数」约束。
 - 英文标签统一大写；中文保持正常字形。物理单位沿用正确写法，如 `dBTP`、`dBFS`、`LUFS`、`Hz`、`kHz`，不被大写转换破坏。
-- 标签使用统一、以字体单位定义的 tracking；小标签可从 `0.08em` 起校准。数值不额外拉开数字间距，用等宽数字及固定小数位保持稳定。
+- tracking 只加在全大写拉丁标签上（`0.04em`，由 `ml::labelFontFor()` 按文案选择）。中文、句子式正文保持 0 字距，不再机械加宽。数值用等宽数字（`tnum`）及固定小数位保持稳定。
 - 正负号、缺省值、小数位和单位格式继续集中处理；数值列按小数点或右边缘对齐，刷新时不得左右抖动。
 - **禁止组件内 `new Font`、直接构造字体或另设任意字号。** 字体创建、fallback、字重、字距和缩放全部归统一主题层管理。JUCE LookAndFeel 的 `getLabelFont(juce::Label&)` 等回调转发到上述语义访问器，不形成第四套规则。
 - 字体缓存必须在初始化或样式更新阶段准备好，禁止第一次 `paint()` 时才分配缓存。
@@ -160,14 +161,14 @@ audio/ui 的 React/CSS 示例用于提取设计规则。MasterLens 的生产实�
 
 | 责任 | 现有文件 | 后续遵循方式 |
 | --- | --- | --- |
-| 字体、配色、材质、控件反馈 | [Theme.h](Source/ui/Theme.h)、[Theme.cpp](Source/ui/Theme.cpp) | 集中实现三档字体访问器、亮度角色、间距和锚点 token；统一 focus 和单光源 |
+| 字体、配色、材质、控件反馈 | [Theme.h](Source/ui/Theme.h)、[Theme.cpp](Source/ui/Theme.cpp) | 集中实现四档字体访问器、亮度角色、间距和锚点 token；统一 focus 和单光源 |
 | 整窗布局、控件、文本 | [EditorLayout.cpp](Source/EditorLayout.cpp)、[EditorControls.cpp](Source/EditorControls.cpp)、[EditorTexts.cpp](Source/EditorTexts.cpp)、[EditorPaint.cpp](Source/EditorPaint.cpp) | 采用父边界推导布局，统一缩放、键盘行为和预格式化文案 |
 | 主频谱、参考、热力和历史 | [Spectra.cpp](Source/ui/Spectra.cpp)、[History.cpp](Source/ui/History.cpp)、[Widgets.h](Source/ui/Widgets.h) | 主曲线最高亮度、向下透明填充、32px 锚点、绘制前缓存准备 |
 | 读数、表头、页面与问题证据 | [Panels.cpp](Source/ui/Panels.cpp)、[Meters.cpp](Source/ui/Meters.cpp)、[Stereo.cpp](Source/ui/Stereo.cpp)、[Modules.h](Source/ui/Modules.h)、`Source/ui/Detail*.cpp` 等 | 全局核算两处关键字号，统一量程 / 单位 / 状态与信息分组 |
 | 实时输入与显示分析 | [PluginProcessor.cpp](Source/PluginProcessor.cpp)、[EditorTimer.cpp](Source/EditorTimer.cpp)、[SpectrumAnalyzer.h](Source/dsp/SpectrumAnalyzer.h)、[SpectrumAnalyzer.cpp](Source/dsp/SpectrumAnalyzer.cpp) | 延续音频回调写 ring、回调外 FFT 的分工，审查整个同步调用链的实时安全 |
 | 测量、试听、文件及专辑证据 | `Source/dsp/`、`Source/audio/`、`Source/file/`、`Source/album/`、`Source/cli/`、`Source/Editor*` 报告文件 | 保持测量来源、时间 / 样本地址、单位及导出含义一致，展示样式不改写测量事实 |
 
-控件与布局阶段已落地：三档 Geist 字体与明确 CJK fallback；`MasterLensLookAndFeel` 仅重写旋钮和按钮背景绘制，字体回调独立管理；按钮亮度反馈、1px 青绿 focus；Grid 8px 组内节奏及项目组件的 4px 逻辑边界；仅频谱页采用约 56% 图表 / 44% 读数分区，频谱锚点至少 32px。其他检查页保留各自的信息布局。Debug 可启用 Melatonin Inspector。
+控件与布局阶段已落地：四档 Geist 字体与明确 CJK fallback；`MasterLensLookAndFeel` 仅重写旋钮和按钮背景绘制，字体回调独立管理；按钮亮度反馈、1px 青绿 focus；Grid 8px 组内节奏及项目组件的 4px 逻辑边界；仅频谱页采用约 56% 图表 / 44% 读数分区，频谱锚点至少 32px。其他检查页保留各自的信息布局。Debug 可启用 Melatonin Inspector。
 
 深色频谱页已完成一次视觉权重复审：压低常规文字与状态条，删除无状态意义的品牌双色、导航渐变和图窗角标，并调整字标排印与 Logo 断点；截图亮度与 processBlock 调用链审查详见同一验收记录。
 

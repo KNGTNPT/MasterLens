@@ -49,30 +49,10 @@ static juce::String pageTitle (PageId p)
 void DetailArea::paintPageHeader (juce::Graphics& g, const juce::String& meta)
 {
     auto header = contentArea().removeFromTop (32);
-    if (page == PageId::spectrum)
-    {
-        header = getLocalBounds().withTrimmedTop (spectrumSplit + 8).withHeight (24).withTrimmedLeft (16).withWidth (128);
-        g.setColour (theme::textDim);
-        g.setFont (getLabelFont());
-        g.drawText (pageTitle (page).toUpperCase(), header, juce::Justification::centredLeft, false);
-
-        if (state.liveAuditionLabel.isNotEmpty())
-        {
-            auto badge = header.removeFromRight (juce::jmin (250, header.getWidth() / 2));
-            g.setColour (theme::accent.withAlpha (0.16f));
-            g.fillRoundedRectangle (badge.toFloat().reduced (0.0f, 4.0f), 9.0f);
-            g.setColour (theme::accent);
-            g.setFont (getLabelFont());
-            g.drawText (T ("实时试听 · ", "LIVE · ") + state.liveAuditionLabel,
-                        badge.reduced (8, 0), juce::Justification::centredRight, true);
-        }
-
-        return;
-    }
 
     g.setColour (theme::text);
-    g.setFont (getLabelFont());
-    g.drawText (pageTitle (page), header.removeFromLeft (juce::jmin (260, header.getWidth() / 2)),
+    g.setFont (getTitleFont());
+    g.drawText (pageTitle (page), header.removeFromLeft (juce::jmin (320, header.getWidth() * 2 / 3)),
                 juce::Justification::centredLeft);
 
     if (state.liveAuditionLabel.isNotEmpty())
@@ -80,8 +60,10 @@ void DetailArea::paintPageHeader (juce::Graphics& g, const juce::String& meta)
         const auto badgeW = juce::jmin (250, juce::jmax (150, header.getWidth() / 2));
         auto badge = header.removeFromRight (badgeW);
 
-        g.setColour (theme::accent.withAlpha (0.16f));
+        g.setColour (theme::card);
         g.fillRoundedRectangle (badge.toFloat().reduced (0.0f, 4.0f), 9.0f);
+        g.setColour (theme::accent.withAlpha (0.55f));
+        g.drawRoundedRectangle (badge.toFloat().reduced (0.0f, 4.0f), 9.0f, 1.0f);
         g.setColour (theme::accent);
         g.setFont (getLabelFont());
         g.drawText (T ("实时试听 · ", "LIVE · ") + state.liveAuditionLabel,
@@ -89,8 +71,20 @@ void DetailArea::paintPageHeader (juce::Graphics& g, const juce::String& meta)
     }
 
     g.setColour (theme::textFaint);
-    g.setFont (getValueFont());
+    g.setFont (getLabelFont());
     g.drawText (meta, header, juce::Justification::centredRight);
+
+    if (page == PageId::spectrum)
+    {
+        // The mode buttons keep a small group label; the page title now lives
+        // in the shared header row above the graph.
+        g.setColour (theme::textFaint);
+        g.setFont (getLabelFont());
+        g.drawText (grid::controlText (T ("视图", "View")),
+                    getLocalBounds().withTrimmedTop (spectrumSplit + 8)
+                        .withHeight (24).reduced (16, 0).withWidth (64),
+                    juce::Justification::centredLeft, false);
+    }
 }
 
 void DetailArea::paint (juce::Graphics& g)
@@ -127,8 +121,9 @@ void DetailArea::paint (juce::Graphics& g)
             break;
 
         case PageId::stereo:
-            meta = (state.stats.stereo ? T ("立体声", "stereo") : T ("单声道", "mono"))
-                 + ml::sep() + T ("三段分频", "three bands") + ml::sep() + "L/R";
+            meta = (state.stats.stereo ? T ("三段分频", "three bands")
+                                       : T ("单声道", "mono") + ml::sep() + T ("三段分频", "three bands"))
+                 + ml::sep() + "L/R";
             break;
 
         case PageId::delivery:

@@ -77,8 +77,8 @@ void StereoMeters::paint (juce::Graphics& g)
     };
     auto peaks=area.removeFromTop(juce::jmin(66,area.getHeight()/3));
     const int peakW=peaks.getWidth()/2;
-    value(peaks.removeFromLeft(peakW),"L / TRUE PEAK",fmtDb(stats.truePeakLeft)+" dBTP");
-    value(peaks,"R / TRUE PEAK",fmtDb(stats.truePeakRight)+" dBTP");
+    value(peaks.removeFromLeft(peakW),T("L / 真峰值","L / TRUE PEAK"),fmtDb(stats.truePeakLeft)+" dBTP");
+    value(peaks,T("R / 真峰值","R / TRUE PEAK"),fmtDb(stats.truePeakRight)+" dBTP");
     const auto bar = [&] (juce::Rectangle<int> cell,const juce::String& label,float amount,float range,float threshold)
     {
         auto line=cell.removeFromTop(20);
@@ -88,7 +88,8 @@ void StereoMeters::paint (juce::Graphics& g)
         g.drawText(num(amount)+"%",line,juce::Justification::centredRight,false);
         cell.removeFromTop(8);
         auto track=cell.removeFromTop(8).toFloat();
-        surface::recessed(g,track,1.0f);
+        g.setColour (theme::track);
+        g.fillRoundedRectangle (track, 1.5f);
         g.setColour(amount>threshold ? theme::warn : theme::accent);
         g.fillRect(track.withWidth(track.getWidth()*juce::jlimit(0.0f,1.0f,amount/range)));
     };
@@ -108,7 +109,7 @@ void StereoMeters::paint (juce::Graphics& g)
     const int w=bands.getWidth()/4;
     const char* namesZh[]{"低频","中频","高频"};
     const char* namesEn[]{"LOW","MID","HIGH"};
-    const char* ranges[]{"<150 Hz","150 Hz - 2 kHz",">2 kHz"};
+    const juce::String ranges[]{"<150 Hz","150 Hz "+enDash()+" 2 kHz",">2 kHz"};
     const float correlations[]{stats.bandCorrLow,stats.bandCorrMid,stats.bandCorrHigh};
     const float sides[]{stats.bandSideLow,stats.bandSideMid,stats.bandSideHigh};
     for(int i=0;i<3;++i)
@@ -126,6 +127,7 @@ void StereoMeters::paint (juce::Graphics& g)
     g.setFont(getValueFont());
     g.drawText("CLIP "+juce::String(stats.clipEvents)+" / TP "+juce::String(stats.oversCount),
                bands.removeFromTop(24),juce::Justification::centredLeft,false);
-    g.drawText("DC "+juce::String(stats.dcOffsetDb,1)+" dBFS",bands.removeFromTop(20),juce::Justification::centredLeft,false);
+    const float dc = std::abs(stats.dcOffsetDb) < 0.05f ? 0.0f : stats.dcOffsetDb;
+    g.drawText("DC "+num(dc,1)+" dBFS",bands.removeFromTop(20),juce::Justification::centredLeft,false);
 }
 } // namespace ml

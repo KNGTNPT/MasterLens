@@ -23,7 +23,7 @@ namespace
     void paintCard (juce::Graphics& g, juce::Rectangle<int> area, const CardSpec& c)
     {
         const auto r = area.toFloat().reduced (0.5f);
-        const bool compact = area.getHeight() < 96;
+        const bool compact = area.getHeight() < 104;   // 98 px cards on the signal page
 
         g.setColour (c.active ? theme::accent.withAlpha (0.18f) : theme::cardAlt);
         g.fillRoundedRectangle (r, tokens::radiusCard);
@@ -41,7 +41,7 @@ namespace
         auto titleRow = inner.removeFromTop (compact ? 16 : 18);
 
         g.setColour (theme::textDim);
-        g.setFont (getLabelFont());
+        g.setFont (labelFontFor (c.title));
         g.drawText (c.title, titleRow.withTrimmedRight (78), juce::Justification::centredLeft, false);
 
         const auto colour = riskColour (c.risk);
@@ -49,32 +49,36 @@ namespace
         const auto status = c.risk >= 65.0f ? T ("需修复", "FIX")
                           : (c.risk >= 35.0f ? T ("建议回听", "REVIEW") : T ("通过", "PASS"));
 
-        g.setColour (colour.withAlpha (0.14f));
+        // Outlined chip, not a same-hue pill: the 11-14 px status text sat at
+        // ~3.5:1 on a 14 % tint in both themes. A neutral chip fill with a
+        // coloured hairline keeps the hue on the text, where the card
+        // background gives it 4.9-5.7:1.
+        g.setColour (theme::card);
         g.fillRoundedRectangle (chip.toFloat(), 9.0f);
+        g.setColour (colour.withAlpha (0.55f));
+        g.drawRoundedRectangle (chip.toFloat().reduced (0.5f), 9.0f, 1.0f);
         g.setColour (colour);
         g.setFont (getValueFont());
         g.drawText (status, chip, juce::Justification::centred);
 
         auto valueRow = inner.removeFromTop (compact ? 24 : juce::jmin (38, inner.getHeight() / 2));
 
-        g.setColour (colour);
-        g.setFont (getValueFont());
-        g.drawText (c.primary, valueRow, juce::Justification::centredLeft, false);
+        // Value and unit share the value font's baseline; no manual y nudge.
+        const auto valueFont = getValueFont();
+        const float baseline = text::centredBaseline (valueFont, valueRow);
+        const int valueWidth = text::drawRun (g, valueFont, colour, c.primary,
+                                              valueRow.getX(), baseline);
 
         if (c.unit.isNotEmpty())
         {
-            const auto font = getLabelFont();
-            const int valueWidth = juce::roundToInt (
-                juce::GlyphArrangement::getStringWidth (getValueFont(), c.primary));
-
-            g.setColour (theme::textFaint);
-            g.setFont (font);
-            g.drawText (c.unit, valueRow.withTrimmedLeft (valueWidth + 6).withTrimmedTop (6),
-                        juce::Justification::centredLeft, false);
+            // "%" and "/100" hang off the number; only real units get the 8 px gap.
+            const int gap = c.unit == "%" ? 0 : (c.unit.startsWith ("/") ? 1 : 8);
+            text::drawRun (g, getLabelFont(), theme::textFaint, c.unit,
+                           valueRow.getX() + valueWidth + gap, baseline);
         }
 
         g.setColour (theme::textFaint);
-        g.setFont (getLabelFont());
+        g.setFont (labelFontFor (c.note));
         g.drawText (c.note + T (" · 实时试听", " · live audition"),
                     inner.removeFromTop (compact ? 14 : 16), juce::Justification::centredLeft, false);
 
@@ -99,14 +103,20 @@ namespace
             }
         }
 
-        const auto track = juce::Rectangle<float> ((float) area.getX() + 14.0f,
-                                                    (float) area.getBottom() - 9.0f,
-                                                    (float) area.getWidth() - 28.0f, 3.0f);
-        g.setColour (theme::borderSoft);
-        g.fillRoundedRectangle (track, 1.5f);
-        g.setColour (colour);
-        g.fillRoundedRectangle (track.withWidth (track.getWidth()
-                                    * juce::jlimit (0.0f, 1.0f, c.risk / 100.0f)), 1.5f);
+        // Risk bar sits in the text flow under the note, not clipped against the
+        // card edge: at 9 px from the bottom it read as a stray hairline.
+        const int gapBeforeBar = compact ? 6 : 8;
+
+        if (inner.getHeight() >= gapBeforeBar + 4)
+        {
+            inner.removeFromTop (gapBeforeBar);
+            const auto track = inner.removeFromTop (4).toFloat();
+            g.setColour (theme::track);
+            g.fillRoundedRectangle (track, 2.0f);
+            g.setColour (colour);
+            g.fillRoundedRectangle (track.withWidth (track.getWidth()
+                                        * juce::jlimit (0.0f, 1.0f, c.risk / 100.0f)), 2.0f);
+        }
     }
 } // namespace
 
@@ -312,7 +322,7 @@ void DetailArea::paintSignal (juce::Graphics& g)
 
         g.setColour (theme::accent);
         g.setFont (getLabelFont());
-        g.drawText (T ("联动归因层  CORRELATED EVENTS", "CORRELATED EVENTS"),
+        g.drawText (T ("联动归因层", "CORRELATED EVENTS"),
                     inner.removeFromTop (16), juce::Justification::centredLeft, false);
 
         juce::StringArray lines;

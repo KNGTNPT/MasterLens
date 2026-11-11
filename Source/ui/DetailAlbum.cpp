@@ -31,7 +31,7 @@ void DetailArea::paintAlbum (juce::Graphics& g)
     g.setColour (gate.blocked ? theme::bad : (gate.incomplete ? theme::warn : theme::good));
     g.setFont (getValueFont());
     g.drawText (gate.blocked ? T ("阻断 RELEASE BLOCK", "RELEASE BLOCK")
-                             : (gate.incomplete ? T ("未采集 INCOMPLETE", "INCOMPLETE")
+                             : (gate.incomplete ? T ("未采集", "INCOMPLETE")
                                                 : T ("放行 RELEASE PASS", "RELEASE PASS")),
                 s.removeFromRight (192), juce::Justification::centredRight);
 
@@ -119,14 +119,14 @@ void DetailArea::paintAlbum (juce::Graphics& g)
                           juce::Justification::centredLeft, 1);
 
         g.setFont (getValueFont());
-        g.drawText (juce::String (t.stats.integrated, 1), r.removeFromLeft (wLufs),
+        g.drawText (num (t.stats.integrated, 1), r.removeFromLeft (wLufs),
                     juce::Justification::centredRight);
 
         if (a.hasMedian)
         {
             const float d = t.stats.integrated - a.medianStats.integrated;
             g.setColour (std::abs (d) > a.rules.lufsSpread ? theme::warn : theme::textDim);
-            g.drawText ((d >= 0.0f ? "+" : "") + juce::String (d, 1),
+            g.drawText (sgn (d, 1),
                         r.removeFromLeft (wDelta), juce::Justification::centredRight);
         }
         else
@@ -136,11 +136,11 @@ void DetailArea::paintAlbum (juce::Graphics& g)
         }
 
         g.setColour (theme::textDim);
-        g.drawText (juce::String (t.stats.lra, 1), r.removeFromLeft (wLra), juce::Justification::centredRight);
-        g.drawText (juce::String (t.stats.getPlr(), 1), r.removeFromLeft (wPlr), juce::Justification::centredRight);
+        g.drawText (num (t.stats.lra, 1), r.removeFromLeft (wLra), juce::Justification::centredRight);
+        g.drawText (num (t.stats.getPlr(), 1), r.removeFromLeft (wPlr), juce::Justification::centredRight);
 
         g.setColour (t.stats.truePeakDb > t.tpCeiling + 0.05f ? theme::bad : theme::textDim);
-        g.drawText (juce::String (t.stats.truePeakDb, 1), r.removeFromLeft (wTp), juce::Justification::centredRight);
+        g.drawText (num (t.stats.truePeakDb, 1), r.removeFromLeft (wTp), juce::Justification::centredRight);
 
         g.setColour (sev >= 2 ? theme::bad : (sev == 1 ? theme::warn : theme::good));
         g.setFont (getLabelFont());

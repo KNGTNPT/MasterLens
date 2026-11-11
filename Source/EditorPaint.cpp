@@ -45,7 +45,7 @@ void MasterLensAudioProcessorEditor::paint (juce::Graphics& g)
     ml::surface::hairlineH (g, 0.0f, width, (float) paramArea.getY(),
                            ml::theme::text.withAlpha (0.12f));
     g.setColour (ml::theme::textFaint);
-    g.setFont (ml::getLabelFont());
+    g.setFont (ml::labelFontFor (T ("比较基准", "COMPARISON BASIS")));
     g.drawText (T ("比较基准", "COMPARISON BASIS"), 24, paramArea.getY() + 12, 190, 16,
                 juce::Justification::centredLeft, false);
 
@@ -57,15 +57,15 @@ void MasterLensAudioProcessorEditor::paint (juce::Graphics& g)
         auto f = footerArea.reduced (16, 4);
 
         g.setColour (ml::theme::textFaint);
-        g.setFont (ml::getValueFont());
+        g.setFont (ml::getLabelFont());
         auto tech = juce::String (processor.getSampleRateValue() / 1000.0, 1) + " kHz"
                     + "  ·  " + (stats.stereo ? T ("stereo", "stereo") : T ("mono", "mono"))
                     + "  ·  4" + ml::times() + " TP";
 
         if (selectedPage == (int) ml::PageId::files)
-            tech = T ("OFFLINE · file QC", "OFFLINE · file QC");
+            tech = T ("离线 · 文件 QC", "OFFLINE · file QC");
         else if (selectedPage == (int) ml::PageId::album)
-            tech = T ("ALBUM · snapshot", "ALBUM · snapshot");
+            tech = T ("专辑 · 快照", "ALBUM · snapshot");
         else if (stats.hostLength > 0.0)
             tech << "  ·  " << T ("cov ", "cov ") << ml::num (stats.coveragePct) << "%";
 
@@ -109,7 +109,7 @@ void MasterLensAudioProcessorEditor::paint (juce::Graphics& g)
 
         const auto leftText = (! sourceIsProject && footerStatusText.isNotEmpty()) ? footerStatusText : tech;
         g.setColour (ml::theme::textFaint);
-        g.setFont (ml::getValueFont());
+        g.setFont (ml::getLabelFont());
         g.drawFittedText (leftText, f.getX(), f.getY(), 300, f.getHeight(),
                           juce::Justification::centredLeft, 1);
 
@@ -139,7 +139,7 @@ void MasterLensAudioProcessorEditor::paint (juce::Graphics& g)
             outColour = ml::theme::accent;
         }
 
-        const auto outFont = ml::getValueFont();
+        const auto outFont = ml::getLabelFont();
         const int outW = juce::jmin (160, juce::roundToInt (
             juce::GlyphArrangement::getStringWidth (outFont, outState)) + 18);
         auto outArea = juce::Rectangle<int> (f.getRight() - outW, f.getY(), outW, f.getHeight());

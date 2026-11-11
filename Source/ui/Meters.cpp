@@ -79,7 +79,7 @@ void LevelMeters::paintRow (juce::Graphics& g, juce::Rectangle<int> area, const 
                                          (float) trackArea.getCentreY() - 2.0f,
                                          (float) trackArea.getWidth(), 4.0f);
 
-    g.setColour (theme::borderSoft);
+    g.setColour (theme::track);
     g.fillRoundedRectangle (track, 2.0f);
 
     const auto normFor = [] (float db) { return juce::jlimit (0.0f, 1.0f, (db + 36.0f) / 36.0f); };

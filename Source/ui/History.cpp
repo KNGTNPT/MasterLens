@@ -445,7 +445,7 @@ void HistoryGraph::paintOverlay (juce::Graphics& g)
         g.setColour (active ? theme::accentSoft : theme::raised);
         g.fillRoundedRectangle (chips[(size_t) i].toFloat(), tokens::radiusControl);
 
-        g.setColour (active ? theme::accent : theme::textDim);
+        g.setColour (active ? theme::accentInk : theme::textDim);
         g.setFont (getLabelFont());
         g.drawText (T (zh[i], en[i]), chips[(size_t) i], juce::Justification::centred);
     }

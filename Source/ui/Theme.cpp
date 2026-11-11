@@ -24,6 +24,7 @@ void theme::apply (bool useDark)
         theme::textDim    = juce::Colour (0xff909994);
         theme::textFaint  = juce::Colour (0xff858f89);
         theme::accent     = juce::Colour (0xff819e90);
+        theme::accentInk  = juce::Colour (0xff9fc0b0);
         theme::accentSoft = juce::Colour (0xff30463e);
         theme::cyan       = juce::Colour (0xff80989f);
         theme::good       = juce::Colour (0xff819e90);
@@ -31,6 +32,7 @@ void theme::apply (bool useDark)
         theme::warn       = juce::Colour (0xffb19870);
         theme::bad        = juce::Colour (0xffc08278);
         theme::violet     = juce::Colour (0xff94949c);
+        theme::track      = juce::Colour (0xff343a3b);
     }
     else
     {
@@ -45,13 +47,18 @@ void theme::apply (bool useDark)
         theme::textDim    = juce::Colour (0xff53665b);
         theme::textFaint  = juce::Colour (0xff62776a);
         theme::accent     = juce::Colour (0xff356d56);
+        theme::accentInk  = juce::Colour (0xff356d56);
         theme::accentSoft = juce::Colour (0xffd6e5d9);
-        theme::cyan       = juce::Colour (0xff426b7a);
-        theme::good       = juce::Colour (0xff14835a);
+        // Light status colours are the readable ink values, not the pale
+        // indicator shades: they carry 14 px status text as well as 1-3 px
+        // marks, and the pale variants only reached 3.1-4.3:1 on the card.
+        theme::cyan       = juce::Colour (0xff355b68);
+        theme::good       = juce::Colour (0xff0d6b47);
         theme::info       = juce::Colour (0xff356d56);
-        theme::warn       = juce::Colour (0xffb46a10);
-        theme::bad        = juce::Colour (0xffc9302a);
-        theme::violet     = juce::Colour (0xff5f4fe0);
+        theme::warn       = juce::Colour (0xff8a4f00);
+        theme::bad        = juce::Colour (0xffb3261e);
+        theme::violet     = juce::Colour (0xff5a4bd3);
+        theme::track      = juce::Colour (0xffb3c0b6);
     }
 
     ++theme::revisionCounter;
@@ -218,9 +225,15 @@ namespace
         juce::Typeface::Ptr brandMono = juce::Typeface::createSystemTypefaceFor (
             MasterLensFonts::GeistMonoRegular_otf, MasterLensFonts::GeistMonoRegular_otfSize);
 
-        juce::Font label { options (regular, 14.0f).withKerningFactor (0.04f) };
-        juce::Font value { options (medium, 16.0f).withFeatureEnabled ("tnum") };
-        juce::Font critical { options (bold, 26.0f).withFeatureEnabled ("tnum") };
+        // Untracked by default: CJK labels must not be widened. Runs of
+        // uppercase Latin ask for the tracked face through labelFontFor().
+        juce::Font label { options (regular, 14.0f).withFeatureEnabled ("tnum") };
+        juce::Font labelTracked { options (regular, 14.0f)
+                                      .withKerningFactor (0.04f)
+                                      .withFeatureEnabled ("tnum") };
+        juce::Font value { options (medium, 18.0f).withFeatureEnabled ("tnum") };
+        juce::Font title { options (medium, 20.0f) };
+        juce::Font critical { options (bold, 30.0f).withFeatureEnabled ("tnum") };
         juce::GlyphArrangement masterWordmark, brandBylineZh, brandBylineEn;
 
         InstrumentFonts()
@@ -247,7 +260,31 @@ namespace
 
 juce::String typefaceName() { return InstrumentFonts::get().regular->getName(); }
 juce::Font getLabelFont() { return InstrumentFonts::get().label; }
+juce::Font getLabelTrackedFont() { return InstrumentFonts::get().labelTracked; }
+
+juce::Font labelFontFor (const juce::String& text)
+{
+    bool hasLetter = false;
+
+    for (int i = 0; i < text.length(); ++i)
+    {
+        const auto ch = text[i];
+
+        if (ch > 0x7f)
+            return getLabelFont();              // CJK or any non-ASCII needs no tracking
+
+        if (juce::CharacterFunctions::isLowerCase (ch))
+            return getLabelFont();              // sentence-case copy stays untracked
+
+        if (juce::CharacterFunctions::isLetter (ch))
+            hasLetter = true;
+    }
+
+    return hasLetter ? getLabelTrackedFont() : getLabelFont();
+}
+
 juce::Font getValueFont() { return InstrumentFonts::get().value; }
+juce::Font getTitleFont() { return InstrumentFonts::get().title; }
 juce::Font getCriticalFont() { return InstrumentFonts::get().critical; }
 const juce::GlyphArrangement& getMasterWordmark() { return InstrumentFonts::get().masterWordmark; }
 const juce::GlyphArrangement& getBrandByline (bool english)
@@ -356,7 +393,10 @@ juce::Font InstrumentTypography::getLabelFont (juce::Label& label)
         ? ml::getValueFont() : label.getFont();
 }
 juce::Font InstrumentTypography::getPopupMenuFont() { return ml::getValueFont().withHeight (16.0f * ui::scale); }
-juce::Font InstrumentTypography::getTextButtonFont (juce::TextButton&, int) { return ml::getLabelFont(); }
+juce::Font InstrumentTypography::getTextButtonFont (juce::TextButton& button, int)
+{
+    return ml::labelFontFor (button.getButtonText());
+}
 
 juce::Slider::SliderLayout InstrumentTypography::getSliderLayout (juce::Slider& slider)
 {

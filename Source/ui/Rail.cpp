@@ -112,7 +112,7 @@ void ModuleRail::paint (juce::Graphics& g)
     {
         auto r = rowBounds (i);
         const bool sel = i == selected;
-        const auto colour = sel ? theme::accent : (i == hoverRow ? theme::text : theme::textFaint);
+        const auto colour = sel ? theme::accent : (i == hoverRow ? theme::text : theme::textDim);
         const float cx = (float) r.getCentreX(), cy = (float) r.getY() + 14.0f;
         g.setColour (colour);
         juce::Path icon;
@@ -143,7 +143,7 @@ void ModuleRail::paint (juce::Graphics& g)
                 icon.startNewSubPath(cx-7,cy+6);icon.lineTo(cx-7,cy-6);icon.lineTo(cx+2,cy-6);icon.lineTo(cx+7,cy-1);icon.lineTo(cx+7,cy+6);icon.closeSubPath();break;
         }
         g.strokePath(icon,juce::PathStrokeType(1.15f));
-        g.setFont (getLabelFont());
+        g.setFont (labelFontFor (T (zh[i], en[i]).toUpperCase()));
         g.drawText (T (zh[i], en[i]).toUpperCase(), r.withTrimmedTop (28).withTrimmedBottom (4),
                     juce::Justification::centred, false);
     }

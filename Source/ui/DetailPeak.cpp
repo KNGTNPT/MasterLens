@@ -30,16 +30,10 @@ void DetailArea::paintTruePeak (juce::Graphics& g)
     auto valueRow = left.removeFromTop (48);
     const auto critical = getCriticalFont();
     const auto valueText = valid ? num (s.truePeakDb) : noValue();
-    g.setColour (colour);
-    g.setFont (critical);
-    g.drawText (valueText, valueRow, juce::Justification::centredLeft);
-
-    const auto valueWidth = juce::roundToInt (
-        juce::GlyphArrangement::getStringWidth (critical, valueText));
-    g.setColour (theme::textFaint);
-    g.setFont (getLabelFont());
-    g.drawText ("dBTP", valueRow.withTrimmedLeft (valueWidth + 8).withTrimmedTop (18),
-                juce::Justification::centredLeft);
+    const float baseline = text::centredBaseline (critical, valueRow);
+    const int valueWidth = text::drawRun (g, critical, colour, valueText, valueRow.getX(), baseline);
+    text::drawRun (g, getLabelFont(), theme::textFaint, "dBTP",
+                   valueRow.getX() + valueWidth + 8, baseline);
 
     const auto row = [&] (const juce::String& key, const juce::String& value)
     {

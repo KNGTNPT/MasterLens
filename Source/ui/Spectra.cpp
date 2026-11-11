@@ -42,6 +42,19 @@ void SpectrumDisplay::setAnalyzer (const SpectrumAnalyzer* a)
     peakLabel = T ("峰值 ", "Peak ") + fmt1 (peakDb) + " dBFS  @ " + formatHz (peakBin * a->getBinHz());
 }
 
+namespace
+{
+// One mapping for grid and curve: -90 dB floor, 6 dB headroom, so the plotted
+// energy fills the window instead of leaving the lower third empty.
+constexpr float spectrumFloorDb = -90.0f;
+constexpr float spectrumTopDb = 6.0f;
+
+inline float spectrumDbToT (float db)
+{
+    return juce::jlimit (0.0f, 1.0f, (db - spectrumFloorDb) / (spectrumTopDb - spectrumFloorDb));
+}
+} // namespace
+
 void SpectrumDisplay::drawGrid (juce::Graphics& g)
 {
     auto area = getLocalBounds().toFloat();
@@ -55,13 +68,13 @@ void SpectrumDisplay::drawGrid (juce::Graphics& g)
 
     const auto yForDb = [plot] (float db)
     {
-        const float t = juce::jlimit (0.0f, 1.0f, (db + 100.0f) / 106.0f);
+        const float t = spectrumDbToT (db);
         return plot.getBottom() - t * plot.getHeight();
     };
 
     g.setFont (getValueFont());
 
-    for (float db = -100.0f; db <= 0.1f; db += 20.0f)
+    for (float db = -80.0f; db <= 0.1f; db += 20.0f)
     {
         const float y = yForDb (db);
 
@@ -69,7 +82,7 @@ void SpectrumDisplay::drawGrid (juce::Graphics& g)
         g.drawHorizontalLine (juce::roundToInt (y), plot.getX(), plot.getRight());
 
         g.setColour (theme::dark ? theme::textFaint : juce::Colour (0xffa7b3ae));
-        g.drawText (juce::String ((int) db),
+        g.drawText (num (db, 0),
                     juce::Rectangle<float> (0.0f, y - 6.0f, leftPad - 8.0f, 12.0f),
                     juce::Justification::centredRight);
     }
@@ -154,7 +167,7 @@ void SpectrumDisplay::paint (juce::Graphics& g)
 
     const auto yForDb = [plot] (float db)
     {
-        const float t = juce::jlimit (0.0f, 1.0f, (db + 100.0f) / 106.0f);
+        const float t = spectrumDbToT (db);
         return plot.getBottom() - t * plot.getHeight();
     };
 
