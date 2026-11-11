@@ -41,9 +41,26 @@ python3 Tests/test_cli.py ./build-universal/MasterLensCli_artefacts/Release/Mast
 python3 scripts/check_ui.py --build-dir build-universal
 ```
 
-## 三、发布状态与限制
+## 三、发布与产物校验
 
-- 3.0.3 目前**只有源码与本地构建**，没有 tag / Release；安装包仍以 3.0.2 为准。
+- tag `v3.0.3`：GitHub Actions run [43070636847](https://github.com/KNGTNPT/MasterLens/actions/runs/43070636847)
+  全绿（macOS、Windows x64、Windows ARM64、Publish verified installers）。
+- Release：<https://github.com/KNGTNPT/MasterLens/releases/tag/v3.0.3>（稳定版，`prerelease=false`）。
+
+  | 资产 | SHA-256 |
+  | --- | --- |
+  | `MasterLens-3.0.3-macOS.dmg` | `2bd22f0ae3f3cc6b2ebabe552c7c5cb982dbafb4ab1e58bee053595a2d74e21b` |
+  | `MasterLens-3.0.3-Windows-x64.exe` | `04f21a116e8d2abcc1471ccd8c54d65c80834e9df2bd75c6833f0fee70406d9d` |
+  | `MasterLens-3.0.3-Windows-ARM64.exe` | `30efd04bf31d7f1d18f0cc5f01bf62e903162159bd874f714872664e1264cafa` |
+
+- 下载后 `shasum -a 256 -c SHA256SUMS.txt` 三项全部 OK。重新挂载发布 DMG：
+  `CFBundleShortVersionString = 3.0.3`，三份插件包内的 `ffmpeg` 均 `codesign -v` 通过，
+  `ffmpeg -version` 为 9.0.2。
+- 从发布 DMG 复制 `MasterLensCli` 与 `ffmpeg` 到空目录，在 PATH 无 ffmpeg 的情况下
+  `--codec mp3` 成功，`backend=bundled`。发布 AU 重新 ad-hoc 签名后
+  `auval` 输出 `Cocoa Views Available: 1` 与 `AU VALIDATION SUCCEEDED`。
+
+## 四、限制
 - 真实宿主（Logic / REAPER / Cubase）与 ≥2 小时持续播放未验收。
 - macOS 仍为 ad-hoc 签名、未公证；Windows ARM64 仍为交叉构建，未实机运行。
 - 编码 A/B 的编码器延迟补偿仍未实现（与 3.0.2 相同）。

@@ -5,7 +5,7 @@
 **母带响度 / 文件 QC / 频谱 / 声场 / 专辑交付 / CLI**<br>
 by **BerryStudio** · developer **KNGTNPT 兰**<br>
 macOS / Windows · VST3 / AU / 独立版 · C++17 + JUCE 8<br>
-当前源码版本：**3.0.3**（界面整理；安装包仍为 3.0.2）
+当前版本：**3.0.3**（界面整理，已发布）
 
 MasterLens 是放在母带链末尾的小检查员：这首歌有多响、峰值会不会顶过头、立体声合成单声道后会不会变薄、交出去之前还有哪里值得听一遍，它都帮你留意着。把它插在 Master / Stereo Out 的最后一级就好。
 
@@ -31,7 +31,7 @@ MasterLens 是放在母带链末尾的小检查员：这首歌有多响、峰值
 - DSP / 可靠性：**178 项通过**；CLI：**76 项通过**（3.0.3 构建 + 随包运行时，0 跳过）。
 - `auval -v aufx Maln OrcA`：**PASS**，`Cocoa Views Available: 1`。
 - 截图：8 张，`docs/screenshots-3.0.3.json` 记录尺寸、参数、渲染器与 SHA-256。
-- 3.0.3 目前只有源码与本地构建，安装包尚未发布；想直接使用请先下载 3.0.2。
+- 已发布：[v3.0.3](https://github.com/KNGTNPT/MasterLens/releases/tag/v3.0.3)，含 macOS DMG 与 Windows x64 / ARM64 安装包、`SHA256SUMS.txt`。
 
 ![MasterLens 3.0.3 响度与动态](docs/screenshot-3.0.3.png)
 
@@ -66,7 +66,7 @@ MasterLens 是放在母带链末尾的小检查员：这首歌有多响、峰值
 - **缩放只有 100%–200%**：整张画布、文字、控件共用同一个缩放因子；默认优先 125%，按屏幕可用空间收敛。
 - **中英规则**：中文保持正常字距；只有全大写拉丁标签加 0.04em tracking。中文页面不出现整句英文。
 
-## 3.0.2：安装包自带 FFmpeg（当前可下载版本）
+## 3.0.2：安装包自带 FFmpeg（上一版）
 
 3.0.2 把 3.0.1 准备好的运行时结构真正填满：安装后直接可用 AAC 256k / MP3 320k 编码 A/B，不需要 Homebrew、PATH 或手动安装 FFmpeg。
 
@@ -111,7 +111,7 @@ MasterLens 是放在母带链末尾的小检查员：这首歌有多响、峰值
 
 ### 先装好，再播一首
 
-[下载最新发布版](https://github.com/KNGTNPT/MasterLens/releases)（当前 3.0.2；3.0.3 的界面改动已进源码，安装包发布后替换）。macOS 打开 DMG，运行「安装 Install.command」；Windows 运行对应 x64 / ARM64 的 EXE，然后重启 DAW。
+[下载最新发布版](https://github.com/KNGTNPT/MasterLens/releases/tag/v3.0.3)（当前 3.0.3）。macOS 打开 DMG，运行「安装 Install.command」；Windows 运行对应 x64 / ARM64 的 EXE，然后重启 DAW。
 
 把 MasterLens 插在母带链最后，先播 20–30 秒，跟它打个招呼。左侧的综合响度看整体有多响，真峰值看最高处有没有越线；LRA 看强弱变化的范围，PLR 看峰值与平均响度之间还留了多少空间。中央曲线会把变化过程画出来。
 
