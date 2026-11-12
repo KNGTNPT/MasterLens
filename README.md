@@ -32,7 +32,7 @@ MasterLens 是放在母带链末尾的小检查员：这首歌有多响、峰值
 - CLI：**86 passed / 0 skipped**（随包运行时）；UI 布局：**46/46 场景**，`docs/layout-3.1.0.json` 92 条记录 0 失败。
 - `auval -v aufx Maln OrcA`：**PASS**，`Cocoa Views Available: 1`。
 - 截图：9 张 `docs/*-3.1.0.png`（含紧凑档），`docs/screenshots-3.1.0.json` 记录参数、尺寸与 SHA-256。
-- 本机 DMG 已打包并复核：版本 3.1.0、三份插件包内的 FFmpeg 签名有效、CLI 在无 PATH 时可完成 MP3 编码。
+- 已发布：[v3.1.0](https://github.com/KNGTNPT/MasterLens/releases/tag/v3.1.0)，含 macOS DMG 与 Windows x64 / ARM64 安装包、`SHA256SUMS.txt`（CI run `43164010215` 全绿）。
 
 ![MasterLens 3.1.0 响度与校准面板](docs/screenshot-3.1.0.png)
 

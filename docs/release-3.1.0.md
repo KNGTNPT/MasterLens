@@ -76,6 +76,10 @@
 
 macOS 仍为 ad-hoc 签名、未公证；Windows ARM64 仍为交叉构建，未在 ARM64 实机验证。
 
+已发布：[v3.1.0](https://github.com/KNGTNPT/MasterLens/releases/tag/v3.1.0)，
+资产 SHA-256 见 `SHA256SUMS.txt`；CI run
+[43164010215](https://github.com/KNGTNPT/MasterLens/actions/runs/43164010215) 全绿。
+
 ## 四、已知边界
 
 - **3.2 流式**：有界预读 + 内存峰值 + ≤30 s Cue 循环 + 前缀响度均已落地；

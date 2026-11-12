@@ -102,15 +102,31 @@
 
 出处文件记录 `rendererSha256` 与 `architecture: universal (x86_64 + arm64)`。
 
-### 本机 DMG
+### DMG 与发布产物
 
-- `dist/MasterLens-3.1.0-macOS.dmg`，约 35 MB，
+- 本机 `dist/MasterLens-3.1.0-macOS.dmg`，约 35 MB，
   SHA-256 `3b0ed6c169ae63a40aa0f096d974269290fb7b51d59fc4386b5b208c04566780`。
 - 挂载后 `CFBundleShortVersionString = 3.1.0`；三份插件包内的 `ffmpeg` 均
   `codesign -v` 通过；从 DMG 复制 `MasterLensCli` + `ffmpeg` 到空目录，PATH 无 ffmpeg
   时 `--codec mp3` 成功（`backend=bundled`，延迟 1200 样本）。
 - 发布 AU 重新 ad-hoc 签名后 `auval`：`Cocoa Views Available: 1`，
   `AU VALIDATION SUCCEEDED`。
+
+### 发布
+
+- tag `v3.1.0`：GitHub Actions run
+  [43164010215](https://github.com/KNGTNPT/MasterLens/actions/runs/43164010215) 全绿
+  （macOS、Windows x64、Windows ARM64、Publish verified installers）。
+- Release：<https://github.com/KNGTNPT/MasterLens/releases/tag/v3.1.0>。
+
+  | 资产 | SHA-256 |
+  | --- | --- |
+  | `MasterLens-3.1.0-macOS.dmg` | `e2ad74783abd7a0c64efaec11df0c170f32e12e4eb39fcbcaacaf27fc19f94ec` |
+  | `MasterLens-3.1.0-Windows-x64.exe` | `aa7e6d9aa455d56ac383113c0c796aa576903421df3cefa90c62d2892ade179b` |
+  | `MasterLens-3.1.0-Windows-ARM64.exe` | `1d73328d807d18e53627d83e88cd2c00c382c4d3318f1996d281047240ec7b93` |
+
+- Windows x64 CI 安装器冒烟已确认 `Program Files\MasterLens\ffmpeg\ffmpeg.exe` 与
+  VST3 内的同名运行时可执行；ARM64 仍为交叉构建，未实机运行。
 
 ## 复跑时修掉的两个问题
 
