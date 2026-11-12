@@ -55,6 +55,31 @@ public:
         gainDb.store (juce::jlimit (-24.0f, 12.0f, db), std::memory_order_relaxed);
     }
 
+    /** Cue loop over the reference (3.2): start + length in seconds. */
+    void setLoop (bool on, double startSeconds, double lengthSeconds) noexcept
+    {
+        loopOn.store (on, std::memory_order_release);
+        loopStartSeconds.store (juce::jmax (0.0, startSeconds), std::memory_order_relaxed);
+        loopLengthSeconds.store (juce::jmax (0.0, lengthSeconds), std::memory_order_relaxed);
+
+        if (on && streaming.load (std::memory_order_acquire))
+            preloadStreamLoop();
+        else if (! on)
+        {
+            const juce::SpinLock::ScopedLockType sl (loopLock);
+            streamLoopReady.store (false, std::memory_order_release);
+        }
+    }
+
+    bool isLooping() const noexcept { return loopOn.load (std::memory_order_acquire); }
+
+    /** 3.2: long references play from a bounded read-ahead buffer instead of
+        being decoded into one big AudioBuffer. Returns the buffered bytes. */
+    bool isStreaming() const noexcept { return streaming.load (std::memory_order_acquire); }
+    juce::int64 getMemoryBytes() const noexcept { return memoryBytes.load (std::memory_order_relaxed); }
+    /** Highest reference memory seen since construction (streamed or in-memory). */
+    juce::int64 getPeakMemoryBytes() const noexcept { return peakMemoryBytes.load (std::memory_order_relaxed); }
+
     float getGainDb() const noexcept
     {
         return gainDb.load (std::memory_order_relaxed);
@@ -64,6 +89,20 @@ public:
         @returns true when reference audio was written. */
     bool render (juce::AudioBuffer<float>& output, double hostSeconds,
                  bool hostPlaying, float extraGainDb, float inputGainDb = 0.0f);
+
+    bool renderStreaming (juce::BufferingAudioReader& reader, juce::AudioBuffer<float>& output,
+                          double hostSeconds, bool hostPlaying,
+                          float extraGainDb, float inputGainDb);
+
+    void preloadStreamLoop();
+    bool renderStreamLoop (juce::AudioBuffer<float>& output, bool hostPlaying,
+                           float extraGainDb, float inputGainDb);
+
+    juce::SpinLock loopLock;
+    juce::AudioBuffer<float> streamLoop;
+    std::atomic<bool> streamLoopReady { false };
+    double streamLoopPos = 0.0;
+    juce::String streamPath;
 
 private:
     struct Data
@@ -90,7 +129,35 @@ private:
     std::atomic<bool> enabled { false };
     std::atomic<double> duration { 0.0 };
     std::atomic<double> offsetSeconds { 0.0 };
+    std::atomic<bool> loopOn { false };
+    std::atomic<double> loopStartSeconds { 0.0 }, loopLengthSeconds { 0.0 };
+    double loopPosition = -1.0;
+
+    std::atomic<bool> streaming { false };
+    std::atomic<juce::int64> memoryBytes { 0 };
+    std::atomic<juce::int64> peakMemoryBytes { 0 };
+
+    // Long-file path: a bounded read-ahead reader serviced by a time-slice
+    // thread. Shared so the audio thread can keep one alive while a new file
+    // is being swapped in.
+    juce::TimeSliceThread streamThread { "MasterLens reference stream" };
+    juce::SpinLock streamLock;
+    std::shared_ptr<juce::BufferingAudioReader> streamReader;
+    std::vector<std::shared_ptr<juce::BufferingAudioReader>> retiredReaders;
+    juce::AudioBuffer<float> streamChunk;
+    juce::int64 streamLength = 0;
+    double streamRate = 48000.0;
     std::atomic<float> gainDb { 0.0f };
     std::atomic<float> loudnessLufs { kSilentDb };
 };
+/** Wrap a time into [start, start + length); used by the reference cue loop. */
+inline double wrapLoopPosition (double seconds, double start, double length)
+{
+    if (length <= 0.0)
+        return seconds;
+
+    const double offset = std::fmod (seconds - start, length);
+    return start + (offset < 0.0 ? offset + length : offset);
+}
+
 } // namespace ml

@@ -32,4 +32,20 @@ struct SpecCheck
 };
 
 SpecCheck evaluateSpec (const FileAnalysisResult&, const DeliverySpec&);
+/** One resolver for GUI, CLI, CSV and JSON: an enabled client spec wins over
+    the platform/manual target, which wins over the -14 LUFS default. */
+struct EffectiveDelivery
+{
+    float targetLufs = -14.0f;
+    float ceilingDbtp = -1.0f;
+};
+
+inline EffectiveDelivery effectiveDelivery (const DeliverySpec& spec, float targetLufs, float ceilingDbtp)
+{
+    if (spec.enabled)
+        return { spec.targetLufs, spec.ceilingDbtp };
+
+    return { targetLufs, ceilingDbtp };
+}
+
 } // namespace ml

@@ -24,8 +24,9 @@ SHOTS = [
     ('stereo', ['page3'], 'ui_shot_page3_stereo'),
     ('fileqc', ['page10', 'fileqc', 'standalone'], 'ui_shot_page10_fileqc'),
     ('about', ['page0', 'about'], 'ui_shot_page0_about_about'),
-    ('codec-ready', ['page10', 'fileqc', 'codecstate'], 'ui_shot_page10_codec-ready'),
-    ('codec-failed', ['page10', 'fileqc', 'codecfail'], 'ui_shot_page10_codec-failed'),
+    ('codec-ready', ['page10', 'fileqc', 'standalone', 'codecstate'], 'ui_shot_page10_codec-ready'),
+    ('codec-failed', ['page10', 'fileqc', 'standalone', 'codecfail'], 'ui_shot_page10_codec-failed'),
+    ('compact', ['page0', 'minsize'], 'ui_shot_page0_min_compact'),
 ]
 
 

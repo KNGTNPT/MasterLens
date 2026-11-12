@@ -113,7 +113,7 @@ juce::String fileReviewStatus (const FileAnalysisResult& r)
         return T ("通过", "PASS");
 
     const bool allReviewed = std::all_of (r.forensic.findings.begin(), r.forensic.findings.end(),
-                                          [] (const FileFinding& f) { return f.reviewed; });
+                                          [] (const FileFinding& f) { return f.reviewed || f.ignored; });
     if (allReviewed)
         return T ("已复核", "REVIEWED");
 
@@ -403,7 +403,7 @@ void DetailArea::paintFiles (juce::Graphics& g)
 
         const bool allReviewed = ! r.forensic.findings.empty()
             && std::all_of (r.forensic.findings.begin(), r.forensic.findings.end(),
-                            [] (const FileFinding& f) { return f.reviewed; });
+                            [] (const FileFinding& f) { return f.reviewed || f.ignored; });
         const bool needsReview = r.ok && ! r.forensic.findings.empty() && ! allReviewed
             && r.forensic.blockers() == 0;
         const auto reviewStatus = fileReviewStatus (r);
@@ -429,6 +429,414 @@ void DetailArea::paintFiles (juce::Graphics& g)
     }
 
     paintFileInspector (g);
+}
+
+
+
+
+namespace
+{
+/** In-plugin client delivery spec: edit the same fields the CLI consumes and
+    see pass / block against the selected file before applying it. */
+class SpecEditorPopup final : public juce::Component
+{
+public:
+    SpecEditorPopup (const ml::DeliverySpec& initial, const ml::FileAnalysisResult* file,
+                     std::function<void (ml::DeliverySpec)> onApply)
+        : applyFn (std::move (onApply))
+    {
+        if (file != nullptr)
+        {
+            previewCopy = *file;
+            hasPreview = true;
+        }
+
+        setup (target, juce::String (initial.targetLufs, 1));
+        setup (ceiling, juce::String (initial.ceilingDbtp, 1));
+        setup (tolerance, juce::String (initial.loudnessToleranceLu, 2));
+        setup (rate, juce::String (initial.sampleRate));
+        setup (depth, juce::String (initial.bitDepth));
+        setup (channels, juce::String (initial.channels));
+        setup (pattern, initial.namingPattern);
+
+        addAndMakeVisible (enabled);
+        enabled.setButtonText (T ("启用客户规格", "Enable client spec"));
+        enabled.setToggleState (initial.enabled, juce::dontSendNotification);
+        enabled.onClick = [this] { refreshPreview(); };
+
+        addAndMakeVisible (ok);
+        ok.setButtonText (T ("应用", "Apply"));
+        ok.onClick = [this] { apply(); };
+
+        addAndMakeVisible (cancel);
+        cancel.setButtonText (T ("取消", "Cancel"));
+        cancel.onClick = [this]
+        {
+            if (auto* box = findParentComponentOfClass<juce::CallOutBox>())
+                box->dismiss();
+        };
+
+        refreshPreview();
+        setSize (410, 360);
+    }
+
+    void paint (juce::Graphics& g) override
+    {
+        g.fillAll (theme::card);
+        g.setColour (theme::text);
+        g.setFont (getPageTitleFont());
+        g.drawText (T ("客户交付规格", "CLIENT DELIVERY SPEC"), 14, 10, 260, 20,
+                    juce::Justification::centredLeft, false);
+
+        const char* zh[] { "目标 LUFS", "真峰值上限 dBTP", "响度容差 LU",
+                           "采样率 Hz（0 = 不限）", "位深（0 = 不限）", "声道（0 = 不限）", "命名规则" };
+        const char* en[] { "Target LUFS", "TP ceiling dBTP", "Tolerance LU",
+                           "Sample rate Hz (0 = any)", "Bit depth (0 = any)", "Channels (0 = any)", "Naming pattern" };
+
+        g.setFont (getLabelFont());
+        g.setColour (theme::textFaint);
+        for (int i = 0; i < 7; ++i)
+            g.drawText (T (zh[i], en[i]), 14, rowY (i) + 4, 132, 20,
+                        juce::Justification::centredLeft, true);
+
+        auto preview = getLocalBounds().removeFromBottom (78).reduced (14, 0).removeFromTop (46);
+        g.setColour (previewOk ? theme::good : theme::bad);
+        g.setFont (getLabelFont());
+        g.drawFittedText (previewText, preview, juce::Justification::topLeft, 2);
+    }
+
+    void resized() override
+    {
+        enabled.setBounds (14, 34, 240, 22);
+        for (int i = 0; i < 7; ++i)
+            field (i).setBounds (146, rowY (i), 248, 24);
+
+        auto buttons = getLocalBounds().removeFromBottom (34).reduced (14, 2);
+        cancel.setBounds (buttons.removeFromRight (76));
+        buttons.removeFromRight (8);
+        ok.setBounds (buttons.removeFromRight (76));
+    }
+
+private:
+    static int rowY (int i) { return 64 + i * 30; }
+
+    void setup (juce::TextEditor& e, const juce::String& value)
+    {
+        addAndMakeVisible (e);
+        e.setText (value, false);
+        e.setFont (getValueFont());
+        e.setJustification (juce::Justification::centredLeft);
+        e.setColour (juce::TextEditor::backgroundColourId, theme::cardAlt);
+        e.setColour (juce::TextEditor::textColourId, theme::text);
+        e.setColour (juce::TextEditor::outlineColourId, theme::border);
+        e.setColour (juce::TextEditor::focusedOutlineColourId, theme::accent);
+        e.onTextChange = [this] { refreshPreview(); };
+    }
+
+    juce::TextEditor& field (int i)
+    {
+        switch (i)
+        {
+            case 0: return target;
+            case 1: return ceiling;
+            case 2: return tolerance;
+            case 3: return rate;
+            case 4: return depth;
+            case 5: return channels;
+            default: return pattern;
+        }
+    }
+
+    ml::DeliverySpec read() const
+    {
+        ml::DeliverySpec s;
+        s.enabled = enabled.getToggleState();
+        s.targetLufs = juce::jlimit (-40.0f, -5.0f, target.getText().getFloatValue());
+        s.ceilingDbtp = juce::jlimit (-12.0f, 0.0f, ceiling.getText().getFloatValue());
+        s.loudnessToleranceLu = juce::jlimit (0.0f, 5.0f, tolerance.getText().getFloatValue());
+        s.sampleRate = juce::jlimit (0, 384000, rate.getText().getIntValue());
+        s.bitDepth = juce::jlimit (0, 32, depth.getText().getIntValue());
+        s.channels = juce::jlimit (0, 8, channels.getText().getIntValue());
+        s.namingPattern = pattern.getText().trim();
+        return s;
+    }
+
+    void refreshPreview()
+    {
+        const auto s = read();
+
+        if (! hasPreview)
+        {
+            previewText = T ("没有可预览的文件。", "No file selected to preview.");
+            previewOk = false;
+        }
+        else if (! s.enabled)
+        {
+            previewText = T ("规格未启用；应用后仍保持关闭。", "Spec is off; applying keeps it disabled.");
+            previewOk = true;
+        }
+        else
+        {
+            const auto check = ml::evaluateSpec (previewCopy, s);
+            previewOk = check.ok;
+            previewText = check.ok ? T ("预览：通过", "Preview: PASS")
+                                   : T ("预览：未通过 · ", "Preview: FAIL · ")
+                                         + check.failures.joinIntoString ("; ");
+        }
+
+        repaint();
+    }
+
+    void apply()
+    {
+        auto s = read();
+        juce::String error;
+
+        if (! s.validate (error))
+        {
+            previewText = error;
+            previewOk = false;
+            repaint();
+            return;
+        }
+
+        if (applyFn != nullptr)
+            applyFn (s);
+
+        if (auto* box = findParentComponentOfClass<juce::CallOutBox>())
+            box->dismiss();
+    }
+
+    juce::TextEditor target, ceiling, tolerance, rate, depth, channels, pattern;
+    juce::ToggleButton enabled;
+    juce::TextButton ok, cancel;
+    ml::FileAnalysisResult previewCopy;
+    bool hasPreview = false;
+    bool previewOk = false;
+    juce::String previewText;
+    std::function<void (ml::DeliverySpec)> applyFn;
+};
+} // namespace
+
+namespace
+{
+/** Small popup for one evidence note; the inspector is too short to host an
+    inline editor at 1120x700 without hiding the finding list. */
+class FindingNotePopup final : public juce::Component
+{
+public:
+    FindingNotePopup (const juce::String& initial, bool ignored,
+                      std::function<void (juce::String, bool)> onDone)
+        : done (std::move (onDone))
+    {
+        addAndMakeVisible (note);
+        note.setMultiLine (true, true);
+        note.setReturnKeyStartsNewLine (true);
+        note.setText (initial, false);
+        note.setFont (getLabelFont());
+        note.setColour (juce::TextEditor::backgroundColourId, theme::cardAlt);
+        note.setColour (juce::TextEditor::textColourId, theme::text);
+        note.setColour (juce::TextEditor::outlineColourId, theme::border);
+        note.setColour (juce::TextEditor::focusedOutlineColourId, theme::accent);
+
+        addAndMakeVisible (ignore);
+        ignore.setButtonText (T ("可忽略 / 已确认", "Ignore / accepted"));
+        ignore.setToggleState (ignored, juce::dontSendNotification);
+
+        addAndMakeVisible (ok);
+        ok.setButtonText (T ("完成", "Done"));
+        ok.onClick = [this]
+        {
+            if (done != nullptr)
+                done (note.getText(), ignore.getToggleState());
+
+            if (auto* box = findParentComponentOfClass<juce::CallOutBox>())
+                box->dismiss();
+        };
+
+        setSize (320, 118);
+    }
+
+    void resized() override
+    {
+        auto area = getLocalBounds().reduced (12);
+        auto buttons = area.removeFromBottom (28);
+        ok.setBounds (buttons.removeFromRight (76));
+        ignore.setBounds (buttons);
+        area.removeFromBottom (8);
+        note.setBounds (area);
+    }
+
+private:
+    juce::TextEditor note;
+    juce::ToggleButton ignore;
+    juce::TextButton ok;
+    std::function<void (juce::String, bool)> done;
+};
+} // namespace
+
+void DetailArea::syncFindingNote()
+{
+    if (fileSelected < 0 || fileSelected >= (int) fileResults.size())
+    {
+        findingNote.setText ({}, false);
+        return;
+    }
+
+    auto& findings = fileResults[(size_t) fileSelected].forensic.findings;
+
+    if (fileFindingSelected < 0 || fileFindingSelected >= (int) findings.size())
+    {
+        findingNote.setText ({}, false);
+        return;
+    }
+
+    updatingFindingNote = true;
+    findingNote.setText (findings[(size_t) fileFindingSelected].note, false);
+    findingIgnore.setToggleState (findings[(size_t) fileFindingSelected].ignored,
+                                  juce::dontSendNotification);
+    updatingFindingNote = false;
+}
+
+void DetailArea::applyFindingNote()
+{
+    if (updatingFindingNote || fileSelected < 0 || fileSelected >= (int) fileResults.size())
+        return;
+
+    auto& findings = fileResults[(size_t) fileSelected].forensic.findings;
+
+    if (fileFindingSelected < 0 || fileFindingSelected >= (int) findings.size())
+        return;
+
+    findings[(size_t) fileFindingSelected].note = findingNote.getText();
+}
+
+void DetailArea::auditionNextUnreviewed()
+{
+    if (fileResults.empty())
+        return;
+
+    const int n = (int) fileResults.size();
+    const int start = juce::jlimit (0, n - 1, fileSelected < 0 ? 0 : fileSelected);
+
+    for (int step = 0; step < n; ++step)
+    {
+        const int fi = (start + step) % n;
+        auto& r = fileResults[(size_t) fi];
+
+        if (! r.ok || r.sampleRate <= 0.0)
+            continue;
+
+        for (size_t k = 0; k < r.forensic.findings.size(); ++k)
+        {
+            auto& f = r.forensic.findings[(size_t) k];
+
+            if (f.reviewed)
+                continue;
+
+            fileSelected = fi;
+            fileFindingScroll = juce::jmax (0, (int) k - 2);
+
+            if (onPreviewFile != nullptr)
+                onPreviewFile (r.path, (double) f.startSample / r.sampleRate);
+
+            resized();
+            repaint();
+            return;
+        }
+    }
+}
+
+
+namespace
+{
+/** Rename a reference cue (double-click A/B). */
+class CueNamePopup final : public juce::Component
+{
+public:
+    CueNamePopup (const juce::String& current, const juce::String& time,
+                  std::function<void (juce::String)> onApply)
+        : applyFn (std::move (onApply))
+    {
+        addAndMakeVisible (name);
+        name.setText (current, false);
+        name.setFont (getValueFont());
+        name.setColour (juce::TextEditor::backgroundColourId, theme::cardAlt);
+        name.setColour (juce::TextEditor::textColourId, theme::text);
+        name.setColour (juce::TextEditor::outlineColourId, theme::border);
+        name.setColour (juce::TextEditor::focusedOutlineColourId, theme::accent);
+        name.onReturnKey = [this] { apply(); };
+
+        addAndMakeVisible (ok);
+        ok.setButtonText (T ("命名", "Name"));
+        ok.onClick = [this] { apply(); };
+
+        timeLabel = time;
+        setSize (300, 108);
+    }
+
+    void paint (juce::Graphics& g) override
+    {
+        g.fillAll (theme::card);
+        g.setColour (theme::textFaint);
+        g.setFont (getMetaFont());
+        g.drawText (timeLabel, 12, 8, 276, 16, juce::Justification::centredLeft, false);
+    }
+
+    void resized() override
+    {
+        name.setBounds (12, 30, 276, 26);
+        ok.setBounds (212, 66, 76, 26);
+    }
+
+private:
+    void apply()
+    {
+        if (applyFn != nullptr)
+            applyFn (name.getText().trim());
+
+        if (auto* box = findParentComponentOfClass<juce::CallOutBox>())
+            box->dismiss();
+    }
+
+    juce::TextEditor name;
+    juce::TextButton ok;
+    juce::String timeLabel;
+    std::function<void (juce::String)> applyFn;
+};
+} // namespace
+
+void DetailArea::openCueNameEditor (int which)
+{
+    const bool isA = which == 0;
+    const auto current = isA ? refCueAName : refCueBName;
+    const auto time = isA ? refCueA.getTooltip() : refCueB.getTooltip();
+
+    auto popup = std::make_unique<CueNamePopup> (current, time,
+        [this, which] (juce::String text)
+        {
+            if (onReferenceCueName != nullptr)
+                onReferenceCueName (which, text);
+        });
+
+    juce::CallOutBox::launchAsynchronously (std::move (popup),
+                                            isA ? refCueA.getBounds() : refCueB.getBounds(), this);
+}
+
+void DetailArea::openSpecEditor()
+{
+    auto popup = std::make_unique<SpecEditorPopup> (
+        spec, selectedFile(),
+        [this] (const ml::DeliverySpec& s)
+        {
+            spec = s;
+            if (onDeliverySpecChanged != nullptr)
+                onDeliverySpecChanged (s);
+            repaint();
+        });
+
+    juce::CallOutBox::launchAsynchronously (std::move (popup),
+                                            specButton.getBounds(), this);
 }
 
 void DetailArea::paintFileInspector (juce::Graphics& g)
@@ -511,9 +919,10 @@ void DetailArea::paintFileInspector (juce::Graphics& g)
             auto row = area.removeFromTop (24);
             fileFindingRows.push_back (row);
             auto check = row.removeFromRight (24);
-            g.setColour (f.reviewed ? theme::good : theme::textFaint);
+            g.setColour (f.ignored ? theme::textFaint : (f.reviewed ? theme::good : theme::textFaint));
             g.setFont (getValueFont());
-            g.drawText (f.reviewed ? "[x]" : "[ ]", check, juce::Justification::centred, false);
+            g.drawText (f.ignored ? "[-]" : (f.reviewed ? "[x]" : "[ ]"), check,
+                        juce::Justification::centred, false);
             auto time = row.removeFromLeft (92);
             g.setColour (f.severity == 2 ? theme::bad : theme::warn);
             g.setFont (getValueFont());
@@ -607,8 +1016,12 @@ bool DetailArea::handleFileMouseDown (const juce::MouseEvent& e)
                     return true;
                 }
 
-                // One click on the finding itself auditions the event; the
-                // right-hand checkbox remains the review toggle.
+                // One click selects the finding (note editor appears) and
+                // auditions the event; the right-hand checkbox toggles review.
+                fileFindingSelected = i;
+                syncFindingNote();
+                resized();
+
                 if (onPreviewFile != nullptr && fileResults[(size_t) fileSelected].sampleRate > 0.0)
                 {
                     onPreviewFile (fileResults[(size_t) fileSelected].path,
@@ -664,6 +1077,9 @@ bool DetailArea::handleFileMouseDown (const juce::MouseEvent& e)
     {
         fileSelected = order[(size_t) index];
         fileFindingScroll = 0;
+        fileFindingSelected = -1;
+        if (selectedFile() != nullptr && ! selectedFile()->forensic.findings.empty())
+            fileFindingSelected = 0;
 
         if (filePlaybackAvailable && selectedFile() != nullptr)
         {
@@ -697,8 +1113,26 @@ void DetailArea::handleFileDoubleClick (const juce::MouseEvent& e)
         for (int i = 0; i < (int) fileFindingRows.size() && i < (int) findings.size(); ++i)
             if (fileFindingRows[(size_t) i].contains (e.getPosition()))
             {
-                if (onPreviewFile != nullptr && r.sampleRate > 0.0)
-                    onPreviewFile (r.path, findings[(size_t) i].startSample / r.sampleRate);
+                const int fi = fileSelected;
+                const int fIndex = i;
+                const auto row = fileFindingRows[(size_t) i];
+                auto popup = std::make_unique<FindingNotePopup> (
+                    findings[(size_t) i].note, findings[(size_t) i].ignored,
+                    [this, fi, fIndex] (juce::String text, bool ignored)
+                    {
+                        if (fi < 0 || fi >= (int) fileResults.size())
+                            return;
+
+                        auto& list = fileResults[(size_t) fi].forensic.findings;
+
+                        if (fIndex < 0 || fIndex >= (int) list.size())
+                            return;
+
+                        list[(size_t) fIndex].note = text;
+                        list[(size_t) fIndex].ignored = ignored;
+                        repaint();
+                    });
+                juce::CallOutBox::launchAsynchronously (std::move (popup), row, this);
                 return;
             }
     }

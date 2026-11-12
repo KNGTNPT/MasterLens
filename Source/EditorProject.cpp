@@ -165,7 +165,7 @@ void MasterLensAudioProcessorEditor::pollFolderWatch()
     lastWatchScanMs = now;
 
     const auto files = ml::FileAnalyzer::expandPaths ({ watchedFolder.getFullPathName() });
-    bool changed = false;
+    juce::StringArray modified, removed;
     std::map<juce::String, std::pair<juce::int64, juce::int64>> next;
 
     for (const auto& path : files)
@@ -175,19 +175,37 @@ void MasterLensAudioProcessorEditor::pollFolderWatch()
         next[path] = stamp;
         auto it = watchedStamps.find (path);
         if (it == watchedStamps.end() || it->second != stamp)
-            changed = true;
+            modified.add (path);
     }
 
-    if (next.size() != watchedStamps.size())
-        changed = true;
+    for (const auto& old : watchedStamps)
+        if (next.find (old.first) == next.end())
+            removed.add (old.first);
+
     watchedStamps = std::move (next);
 
-    if (changed)
+    // 3.4: per-file incremental. Only changed files go back to the analyser;
+    // unchanged rows stay in the table, deleted files leave it.
+    for (const auto& path : removed)
+        fileResults.erase (std::remove_if (fileResults.begin(), fileResults.end(),
+                                           [&path] (const ml::FileAnalysisResult& r) { return r.path == path; }),
+                           fileResults.end());
+
+    if (! modified.isEmpty())
     {
-        footerStatusText = T ("文件夹有变化，正在自动复检…", "Folder changed; re-checking…");
+        footerStatusText = T ("正在复检 ", "Re-checking ")
+                           + juce::String (modified.size()) + T (" 个变更文件…", " changed files…");
         footerStatusColour = ml::theme::cyan;
         repaint();
-        startFileAnalysis ({ watchedFolder.getFullPathName() });
+        startFileAnalysis (modified, true);
+    }
+    else if (! removed.isEmpty())
+    {
+        detail.setFileResults (fileResults, false, 0, 0, {});
+        footerStatusText = T ("已移除 ", "Removed ") + juce::String (removed.size())
+                           + T (" 个文件", " files");
+        footerStatusColour = ml::theme::textDim;
+        repaint();
     }
 }
 

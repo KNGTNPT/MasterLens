@@ -168,6 +168,26 @@ void MasterLensAudioProcessorEditor::updateUiFrame()
                                               && processor.referencePlayer.isReady(),
                                           processor.referencePlayer.getStatus());
 
+        // 3.2: replacing a reference keeps the cues, but a shorter file must
+        // realign them instead of silently looping past the end.
+        const double refDuration = processor.referencePlayer.getDuration();
+        if (refDuration > 0.0 && (refCueA > refDuration + 0.01 || refCueB > refDuration + 0.01))
+        {
+            refCueA = juce::jmin (refCueA, refDuration);
+            refCueB = juce::jmin (refCueB, refDuration);
+            if (refCueB <= refCueA + 0.05)
+            {
+                refCueA = 0.0;
+                refCueB = 0.0;
+                refLoop = false;
+            }
+            processor.referencePlayer.setLoop (refLoop, refCueA, refCueB - refCueA);
+            detail.setReferenceCues (refCueA, refCueB, refLoop, refCueAName, refCueBName);
+            footerStatusText = T ("参考已替换，片段已重新对齐", "Reference replaced; cues realigned");
+            footerStatusColour = ml::theme::warn;
+            repaint();
+        }
+
         if (filePreviewPath.isNotEmpty())
         {
             const auto* selected = detail.selectedFile();
@@ -266,6 +286,16 @@ void MasterLensAudioProcessorEditor::updateUiFrame()
         readout.setValues (offline, basis, ml::platformSummary (offline), target, ceiling, offline.hasSignal);
     }
     else readout.setValues (stats, basis, platform, target, ceiling, stats.hasSignal);
+
+    {
+        const int meterK = juce::roundToInt ((processor.getSampleRate() > 0.0 ? processor.getSampleRate() : 48000.0)
+                                             * 4.0 / 1000.0);
+        const int secs = (int) ((juce::Time::getMillisecondCounterHiRes() - sessionStartMs) / 1000.0);
+        readout.setSessionInfo (processor.isFilePreviewActive() ? T ("文件", "FILE") : T ("工程", "SESSION"),
+                                juce::String (meterK) + " kHz",
+                                juce::String::formatted ("%02d:%02d", juce::jmax (0, secs) / 60,
+                                                         juce::jmax (0, secs) % 60));
+    }
 
     const auto& resos = analyzer.getResonances();
     if ((frameCounter % 12) == 0)

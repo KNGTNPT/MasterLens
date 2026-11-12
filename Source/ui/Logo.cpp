@@ -68,21 +68,36 @@ namespace
     const ApertureGeometry aperture; // prepare once, outside painting
 }
 
-void paintLogoMark (juce::Graphics& g, juce::Rectangle<float> area, bool /*monochrome*/, float angle)
+void paintLogoMark (juce::Graphics& g, juce::Rectangle<float> area, bool /*monochrome*/, float /*angle*/)
 {
+    // oil-ui mark: 32-unit ring, two 10.5-unit arcs and a 3.2-unit core.
     if (area.getWidth() < 4.0f || area.getHeight() < 4.0f)
         return;
 
     const float s = juce::jmin (area.getWidth(), area.getHeight());
-    area = area.withSizeKeepingCentre (s, s);
-    g.setColour (theme::textDim);
-    const auto transform = juce::AffineTransform::rotation (angle, 0.5f, 0.5f)
-        .scaled (s).translated (area.getPosition());
-    g.strokePath (aperture.paths[s < 32.0f ? 0 : 1],
-                  juce::PathStrokeType (juce::jmax (1.0f, s * 0.060f), juce::PathStrokeType::curved,
-                                        juce::PathStrokeType::rounded), transform);
-    const auto centre = area.getCentre();
-    g.fillEllipse (centre.x - s * 0.060f, centre.y - s * 0.060f, s * 0.120f, s * 0.120f);
+    const auto square = area.withSizeKeepingCentre (s, s);
+    const auto centre = square.getCentre();
+    const float stroke = juce::jmax (1.0f, s * (1.4f / 32.0f));
+
+    g.setColour (theme::text.withAlpha (0.55f));
+    const float ringR = s * (12.5f / 32.0f);
+    g.drawEllipse (centre.x - ringR, centre.y - ringR, ringR * 2.0f, ringR * 2.0f, stroke);
+
+    juce::Path arcs;
+    const float arcR = s * (10.5f / 32.0f);
+    arcs.addCentredArc (centre.x, centre.y, arcR, arcR, 0.0f,
+                        juce::MathConstants<float>::pi * -0.5f,
+                        juce::MathConstants<float>::pi * (-1.0f / 6.0f), true);
+    arcs.addCentredArc (centre.x, centre.y, arcR, arcR, 0.0f,
+                        juce::MathConstants<float>::pi * 0.5f,
+                        juce::MathConstants<float>::pi * (5.0f / 6.0f), true);
+
+    g.setColour (theme::text.withAlpha (0.9f));
+    g.strokePath (arcs, juce::PathStrokeType (stroke, juce::PathStrokeType::curved,
+                                              juce::PathStrokeType::rounded));
+
+    const float dotR = s * (3.2f / 32.0f);
+    g.fillEllipse (centre.x - dotR, centre.y - dotR, dotR * 2.0f, dotR * 2.0f);
 }
 
 void paintBerryWordmark (juce::Graphics& g, juce::Rectangle<int> area, juce::Colour colour,

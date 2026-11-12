@@ -155,6 +155,43 @@ CodecPreview createCodecPreview (const juce::File& input, const juce::String& co
     }
 
     preview.decodedFile = decoded;
+
+    // 3.3: encoder delay against the source, measured on the first 8k samples.
+    // The A/B switch uses this to align the decoded side; the residual is
+    // reported so a suspiciously large offset can be surfaced instead of hidden.
+    {
+        juce::AudioFormatManager fm;
+        fm.registerBasicFormats();
+
+        const auto readWindow = [&fm] (const juce::File& f)
+        {
+            juce::AudioBuffer<float> buf;
+            std::unique_ptr<juce::AudioFormatReader> r (fm.createReaderFor (f));
+
+            if (r == nullptr || r->lengthInSamples <= 0 || r->numChannels <= 0)
+                return buf;
+
+            const juce::int64 length = r->lengthInSamples;
+            const int n = (int) (length < 8192 ? length : 8192);
+            buf.setSize (juce::jlimit (1, 2, (int) r->numChannels), n);
+            r->read (&buf, 0, n, 0, true, true);
+            return buf;
+        };
+
+        const auto src = readWindow (input);
+        const auto dec = readWindow (decoded);
+        const auto al = measureCodecAlignment (src, dec);
+        preview.delaySamples = al.delaySamples;
+        preview.residual = al.residual;
+
+        std::unique_ptr<juce::AudioFormatReader> sr (fm.createReaderFor (input));
+        std::unique_ptr<juce::AudioFormatReader> dr (fm.createReaderFor (decoded));
+
+        if (sr != nullptr && dr != nullptr)
+            preview.tailSamples = (int) juce::jmax ((juce::int64) 0,
+                dr->lengthInSamples - sr->lengthInSamples - (juce::int64) al.delaySamples);
+    }
+
     preview.ok = true;
     return preview;
 }

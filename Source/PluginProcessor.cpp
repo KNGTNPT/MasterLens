@@ -62,7 +62,7 @@ juce::AudioProcessorValueTreeState::ParameterLayout MasterLensAudioProcessor::cr
 }
 
 //==============================================================================
-void MasterLensAudioProcessor::resetHostCoverage() noexcept { coverageTracker.reset(); }
+void MasterLensAudioProcessor::resetHostCoverage() noexcept { coverageTracker.reset(); transportCoverage.reset(); wasTransportActive = false; }
 void MasterLensAudioProcessor::markHostCoverage (double start, double end) noexcept
 {
     coverageTracker.add (start, end);
@@ -229,13 +229,62 @@ void MasterLensAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, j
     if (hostValid && playing)
         markHostCoverage (hostPosition, hostPosition + (double) numSamples / currentSampleRate);
 
-    const double covered = hostValid ? coverageTracker.seconds (knownLength) : -1.0;
-    float coverage = transportAnalysis ? 100.0f
-        : (covered >= 0.0 ? (float) (100.0 * covered / knownLength) : -1.0f);
-    if (! transportAnalysis && covered >= 0.0 && covered < knownLength - 1.0e-9)
+    // Standalone transport: coverage is what actually reached analysis, not
+    // "the file is open". A 10 minute file played for 10 seconds must read
+    // about 1.7%, not 100%. Unique regions are unioned so seeking back and
+    // forth does not double-count.
+    if (transportAnalysis)
+    {
+        if (! wasTransportActive)
+            transportCoverage.reset();
+
+        const double rate = currentSampleRate > 0.0 ? currentSampleRate : 48000.0;
+        const double endPos = transportB ? codecPreview.getPositionSeconds()
+                            : transportA ? streamingPreview.getPositionSeconds()
+                                         : filePreviewPlayer.getPositionSeconds();
+        const double startPos = juce::jmax (0.0, endPos - (double) numSamples / rate);
+        transportCoverage.add (startPos, endPos);
+        wasTransportActive = true;
+    }
+    else
+    {
+        wasTransportActive = false;
+    }
+
+    const double covered = hostValid ? coverageTracker.seconds (knownLength)
+                         : (transportAnalysis ? transportCoverage.seconds (knownLength) : -1.0);
+    float coverage = (covered >= 0.0 && knownLength > 0.0)
+        ? (float) (100.0 * covered / knownLength)
+        : (transportAnalysis ? 100.0f : -1.0f);
+    if (knownLength > 0.0 && covered >= 0.0 && covered < knownLength - 1.0e-9)
         coverage = std::nextafter (juce::jmin (100.0f, coverage), 0.0f);
     stats.coveragePct = coverage;
-    if (previewOutput) { outputSpectrumFifo.pushMainOutput (buffer); return; }
+    if (previewOutput)
+    {
+        // 3.3: in diff mode both players run; the output is the aligned
+        // difference (A - B), lifted by +6 dB so codec artifacts are audible.
+        if (codecDiffMode.load (std::memory_order_relaxed) && transportA)
+        {
+            juce::AudioBuffer<float> bBuffer (buffer.getNumChannels(), numSamples);
+            bBuffer.clear();
+
+            if (codecPreview.render (bBuffer))
+            {
+                constexpr float diffGain = 1.9952623f; // +6 dB lift
+                const float matchGain = juce::Decibels::decibelsToGain (
+                    codecDiffMatchDb.load (std::memory_order_relaxed));
+                const int channels = juce::jmin (buffer.getNumChannels(), bBuffer.getNumChannels());
+
+                for (int ch = 0; ch < channels; ++ch)
+                    for (int i = 0; i < numSamples; ++i)
+                        buffer.setSample (ch, i, (buffer.getSample (ch, i)
+                                                   - bBuffer.getSample (ch, i) * matchGain) * diffGain);
+            }
+        }
+
+        outputSpectrumFifo.pushMainOutput (buffer);
+        return;
+    }
 
     // Optional loudness-matched monitor. It is deliberately off by default and
     // only changes the output when the user explicitly engages it; analysis has
@@ -296,6 +345,30 @@ float MasterLensAudioProcessor::getSmoothing() const
 }
 
 //==============================================================================
+void MasterLensAudioProcessor::startCodecDiff()
+{
+    if (codecPreview.getDurationSeconds() <= 0.0)
+        return;
+
+    const double delay = codecDelaySeconds.load (std::memory_order_relaxed);
+
+    if (! streamingPreview.isActive())
+    {
+        const double bPos = codecPreview.isActive()
+                                ? codecPreview.getPositionSeconds() - delay : 0.0;
+        streamingPreview.start (juce::jmax (0.0, bPos));
+    }
+
+    codecPreview.start (juce::jmax (0.0, streamingPreview.getPositionSeconds() + delay));
+    codecDiffMode.store (true, std::memory_order_relaxed);
+}
+
+void MasterLensAudioProcessor::stopCodecDiff()
+{
+    codecDiffMode.store (false, std::memory_order_relaxed);
+    codecPreview.stop();
+}
+
 void MasterLensAudioProcessor::setCodecSide (int side)
 {
     const int next = side == 1 ? 1 : 0;
@@ -303,16 +376,21 @@ void MasterLensAudioProcessor::setCodecSide (int side)
     if (next == codecSide.load (std::memory_order_relaxed))
         return;
 
+    // 3.3: the decoded file carries the encoder delay at its head. Start B
+    // further in by that delay (and A earlier on the way back) so the switch
+    // stays time-aligned instead of shifting the comparison.
+    const double delay = codecDelaySeconds.load (std::memory_order_relaxed);
+
     if (next == 1)
     {
-        const double position = streamingPreview.getPositionSeconds();
-        codecPreview.start (position);
+        const double position = streamingPreview.getPositionSeconds() + delay;
+        codecPreview.start (juce::jmax (0.0, position));
         streamingPreview.stop();
     }
     else
     {
-        const double position = codecPreview.getPositionSeconds();
-        streamingPreview.start (position);
+        const double position = codecPreview.getPositionSeconds() - delay;
+        streamingPreview.start (juce::jmax (0.0, position));
         codecPreview.stop();
     }
 

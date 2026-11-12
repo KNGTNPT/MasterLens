@@ -143,8 +143,8 @@ public:
             editor->setFilePlaybackAvailableForSnapshot (true);
         editor->setScaleForSnapshot (scale);
         const bool standardShot = commandLine.containsIgnoreCase ("size1120");
-        const float shotW = minShot ? 880.0f : (smallShot ? 900.0f : (standardShot ? 1120.0f : 1280.0f));
-        const float shotH = minShot ? 560.0f : (smallShot ? 620.0f : (standardShot ? 700.0f : 820.0f));
+        const float shotW = minShot ? 1000.0f : (smallShot ? 1000.0f : (standardShot ? 1120.0f : 1280.0f));
+        const float shotH = minShot ? 630.0f : (smallShot ? 630.0f : (standardShot ? 700.0f : 820.0f));
         editor->setSize (juce::roundToInt (shotW * scale), juce::roundToInt (shotH * scale));
 
 

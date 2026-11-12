@@ -14,6 +14,8 @@ struct FileFinding
     int channel = -1; // -1 = all, otherwise zero-based
     double value = 0.0;
     bool reviewed = false; // UI review state; exported with the evidence
+    bool ignored = false;  // reviewed and consciously accepted (no action)
+    juce::String note;     // free-form review note, exported with the evidence
 };
 
 struct FileForensics

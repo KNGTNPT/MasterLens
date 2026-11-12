@@ -1190,6 +1190,69 @@ int main (int argc, char** argv)
         check ("budget silence invalid", ml::gainBudget (-100, -100, -14, -1).valid ? 1 : 0, 0, 0);
         check ("budget attenuation", ml::gainBudget (-10, -0.2f, -14, -1).safeGainDb, -4, 0.0001);
 
+        // 3.2 reference cue loop: the wrap must stay inside [start, start+len)
+        // and survive a source position before the loop head.
+        check ("loop wrap inside", ml::wrapLoopPosition (7.0, 5.0, 4.0), 7.0, 1e-9);
+        check ("loop wrap at head", ml::wrapLoopPosition (5.0, 5.0, 4.0), 5.0, 1e-9);
+        check ("loop wrap tail", ml::wrapLoopPosition (12.0, 5.0, 4.0), 8.0, 1e-9);
+        check ("loop wrap before head", ml::wrapLoopPosition (4.0, 5.0, 4.0), 8.0, 1e-9);
+        check ("loop wrap disabled", ml::wrapLoopPosition (4.0, 5.0, 0.0), 4.0, 1e-9);
+
+        // 3.3 codec alignment: a decoded buffer delayed by 1000 samples must
+        // report exactly that offset with a near-zero residual.
+        {
+            juce::AudioBuffer<float> src (1, 8192), dec (1, 8192);
+            juce::Random rng (1234);
+
+            for (int i = 0; i < 8192; ++i)
+                src.setSample (0, i, (rng.nextFloat() * 2.0f - 1.0f) * 0.5f);
+
+            dec.clear();
+            constexpr int delay = 1000;
+
+            for (int i = 0; i < 8192 - delay; ++i)
+                dec.setSample (0, i + delay, src.getSample (0, i));
+
+            // 3.3: a 12 kHz tone peaks between samples at 48 kHz; 4x windowed
+            // sinc must recover a higher value than the nearest sample.
+            {
+                constexpr int taps = 16;
+                std::vector<float> win ((size_t) (2 * taps + 1));
+                const double sr = 48000.0, f = 6000.0;
+
+                for (int i = 0; i < 2 * taps + 1; ++i)
+                    win[(size_t) i] = (float) std::sin (2.0 * juce::MathConstants<double>::pi * f
+                                                        * (i - taps) / sr + juce::MathConstants<double>::pi / 8.0);
+
+                float samplePeak = 0.0f;
+                int peakIndex = taps;
+
+                for (int i = 1; i < 2 * taps; ++i)
+                    if (std::abs (win[(size_t) i]) > samplePeak)
+                    {
+                        samplePeak = std::abs (win[(size_t) i]);
+                        peakIndex = i;
+                    }
+
+                float refined = samplePeak;
+
+                for (const double frac : { 0.25, 0.5, 0.75 })
+                    refined = juce::jmax (refined, std::abs (ml::interpolateSample (win.data(), peakIndex, frac, taps)));
+
+                check ("sinc refinement beats sample peak", refined > samplePeak + 0.05 ? 1 : 0, 1, 0);
+            }
+
+            const auto al = ml::measureCodecAlignment (src, dec);
+            check ("codec align found", al.ok ? 1 : 0, 1, 0);
+            check ("codec align delay", al.delaySamples, delay, 0);
+            check ("codec align residual", al.residual, 0.0, 0.05);
+
+            // 3.3 loudness-matched difference: match B to A before A-B.
+            check ("diff match gain", ml::loudnessMatchGainDb (-14.0f, -15.0f), 1.0, 1e-4);
+            check ("diff match silence", ml::loudnessMatchGainDb (-100.0f, -15.0f), 0.0, 1e-4);
+            check ("diff match clamp", ml::loudnessMatchGainDb (-5.0f, -30.0f), 12.0, 1e-4);
+        }
+
         // The offline evidence must survive the same session serialization used
         // by DAW state and the independently exported album proof.
         const auto dir = juce::File::getSpecialLocation (juce::File::tempDirectory)
@@ -1240,6 +1303,44 @@ int main (int argc, char** argv)
         check ("delivery spec pass", ml::evaluateSpec (specResult, spec).ok ? 1 : 0, 1, 0);
         spec.bitDepth = 16;
         check ("delivery spec bit depth", ml::evaluateSpec (specResult, spec).ok ? 1 : 0, 0, 0);
+
+        // 3.0.4: an enabled client spec is the effective target. A -23 LUFS
+        // master against a -23 LUFS customer target must ask for 0 dB, not the
+        // +9 dB a platform default would produce.
+        {
+            ml::DeliverySpec customer;
+            customer.enabled = true;
+            customer.targetLufs = -23.0f;
+            customer.ceilingDbtp = -1.0f;
+            const auto eff = ml::effectiveDelivery (customer, -14.0f, -1.0f);
+            check ("spec target overrides", eff.targetLufs, -23.0, 0.0001);
+            const auto zero = ml::gainBudget (-23.0f, -1.2f, eff.targetLufs, eff.ceilingDbtp);
+            check ("spec target zero gain", zero.requestedGainDb, 0.0, 0.0001);
+            const auto fallback = ml::effectiveDelivery (ml::DeliverySpec {}, -14.0f, -1.0f);
+            check ("no spec keeps fallback", fallback.targetLufs, -14.0, 0.0001);
+
+            // 3.0.4: monitoring (reference / equal-loudness / solo / evidence)
+            // may change what is heard, never the exported measurement or the
+            // gain advice. The monitor trim is informational only.
+            ml::FileAnalysisResult monitored;
+            monitored.ok = true;
+            monitored.fileName = "monitor.wav";
+            monitored.sampleRate = 48000;
+            monitored.bitDepth = 24;
+            monitored.numChannels = 2;
+            monitored.stats.integrated = -14.0f;
+            monitored.stats.truePeakDb = -1.0f;
+            monitored.stats.monitorTrimDb = 0.0f;
+            const auto clean = ml::fileResultToVar (monitored, -14.0f, -1.0f);
+            monitored.stats.monitorTrimDb = -6.0f;
+            const auto trimmed = ml::fileResultToVar (monitored, -14.0f, -1.0f);
+            const auto cleanBudget = clean["gainBudget"];
+            const auto trimmedBudget = trimmed["gainBudget"];
+            check ("export budget ignores monitor trim",
+                  (double) cleanBudget["safeGainDb"] - (double) trimmedBudget["safeGainDb"], 0.0, 1e-9);
+            check ("export requested gain unchanged",
+                  (double) cleanBudget["requestedGainDb"] - (double) trimmedBudget["requestedGainDb"], 0.0, 1e-9);
+        }
 
         const auto projectFile = dir.getChildFile ("project.json");
         check ("project save", session.saveProject (projectFile, "v-test") ? 1 : 0, 1, 0);
@@ -1463,6 +1564,100 @@ int main (int argc, char** argv)
         }
 
         source.deleteFile();
+    }
+
+    // 3.2: a 96 kHz reference above the in-memory cut-off must stream from a
+    // bounded read-ahead buffer, not decode 90+ MB into RAM.
+    {
+        const auto dir = juce::File::getSpecialLocation (juce::File::tempDirectory)
+                             .getChildFile ("MasterLens-stream-" + juce::Uuid().toString());
+        dir.createDirectory();
+        const auto file = dir.getChildFile ("long-96k.wav");
+
+        {
+            juce::WavAudioFormat format;
+            std::unique_ptr<juce::AudioFormatWriter> writer (
+                format.createWriterFor (new juce::FileOutputStream (file), 96000.0, 2, 24, {}, 0));
+
+            if (writer != nullptr)
+            {
+                juce::AudioBuffer<float> chunk (2, 96000);
+                double phase = 0.0;
+
+                for (int second = 0; second < 120; ++second)
+                {
+                    for (int i = 0; i < 96000; ++i)
+                    {
+                        const float v = (float) (0.2 * std::sin (phase));
+                        phase += 2.0 * juce::MathConstants<double>::pi * 1000.0 / 96000.0;
+                        chunk.setSample (0, i, v);
+                        chunk.setSample (1, i, v);
+                    }
+
+                    writer->writeFromAudioSampleBuffer (chunk, 0, 96000);
+                }
+            }
+        }
+
+        check ("stream file written", file.getSize() > 64LL * 1024 * 1024 ? 1 : 0, 1, 0);
+
+        ml::ReferencePlayer player;
+        player.prepare (48000.0);
+        player.load ({ file.getFullPathName() }, 48000.0);
+
+        for (int wait = 0; wait < 400 && player.isBusy(); ++wait)
+            juce::Thread::sleep (25);
+
+        check ("long reference streams", player.isStreaming() ? 1 : 0, 1, 0);
+        check ("stream memory bounded", player.getMemoryBytes() < 32LL * 1024 * 1024 ? 1 : 0, 1, 0);
+        check ("stream memory peak recorded",
+               player.getPeakMemoryBytes() >= player.getMemoryBytes()
+                   && player.getPeakMemoryBytes() < 32LL * 1024 * 1024 ? 1 : 0, 1, 0);
+        check ("stream duration", player.getDuration(), 120.0, 0.1);
+        check ("stream prefix loudness", player.getLoudness() > -70.0f ? 1 : 0, 1, 0);
+
+        player.setEnabled (true);
+        juce::AudioBuffer<float> out (2, 512);
+        bool heard = false;
+
+        for (int attempt = 0; attempt < 200 && ! heard; ++attempt)
+        {
+            out.clear();
+            player.render (out, 0.0, true, 0.0f);
+
+            for (int ch = 0; ch < 2 && ! heard; ++ch)
+                for (int i = 0; i < out.getNumSamples(); ++i)
+                    if (std::abs (out.getSample (ch, i)) > 1.0e-4f)
+                        heard = true;
+
+            if (! heard)
+                juce::Thread::sleep (10);
+        }
+
+        check ("stream renders audio", heard ? 1 : 0, 1, 0);
+
+        // 3.2: cue loop on a streamed reference (5 s region preloaded).
+        player.setLoop (true, 10.0, 5.0);
+        check ("stream cue loudness measured", player.getLoudness() > -70.0f ? 1 : 0, 1, 0);
+        bool loopHeard = false;
+
+        for (int attempt = 0; attempt < 200 && ! loopHeard; ++attempt)
+        {
+            out.clear();
+            player.render (out, 0.0, true, 0.0f);
+
+            for (int ch = 0; ch < 2 && ! loopHeard; ++ch)
+                for (int i = 0; i < out.getNumSamples(); ++i)
+                    if (std::abs (out.getSample (ch, i)) > 1.0e-4f)
+                        loopHeard = true;
+
+            if (! loopHeard)
+                juce::Thread::sleep (5);
+        }
+
+        check ("stream cue loop renders", loopHeard ? 1 : 0, 1, 0);
+        player.clear();
+        dir.deleteRecursively();
     }
 
     std::printf ("\n%s (%d failed, %d skipped)\n",

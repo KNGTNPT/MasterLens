@@ -143,6 +143,8 @@ void LevelMeters::paint (juce::Graphics& g)
 
     g.setFont (getValueFont());
 
+    int lastRight = juce::jmin (0, trackArea.getX() - 8);
+
     for (float db : labelDbs)
     {
         const float x = (float) trackArea.getX() + (float) trackArea.getWidth() * normFor (db);
@@ -152,8 +154,14 @@ void LevelMeters::paint (juce::Graphics& g)
         auto lr = juce::Rectangle<int> (juce::roundToInt (x) - tw / 2, scaleRow.getY(), tw, 12);
         lr.setX (juce::jlimit (trackArea.getX(), trackArea.getRight() - tw, lr.getX()));
 
+        // A narrower console (3.1 adds the delivery ledger) must not fuse
+        // "-6" and "0" into "-60": drop the label instead of overlapping it.
+        if (lr.getX() < lastRight + 4)
+            continue;
+
         g.setColour (theme::textFaint);
         g.drawText (text, lr, juce::Justification::centred);
+        lastRight = lr.getRight();
     }
 }
 } // namespace ml

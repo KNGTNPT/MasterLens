@@ -20,6 +20,14 @@
 
 namespace ml
 {
+/** TextButton that also reports double-clicks (used to rename reference cues). */
+class CueButton : public juce::TextButton
+{
+public:
+    std::function<void()> onDoubleClick;
+    void mouseDoubleClick (const juce::MouseEvent&) override { if (onDoubleClick != nullptr) onDoubleClick(); }
+};
+
 struct Marker
 {
     double time = 0.0;
@@ -261,6 +269,9 @@ public:
     std::function<void (const juce::String&, double)> onPreviewFile;
     std::function<void (const juce::String&)> onRevealFile;
     std::function<void (const juce::String&, bool)> onReviewEvidence;
+    std::function<void (const DeliverySpec&)> onDeliverySpecChanged;
+    std::function<void (int)> onReferenceCue;
+    std::function<void (int, const juce::String&)> onReferenceCueName;
     std::function<void()> onCodecMenu;
 
     void setFileResults (std::vector<FileAnalysisResult> results, bool busy,
@@ -315,6 +326,10 @@ public:
     void setSpectrumSplit (int height, int bandHeight) { spectrumSplit = height; spectrumBandHeight = bandHeight; resized(); }
     void setFileView (int view) { fileView = juce::jlimit (0, 2, view); resized(); repaint(); }
     void setDeliverySpec (const DeliverySpec& s) { spec = s; repaint(); }
+    void setReferenceCues (double a, double b, bool looping,
+                           const juce::String& nameA = "A", const juce::String& nameB = "B");
+    void openCueNameEditor (int which);
+    juce::String refCueAName { "A" }, refCueBName { "B" };
     void setFilePlaybackAvailable (bool available);
     void setFilePlayActive (bool active);
     /** Shows "buffering" inside the playing state for the streaming transport. */
@@ -358,11 +373,16 @@ public:
 
 private:
     void hideAllChildren();
+    void auditionNextUnreviewed();
+    void openSpecEditor();
+    void syncFindingNote();
+    void applyFindingNote();
     juce::Rectangle<int> contentArea() const;
     void paintPageHeader (juce::Graphics&, const juce::String& meta);
     void ensureBackground();
 
     void paintLoudness (juce::Graphics&);
+    void paintDeliveryLedger (juce::Graphics&);
     void paintTruePeak (juce::Graphics&);
     void paintSpectrumExtras (juce::Graphics&);
     void paintStereoExtras (juce::Graphics&);
@@ -394,7 +414,8 @@ private:
     StereoMeters meters;
     IssueList issues;
 
-    juce::TextButton refImport, refClear, refPlay, refAlign, reportButton, markButton;
+    juce::TextButton refImport, refClear, refPlay, refAlign, refLoop, reportButton, markButton;
+    CueButton refCueA, refCueB;
     juce::ComboBox refSlotBox;
     juce::TextEditor refOffset, refGain;
     bool updatingReferenceControls = false;
@@ -413,7 +434,11 @@ private:
     juce::Slider warSlider;
     juce::TextButton applyTarget;
 
-    juce::TextButton fileChoose, fileFolder, filePlay, fileAddAlbum, fileClear, fileExport;
+    juce::TextButton fileChoose, fileFolder, filePlay, fileAddAlbum, fileClear, fileExport, nextReview, specButton;
+    juce::TextEditor findingNote;
+    juce::TextButton findingIgnore;
+    int fileFindingSelected = -1;
+    bool updatingFindingNote = false;
     juce::TextButton codecAB;
     juce::TextButton fileInspectorToggle;
     juce::Slider fileProgress;
@@ -450,6 +475,7 @@ private:
 
     juce::Rectangle<int> signalProblemRowBounds, signalAttributionBounds, signalGridBounds;
     juce::Rectangle<int> loudnessSideArea;
+    juce::Rectangle<int> deliveryArea;
     int spectrumSplit = 0, spectrumBandHeight = 0;
     juce::Rectangle<int> spectrumSideArea;
     std::array<juce::Rectangle<int>, 4> signalChipBounds;

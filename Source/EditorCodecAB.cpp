@@ -1,5 +1,6 @@
 #include "PluginEditor.h"
 #include "file/FFmpegRuntime.h"
+#include "file/CodecCheck.h"
 
 using ml::T;
 
@@ -31,6 +32,12 @@ void MasterLensAudioProcessorEditor::showCodecMenu()
         menu.addItem (1, T ("监听 A 原始", "Monitor A source"), true, side == 0);
         menu.addItem (2, T ("监听 B 编码后 ", "Monitor B encoded ") + codecResult.label,
                       true, side == 1);
+        menu.addItem (8, T ("差分 A−B（+6 dB）", "Difference A−B (+6 dB)"),
+                      true, processor.isCodecDiffActive());
+        menu.addItem (7, T ("跳至编码后最高峰 ", "Jump to encoded peak")
+                             + (codecResult.peakTimeSeconds >= 0.0
+                                    ? ml::fmtTime (codecResult.peakTimeSeconds) : juce::String()),
+                      codecResult.peakTimeSeconds >= 0.0);
         menu.addSeparator();
     }
 
@@ -66,6 +73,34 @@ void MasterLensAudioProcessorEditor::showCodecMenu()
                                 safe->startCodecAB ("mp3");
                             else if (choice == 5)
                                 safe->stopCodecAB();
+                            else if (choice == 8)
+                            {
+                                if (safe->processor.isCodecDiffActive())
+                                {
+                                    safe->processor.stopCodecDiff();
+                                    safe->footerStatusText = T ("差分试听关闭", "Difference audition off");
+                                }
+                                else
+                                {
+                                    const float matchDb = ml::loudnessMatchGainDb (
+                                        safe->codecSourceLufs, safe->codecResult.decodedLufs);
+                                    safe->processor.setCodecDiffMatchDb (matchDb);
+                                    safe->processor.startCodecDiff();
+                                    safe->footerStatusText = T ("差分 A−B · 等响 ", "Difference A−B · matched ")
+                                                             + ml::sgn (matchDb, 1) + T (" dB · +6 dB 提升",
+                                                                                         " dB · +6 dB lift");
+                                }
+
+                                safe->footerStatusColour = ml::theme::accent;
+                                safe->repaint();
+                            }
+                            else if (choice == 7)
+                            {
+                                safe->toggleCodecSide (1);
+
+                                if (safe->codecResult.peakTimeSeconds >= 0.0)
+                                    safe->processor.startCodecPreview (safe->codecResult.peakTimeSeconds);
+                            }
                         });
 }
 
@@ -118,6 +153,10 @@ void MasterLensAudioProcessorEditor::applyCodecResult (const ml::CodecABResult& 
     if (measured.decodedFile != juce::File())
         processor.openCodecPreview (measured.decodedFile);
 
+    if (const auto* selected = detail.selectedFile())
+        if (selected->sampleRate > 0.0)
+            processor.setCodecDelaySeconds ((double) measured.delaySamples / selected->sampleRate);
+
     detail.setCodecABState (T ("A 原始 / B ", "A source / B ") + measured.label, true);
 
     if (const auto* selected = detail.selectedFile())
@@ -130,6 +169,12 @@ void MasterLensAudioProcessorEditor::applyCodecResult (const ml::CodecABResult& 
                        + " dB" + (measured.backend.isNotEmpty()
                                       ? " · " + measured.backend + " " + measured.ffmpegVersion
                                       : juce::String())
+                       + T (" · 对齐 ", " · align ")
+                       + juce::String (measured.delaySamples) + T (" 样本", " smp")
+                       + T (" · 残差 ", " · residual ") + juce::String (measured.residual * 100.0f, 1) + "%"
+                       + (measured.peakTimeSeconds >= 0.0
+                              ? T (" · 峰值 @ ", " · peak @ ") + ml::fmtTime (measured.peakTimeSeconds)
+                              : juce::String())
                        + T (" · 点按钮或按 B 切换", " · click or press B to switch");
     footerStatusColour = ml::theme::good;
     repaint();
@@ -244,6 +289,7 @@ void MasterLensAudioProcessorEditor::toggleCodecSide (int side)
 
 void MasterLensAudioProcessorEditor::stopCodecAB()
 {
+    processor.stopCodecDiff();
     processor.stopCodecPreview();
 
     hasCodecPreview = false;

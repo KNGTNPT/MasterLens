@@ -34,6 +34,7 @@ public:
 #endif
 
     void paint (juce::Graphics&) override;
+    void paintOverChildren (juce::Graphics&) override;
     void resized() override;
 
     bool isInterestedInFileDrag (const juce::StringArray&) override;
@@ -148,7 +149,7 @@ private:
     void chooseFiles();
     void chooseFolder();
     void toggleFilePlayback();
-    void startFileAnalysis (const juce::StringArray& paths);
+    void startFileAnalysis (const juce::StringArray& paths, bool merge = false);
     void pollFileAnalysis();
     void addFileResultToAlbum (const ml::FileAnalysisResult& result);
     void addFileResultsToAlbum();
@@ -207,8 +208,8 @@ private:
     ml::AboutPanel aboutPanel;
     ml::GenrePanel genrePanel;
     ml::SettingsPanel settingsPanel;
-    ml::SnapshotChip snapshotA { "A" };
-    ml::SnapshotChip snapshotB { "B" };
+    ml::SnapshotChip snapshotA { "1" };
+    ml::SnapshotChip snapshotB { "2" };
 
     ml::SpectrumAnalyzer analyzer;
     ml::SpectrumFifo::Reader outputSpectrumReader;
@@ -231,10 +232,14 @@ private:
     std::array<double, 4> referenceOffsets { 0.0, 0.0, 0.0, 0.0 };
     std::array<double, 4> referenceGains { 0.0, 0.0, 0.0, 0.0 };
     int referenceSlot = 0;
+    double refCueA = 0.0, refCueB = 0.0;
+    bool refLoop = false;
+    juce::String refCueAName { "A" }, refCueBName { "B" };
     ml::DeliverySpec deliverySpec;
     juce::File watchedFolder;
     std::map<juce::String, std::pair<juce::int64, juce::int64>> watchedStamps;
     bool watchFolderEnabled = false;
+    double sessionStartMs = juce::Time::getMillisecondCounterHiRes();
     double lastWatchScanMs = 0.0;
 
     struct RawSeriesPoint

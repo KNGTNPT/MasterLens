@@ -22,6 +22,15 @@ namespace
 //==============================================================================
 juce::Rectangle<int> MasterLensAudioProcessorEditor::baseBounds() const
 {
+    // 3.1 compact tier: 1000..1119 px wide lays out at the real size with 1:1
+    // fonts. Smaller windows are zoom steps (e.g. 0.8x) and keep the 1120
+    // canvas scaled down, exactly as before.
+    const bool compact = getWidth() >= 1000 && getHeight() >= 630
+                         && (getWidth() < 1120 || getHeight() < 700);
+
+    if (compact)
+        return { 0, 0, getWidth(), getHeight() };
+
     return { 0, 0, 1120, 700 };
 }
 
@@ -40,7 +49,10 @@ float MasterLensAudioProcessorEditor::computeInitialUiScale() const
 //==============================================================================
 void MasterLensAudioProcessorEditor::resized()
 {
-    uiScale = juce::jmax (0.1f, juce::jmin (getWidth() / 1120.0f, getHeight() / 700.0f));
+    const bool compact = getWidth() >= 1000 && getHeight() >= 630
+                         && (getWidth() < 1120 || getHeight() < 700);
+    uiScale = compact ? 1.0f
+                      : juce::jmax (0.1f, juce::jmin (getWidth() / 1120.0f, getHeight() / 700.0f));
     ml::ui::setScale (uiScale);
     const auto base = baseBounds();
     settingsPanel.setScale (uiScale);
@@ -66,7 +78,7 @@ void MasterLensAudioProcessorEditor::resized()
     else
     {
         spectrumArea = {};
-        readingsArea = body.removeFromLeft (base.getWidth() < 1000 ? 176 : 208);
+        readingsArea = body.removeFromLeft (base.getWidth() < 1080 ? 176 : 208);
         readout.setBounds (readingsArea);
         body.removeFromLeft (16);
         detail.setBounds (body);

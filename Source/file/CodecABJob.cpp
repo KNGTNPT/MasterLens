@@ -4,6 +4,84 @@
 
 namespace ml
 {
+
+namespace
+{
+/** Time of the largest decoded sample: where the encoded side actually peaks. */
+double decodedPeakSeconds (const juce::File& file)
+{
+    juce::AudioFormatManager formats;
+    formats.registerBasicFormats();
+    std::unique_ptr<juce::AudioFormatReader> reader (formats.createReaderFor (file));
+
+    if (reader == nullptr || reader->lengthInSamples <= 0 || reader->sampleRate <= 0.0
+        || reader->numChannels <= 0)
+        return -1.0;
+
+    constexpr int block = 8192;
+    juce::AudioBuffer<float> buffer (juce::jmin (2, (int) reader->numChannels), block);
+    juce::int64 pos = 0;
+    float peak = 0.0f;
+    juce::int64 peakPos = 0;
+
+    while (pos < reader->lengthInSamples)
+    {
+        const int n = (int) juce::jmin ((juce::int64) block, (juce::int64) reader->lengthInSamples - pos);
+        buffer.clear();
+        reader->read (&buffer, 0, n, pos, true, true);
+
+        for (int ch = 0; ch < buffer.getNumChannels(); ++ch)
+            for (int i = 0; i < n; ++i)
+            {
+                const float v = std::abs (buffer.getSample (ch, i));
+
+                if (v > peak)
+                {
+                    peak = v;
+                    peakPos = pos + i;
+                }
+            }
+
+        pos += n;
+    }
+
+    // 3.3: refine the sample peak with 4x windowed-sinc interpolation so the
+    // locator reports the encoded true-peak position, not just the nearest sample.
+    constexpr int taps = 16;
+
+    if (peakPos >= taps && peakPos + taps < reader->lengthInSamples)
+    {
+        const int count = 2 * taps + 1;
+        juce::AudioBuffer<float> window (juce::jmin (2, (int) reader->numChannels), count);
+        window.clear();
+        reader->read (&window, 0, count, peakPos - taps, true, true);
+
+        std::vector<float> mono ((size_t) count, 0.0f);
+
+        for (int ch = 0; ch < window.getNumChannels(); ++ch)
+            for (int i = 0; i < count; ++i)
+                mono[(size_t) i] += window.getSample (ch, i) / (float) window.getNumChannels();
+
+        float best = peak;
+        double bestPos = (double) peakPos;
+
+        for (const double frac : { 0.25, 0.5, 0.75 })
+        {
+            const float v = std::abs (interpolateSample (mono.data(), taps, frac, taps));
+
+            if (v > best)
+            {
+                best = v;
+                bestPos = (double) peakPos + frac;
+            }
+        }
+
+        return bestPos / reader->sampleRate;
+    }
+
+    return (double) peakPos / reader->sampleRate;
+}
+} // namespace
 CodecABJob::CodecABJob()
     : juce::Thread ("MasterLens codec A/B")
 {
@@ -157,6 +235,10 @@ void CodecABJob::run()
         measured.codec = preview.codec;
         measured.label = preview.codec == "aac" ? "AAC 256k" : "MP3 320k";
         measured.decodedFile = preview.decodedFile;
+        measured.delaySamples = preview.delaySamples;
+        measured.tailSamples = preview.tailSamples;
+        measured.residual = preview.residual;
+        measured.peakTimeSeconds = decodedPeakSeconds (preview.decodedFile);
         measured.encodedBytes = preview.encodedBytes;
         measured.backend = preview.backend;
         measured.ffmpegVersion = preview.ffmpegVersion;

@@ -56,6 +56,9 @@ public:
     ml::StreamingPreviewPlayer streamingPreview;
     ml::StreamingPreviewPlayer codecPreview;
     std::atomic<int> codecSide { 0 };
+    std::atomic<double> codecDelaySeconds { 0.0 };
+    std::atomic<bool> codecDiffMode { false };
+    std::atomic<float> codecDiffMatchDb { 0.0f };
     ml::album::Session albumSession;
     ml::FilePreviewPlayer filePreviewPlayer;
     std::atomic<bool> hostTransportPlaying { false };
@@ -138,6 +141,14 @@ public:
     // Codec A/B: side 0 is the source file, side 1 the decoded preview.
     void openCodecPreview (const juce::File& file) { codecPreview.open (file, false); }
     void startCodecPreview (double fromSeconds) { codecPreview.start (fromSeconds); }
+    /** 3.3 differential audition: A and B play together, output = (A-B). */
+    void startCodecDiff();
+    void stopCodecDiff();
+    bool isCodecDiffActive() const noexcept { return codecDiffMode.load (std::memory_order_relaxed); }
+
+    void setCodecDiffMatchDb (float db) noexcept { codecDiffMatchDb.store (juce::jlimit (-12.0f, 12.0f, db), std::memory_order_relaxed); }
+
+    void setCodecDelaySeconds (double seconds) noexcept { codecDelaySeconds.store (juce::jmax (0.0, seconds), std::memory_order_relaxed); }
     void stopCodecPreview() { codecPreview.stop(); codecSide.store (0); }
     bool isCodecPreviewActive() const noexcept { return codecPreview.isActive(); }
     bool isCodecPreviewBuffering() const noexcept { return codecPreview.isBuffering(); }
@@ -170,6 +181,9 @@ private:
     void resetHostCoverage() noexcept;
     void markHostCoverage (double startSeconds, double endSeconds) noexcept;
     ml::CoverageTracker coverageTracker;
+    /** Unique regions of the standalone file transport that reached analysis. */
+    ml::CoverageTracker transportCoverage;
+    bool wasTransportActive = false;
 
     std::atomic<int> pendingUiCommand { 0 };
     std::atomic<float> monitorTargetLufs { -14.0f };

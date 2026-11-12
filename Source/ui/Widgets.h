@@ -65,11 +65,13 @@ public:
     void setValues (const StatsSnapshot& s, const BasisContext& basis,
                     const PlatformSummary& platform, float targetLufs,
                     float ceilingDb, bool signal);
+    void setSessionInfo (juce::String source, juce::String meterRate, juce::String clock);
 
     void paint (juce::Graphics&) override;
     int getUpdateCount() const noexcept { return updateCount; }
 
 private:
+    void paintRail31 (juce::Graphics&);
     struct Cell { juce::String label, value, unit; juce::Colour status; };
     std::array<Cell, 5> cells;
     std::array<juce::Rectangle<int>, 5> cellBounds;
@@ -82,6 +84,7 @@ private:
     float target = -14.0f;
     float ceiling = -1.0f;
     bool hasSignal = false;
+    juce::String sourceText { "工程" }, meterText, clockText;
 };
 
 //==============================================================================
@@ -93,6 +96,7 @@ public:
     void setValues (const StatsSnapshot& s, const BasisContext& basis,
                     const PlatformSummary& platform, float targetLufs,
                     float ceilingDb, bool signal);
+    void setSessionInfo (juce::String source, juce::String meterRate, juce::String clock);
 
     void paint (juce::Graphics&) override;
 

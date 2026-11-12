@@ -80,6 +80,9 @@ DetailArea::DetailArea()
     addChildComponent (refClear);
     addChildComponent (refPlay);
     addChildComponent (refAlign);
+    addChildComponent (refCueA);
+    addChildComponent (refCueB);
+    addChildComponent (refLoop);
     addChildComponent (reportButton);
     addChildComponent (markButton);
     addChildComponent (markerExport);
@@ -129,8 +132,31 @@ DetailArea::DetailArea()
             onApplyTargetPlan();
     };
 
-    for (auto* b : { &fileChoose, &fileFolder, &filePlay, &fileAddAlbum, &fileClear })
+    for (auto* b : { &fileChoose, &fileFolder, &filePlay, &fileAddAlbum, &fileClear, &nextReview, &specButton })
         addChildComponent (*b);
+
+    addChildComponent (findingNote);
+    addChildComponent (findingIgnore);
+    findingNote.setMultiLine (false);
+    findingNote.setReturnKeyStartsNewLine (false);
+    findingNote.setTextToShowWhenEmpty (T ("备注…", "Note…"), theme::textFaint);
+    findingNote.setFont (getLabelFont());
+    findingNote.setColour (juce::TextEditor::backgroundColourId, theme::cardAlt);
+    findingNote.setColour (juce::TextEditor::textColourId, theme::text);
+    findingNote.setColour (juce::TextEditor::outlineColourId, theme::border);
+    findingNote.setColour (juce::TextEditor::focusedOutlineColourId, theme::accent);
+    findingNote.onTextChange = [this] { applyFindingNote(); };
+    findingIgnore.setClickingTogglesState (true);
+    findingIgnore.onClick = [this]
+    {
+        if (fileSelected < 0 || fileSelected >= (int) fileResults.size())
+            return;
+        auto& findings = fileResults[(size_t) fileSelected].forensic.findings;
+        if (fileFindingSelected < 0 || fileFindingSelected >= (int) findings.size())
+            return;
+        findings[(size_t) fileFindingSelected].ignored = findingIgnore.getToggleState();
+        repaint();
+    };
 
     addChildComponent (fileProgress);
     addChildComponent (fileTime);
@@ -156,6 +182,8 @@ DetailArea::DetailArea()
     fileAddAlbum.onClick = [this] { if (onAddFileResultsToAlbum != nullptr) onAddFileResultsToAlbum(); };
     fileClear.onClick = [this] { if (onClearFileResults != nullptr) onClearFileResults(); };
     fileExport.onClick = [this] { if (onExportFileTable != nullptr) onExportFileTable(); };
+    nextReview.onClick = [this] { auditionNextUnreviewed(); };
+    specButton.onClick = [this] { openSpecEditor(); };
     codecAB.onClick = [this] { if (onCodecMenu != nullptr) onCodecMenu(); };
     addChildComponent (fileExport);
     addChildComponent (codecAB);
@@ -204,6 +232,11 @@ DetailArea::DetailArea()
     refImport.onClick = [this] { if (onImportReference != nullptr) onImportReference(); };
     refClear.onClick = [this] { if (onClearReference != nullptr) onClearReference(); };
     refPlay.onClick = [this] { if (onToggleReferencePlayback != nullptr) onToggleReferencePlayback(); };
+    refCueA.onClick = [this] { if (onReferenceCue != nullptr) onReferenceCue (0); };
+    refCueB.onClick = [this] { if (onReferenceCue != nullptr) onReferenceCue (1); };
+    refLoop.onClick = [this] { if (onReferenceCue != nullptr) onReferenceCue (2); };
+    refCueA.onDoubleClick = [this] { openCueNameEditor (0); };
+    refCueB.onDoubleClick = [this] { openCueNameEditor (1); };
     refAlign.onClick = [this] { if (onAutoAlignReference != nullptr) onAutoAlignReference(); };
     reportButton.onClick = [this] { if (onExportReport != nullptr) onExportReport(); };
     markButton.onClick = [this] { if (onAddMarkerNow != nullptr) onAddMarkerNow(); };
@@ -286,6 +319,7 @@ void DetailArea::refreshTexts()
     };
 
     reportButton.setButtonText (ml::grid::controlText (T ("导出报告", "Export report")));
+    reportButton.setComponentID ("accentButton");
     markButton.setButtonText (ml::grid::controlText (T ("+ 打标记", "+ Marker")));
     markerExport.setButtonText (ml::grid::controlText (T ("导出标记 CSV", "Export markers")));
     markerImport.setButtonText (ml::grid::controlText (T ("导入标记 CSV", "Import markers")));
@@ -323,9 +357,18 @@ void DetailArea::refreshTexts()
                              "Standalone: play the selected file; click again to stop"));
     fileAddAlbum.setButtonText (ml::grid::controlText (T ("加入专辑", "Add to album")));
     fileExport.setButtonText (ml::grid::controlText (T ("导出 QC", "Export QC")));
+    nextReview.setButtonText (T ("下一处待回听", "Next to audition"));
+    nextReview.setTooltip (T ("跳到下一处未确认的证据并试听", "Jump to the next unreviewed finding and audition it"));
+    specButton.setTooltip (T ("编辑客户交付规格并预览通过 / 阻断", "Edit the client delivery spec and preview pass / block"));
     fileViewButtons[0].setButtonText (ml::grid::controlText (T ("样本证据", "Evidence")));
     fileViewButtons[1].setButtonText (ml::grid::controlText (T ("分频折叠", "Mono bands")));
     fileViewButtons[2].setButtonText (ml::grid::controlText (T ("增益预算", "Gain budget")));
+    refCueA.setButtonText ("A");
+    refCueB.setButtonText ("B");
+    refLoop.setButtonText ("LOOP");
+    refCueA.setTooltip (T ("把当前位置设为片段 A", "Set cue A at the current position"));
+    refCueB.setTooltip (T ("把当前位置设为片段 B", "Set cue B at the current position"));
+    refLoop.setTooltip (T ("在 A 与 B 之间循环", "Loop between A and B"));
     fileInspectorToggle.setButtonText (ml::grid::controlText (
         fileInspectorCollapsed ? T ("展开证据", "Expand") : T ("收起证据", "Collapse")));
     fileExport.setTooltip (T ("导出 CSV 摘要与完整 JSON 证据（时间、样本、源文件 SHA256）",
@@ -386,6 +429,9 @@ void DetailArea::hideAllChildren()
     refImport.setVisible (false);
     refClear.setVisible (false);
     refPlay.setVisible (false);
+    refCueA.setVisible (false);
+    refCueB.setVisible (false);
+    refLoop.setVisible (false);
     refAlign.setVisible (false);
     refSlotBox.setVisible (false);
     refOffset.setVisible (false);
@@ -417,6 +463,10 @@ void DetailArea::hideAllChildren()
     fileInspectorToggle.setVisible (false);
     fileAddAlbum.setVisible (false);
     fileClear.setVisible (false);
+    nextReview.setVisible (false);
+    specButton.setVisible (false);
+    findingNote.setVisible (false);
+    findingIgnore.setVisible (false);
     fileExport.setVisible (false);
     codecAB.setVisible (false);
     for (auto& b : fileViewButtons) b.setVisible (false);
@@ -521,6 +571,21 @@ void DetailArea::setReferenceSlots (const juce::StringArray& names, int active,
     repaint();
 }
 
+void DetailArea::setReferenceCues (double a, double b, bool looping,
+                                   const juce::String& nameA, const juce::String& nameB)
+{
+    refCueAName = nameA.isNotEmpty() ? nameA : juce::String ("A");
+    refCueBName = nameB.isNotEmpty() ? nameB : juce::String ("B");
+    refCueA.setButtonText (refCueAName);
+    refCueB.setButtonText (refCueBName);
+    refCueA.setTooltip (refCueAName + (a > 0.0 ? " · " + fmtTime (a) : juce::String())
+                        + T ("（双击命名）", " (double-click to rename)"));
+    refCueB.setTooltip (refCueBName + (b > 0.0 ? " · " + fmtTime (b) : juce::String())
+                        + T ("（双击命名）", " (double-click to rename)"));
+    refLoop.setToggleState (looping, juce::dontSendNotification);
+    repaint();
+}
+
 void DetailArea::setReferencePlaybackState (bool playing, const juce::String&)
 {
     refPlaying = playing;
@@ -558,6 +623,8 @@ void DetailArea::setFileResults (std::vector<FileAnalysisResult> results, bool b
     if (fileSelected >= (int) fileResults.size())
         fileSelected = -1;
     if (fileSelected < 0 && ! fileResults.empty()) fileSelected = 0;
+
+    fileFindingSelected = -1;
     if (layoutChanged) fileInspectorCollapsed = false;
     if (layoutChanged) resized();
 
@@ -787,6 +854,7 @@ void DetailArea::resized()
     hideAllChildren();
 
     auto area = contentArea();
+    deliveryArea = {};
     if (page != PageId::spectrum) area.removeFromTop (32);   // page header
 
     if (emptyMode && page != PageId::files && page != PageId::album && page != PageId::target)
@@ -796,6 +864,11 @@ void DetailArea::resized()
     {
         case PageId::loudness:
         {
+            // Compact: drop the ledger before squeezing the chart.
+            deliveryArea = area.getWidth() >= 800
+                               ? area.removeFromRight (juce::jmin (236, area.getWidth() / 3))
+                               : juce::Rectangle<int>();
+            if (! deliveryArea.isEmpty()) area.removeFromRight (16);
             auto console = area.removeFromBottom (juce::jmin (116, area.getHeight()/3));
             area.removeFromBottom (24);
             const int phaseWidth = juce::jmin (220, console.getWidth()/3);
@@ -823,8 +896,16 @@ void DetailArea::resized()
                 ? getLocalBounds().removeFromBottom (spectrumBandHeight).reduced (16, 0) : juce::Rectangle<int>();
             spectrumBandGroupBounds = spectrumGroupRects (spectrumSideArea);
             const int modeWidth = 72;
-            grid::row (controls, { &spectrumViewButtons[0], &spectrumViewButtons[1], &spectrumViewButtons[2] },
+            auto viewRow = controls.removeFromLeft (modeWidth * 3 + 16);
+            grid::row (viewRow, { &spectrumViewButtons[0], &spectrumViewButtons[1], &spectrumViewButtons[2] },
                        { modeWidth, modeWidth, modeWidth });
+            controls.removeFromLeft (8);
+            auto cueRow = controls.removeFromLeft (108);
+            grid::row (cueRow, { &refCueA, &refCueB, &refLoop }, { 28, 28, 44 });
+            refCueA.setVisible (true);
+            refCueB.setVisible (true);
+            refLoop.setVisible (true);
+
             auto referenceControls = controls.removeFromRight (476);
             grid::row (referenceControls,
                        { &refSlotBox, &refOffset, &refGain, &refPlay, &refImport, &refAlign, &refClear },
@@ -979,6 +1060,17 @@ void DetailArea::resized()
             buttons.removeFromRight (8);
             filePlay.setBounds (buttons.removeFromRight (80).withSizeKeepingCentre (80, 30));
             codecAB.setBounds (buttons.removeFromLeft (104).withSizeKeepingCentre (100, 30));
+            specButton.setVisible (fileSelected >= 0 && ! fileResults.empty());
+            specButton.setButtonText (spec.enabled ? T ("客户规格 · 开", "Spec · on")
+                                                   : T ("客户规格", "Client spec"));
+            nextReview.setVisible (fileSelected >= 0 && ! fileResults.empty());
+            {
+                bool hasUnreviewed = false;
+                for (const auto& r : fileResults)
+                    for (const auto& f : r.forensic.findings)
+                        hasUnreviewed = hasUnreviewed || ! f.reviewed;
+                nextReview.setEnabled (hasUnreviewed);
+            }
 
             fileChoose.setVisible (true);
             fileFolder.setVisible (true);
@@ -997,6 +1089,13 @@ void DetailArea::resized()
             }
             fileInspectorToggle.setBounds (tabs.removeFromRight (84).reduced (2, 2));
             fileInspectorToggle.setVisible (fileSelected >= 0 && ! fileResults.empty());
+            specButton.setBounds (tabs.removeFromRight (104).reduced (2, 2));
+            nextReview.setBounds (tabs.removeFromRight (132).reduced (2, 2));
+
+            // The inline note row is parked until the inspector gets its own
+            // height tier; notes are still exported with the evidence.
+            findingIgnore.setVisible (false);
+            findingNote.setVisible (false);
             break;
         }
 

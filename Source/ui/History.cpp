@@ -225,10 +225,10 @@ void HistoryGraph::paintPlot (juce::Graphics& g)
     {
         const float y = yFor (db);
 
-        g.setColour (db == 0.0f || db == -36.0f ? theme::border : theme::borderSoft);
+        g.setColour (db == 0.0f || db == -36.0f ? theme::plotGrid : theme::plotGrid.withAlpha (0.55f));
         g.drawHorizontalLine (juce::roundToInt (y), (float) plot.getX(), (float) plot.getRight());
 
-        g.setColour (theme::textFaint);
+        g.setColour (theme::plotFaint);
         g.drawText (num (db, 0),
                     juce::Rectangle<float> ((float) plot.getX() - 42.0f, y - 6.0f, 36.0f, 12.0f),
                     juce::Justification::centredRight);
@@ -236,13 +236,28 @@ void HistoryGraph::paintPlot (juce::Graphics& g)
 
     // The unit lives with the current value; the curve itself stays clean.
 
+    // ---- four-edge graticule ticks -----------------------------------------
+    {
+        constexpr float tick = 4.0f;
+        g.setColour (theme::plotGrid);
+        for (int i = 0; i <= 10; ++i)
+        {
+            const float px = (float) plot.getX() + (float) plot.getWidth() * (float) i / 10.0f;
+            const float py = (float) plot.getY() + (float) plot.getHeight() * (float) i / 10.0f;
+            g.fillRect (px - 0.5f, (float) plot.getY(), 1.0f, tick);
+            g.fillRect (px - 0.5f, (float) plot.getBottom() - tick, 1.0f, tick);
+            g.fillRect ((float) plot.getX(), py - 0.5f, tick, 1.0f);
+            g.fillRect ((float) plot.getRight() - tick, py - 0.5f, tick, 1.0f);
+        }
+    }
+
     // ---- LRA allowance band (8 % fill) --------------------------------------
     if (bandLra > 0.05f)
     {
         const float top = yFor (juce::jmin (0.0f, target + bandLra * 0.5f));
         const float bottom = yFor (juce::jmax (-36.0f, target - bandLra * 0.5f));
 
-        g.setColour (theme::good.withAlpha (0.08f));
+        g.setColour (theme::plotAccent.withAlpha (0.10f));
         g.fillRect (juce::Rectangle<float> ((float) plot.getX(), top, (float) plot.getWidth(),
                                             juce::jmax (1.0f, bottom - top)));
     }
@@ -250,7 +265,7 @@ void HistoryGraph::paintPlot (juce::Graphics& g)
     // ---- dashed target line --------------------------------------------------
     {
         const float y = yFor (juce::jlimit (-36.0f, 0.0f, target));
-        g.setColour (theme::good.withAlpha (0.85f));
+        g.setColour (theme::plotAccent);
 
         for (float x = (float) plot.getX(); x < (float) plot.getRight(); x += 9.0f)
             g.fillRect (x, y - 0.5f, 5.0f, 1.0f);
@@ -303,12 +318,12 @@ void HistoryGraph::paintPlot (juce::Graphics& g)
             fillPath.lineTo (firstX, (float) plot.getBottom());
             fillPath.closeSubPath();
 
-            juce::ColourGradient fillGrad (theme::accent.withAlpha (0.16f), 0.0f, (float) plot.getY(),
-                                           theme::accent.withAlpha (0.0f), 0.0f, (float) plot.getBottom(), false);
+            juce::ColourGradient fillGrad (theme::plotAccent.withAlpha (0.16f), 0.0f, (float) plot.getY(),
+                                           theme::plotAccent.withAlpha (0.0f), 0.0f, (float) plot.getBottom(), false);
             g.setGradientFill (fillGrad);
             g.fillPath (fillPath);
 
-            g.setColour (theme::accent);
+            g.setColour (theme::plotInk);
             g.strokePath (curvePath, juce::PathStrokeType (1.4f));
 
             // Events live on the curve, not on a separate 40 px strip.
@@ -322,8 +337,8 @@ void HistoryGraph::paintPlot (juce::Graphics& g)
                 if (mx < (float) plot.getX() || mx > (float) plot.getRight())
                     continue;
 
-                const auto c = ev.severity >= 2 ? theme::bad
-                             : (ev.severity == 1 ? theme::warn : theme::accent);
+                const auto c = ev.severity >= 2 ? theme::plotBad
+                             : (ev.severity == 1 ? theme::plotWarn : theme::plotAccent);
                 g.setColour (c.withAlpha (0.7f));
                 g.fillRoundedRectangle (mx - 1.0f, (float) plot.getY(), 2.0f,
                                         (float) plot.getHeight(), 1.0f);
@@ -370,7 +385,7 @@ void HistoryGraph::paintOverlay (juce::Graphics& g)
         text::drawValueUnit (g,
                              juce::Rectangle<int> (right - runWidth, plot.getY() + 4, runWidth, 20),
                              valueText, "LUFS", valueFont, unitFont,
-                             theme::text, theme::textFaint, gap);
+                             theme::plotInk, theme::plotFaint, gap);
     }
 
     // ---- drag selection ------------------------------------------------------
@@ -382,10 +397,10 @@ void HistoryGraph::paintOverlay (juce::Graphics& g)
         const float x1 = juce::jlimit ((float) plot.getX(), (float) plot.getRight(), a);
         const float x2 = juce::jlimit ((float) plot.getX(), (float) plot.getRight(), b);
 
-        g.setColour (theme::accent.withAlpha (0.10f));
+        g.setColour (theme::plotAccent.withAlpha (0.12f));
         g.fillRect (juce::Rectangle<float> (x1, (float) plot.getY(), x2 - x1,
                                             (float) plot.getHeight()));
-        g.setColour (theme::accent);
+        g.setColour (theme::plotAccent);
         g.fillRect (x1, (float) plot.getY(), 1.0f, (float) plot.getHeight());
         g.fillRect (x2, (float) plot.getY(), 1.0f, (float) plot.getHeight());
     }
@@ -398,7 +413,7 @@ void HistoryGraph::paintOverlay (juce::Graphics& g)
 
         if (hx >= (float) plot.getX() && hx <= (float) plot.getRight())
         {
-            g.setColour (theme::accent.withAlpha (0.85f));
+            g.setColour (theme::plotAccent.withAlpha (0.9f));
             g.fillRect (hx - 0.5f, (float) plot.getY(), 1.0f, (float) plot.getHeight());
             g.fillEllipse (hx - 3.0f, (float) plot.getY() - 3.0f, 6.0f, 6.0f);
         }
@@ -406,7 +421,7 @@ void HistoryGraph::paintOverlay (juce::Graphics& g)
 
     // ---- one relative time axis ---------------------------------------------
     g.setFont (getValueFont());
-    g.setColour (theme::textFaint);
+    g.setColour (theme::plotFaint);
 
     const float midSeconds = (float) (span - 1) * 0.05f;
     const float leftSeconds = (float) (span - 1) * 0.1f;
@@ -442,10 +457,10 @@ void HistoryGraph::paintOverlay (juce::Graphics& g)
     {
         const bool active = (int) range == i;
 
-        g.setColour (active ? theme::accentSoft : theme::raised);
+        g.setColour (active ? theme::plotAccent.withAlpha (0.18f) : juce::Colours::black.withAlpha (0.22f));
         g.fillRoundedRectangle (chips[(size_t) i].toFloat(), tokens::radiusControl);
 
-        g.setColour (active ? theme::accentInk : theme::textDim);
+        g.setColour (active ? theme::plotInk : theme::plotFaint);
         g.setFont (getLabelFont());
         g.drawText (T (zh[i], en[i]), chips[(size_t) i], juce::Justification::centred);
     }
@@ -461,12 +476,12 @@ void HistoryGraph::paintOverlay (juce::Graphics& g)
             const float value = data[(size_t) ((int) data.size() - 1 - indexFromRight)];
             const float x = (float) plot.getRight() - (float) indexFromRight * stepX;
 
-            g.setColour (theme::textDim.withAlpha (0.55f));
+            g.setColour (theme::plotFaint.withAlpha (0.55f));
             g.drawVerticalLine (juce::roundToInt (x), (float) plot.getY(), (float) plot.getBottom());
 
             if (value > -99.0f)
             {
-                g.setColour (theme::accent);
+                g.setColour (theme::plotAccent);
                 g.fillEllipse (x - 3.0f, yFor (value) - 3.0f, 6.0f, 6.0f);
 
                 const float seconds = (float) indexFromRight * 0.1f;

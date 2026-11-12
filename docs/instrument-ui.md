@@ -1,5 +1,7 @@
 # Precision Instrument：控件与布局验收
 
+> **状态说明（2026-11）**：本文记录 2.x 的 Precision Instrument 实施细节（11 / 13 / 20 字号、13,150 次边界检查），其中字号与部分布局数字已被 3.0.3 的 14 / 18 / 20 / 30 取代；3.1 的 Calibrated Plate 方向见 [docs/design-3.1.md](design-3.1.md)，当前实现约束见 [DESIGN.md](../DESIGN.md)。本文保留作为历史验收记录。
+
 本阶段按 `DESIGN.md` 的优先级实施：MasterLens 母带仪器定位 → audio/ui 硬件规则 → high-end-visual-design 排印规则。按本次确认，**仅频谱页**使用上下布局，其余检查页保留任务内容与左侧读数的组织方式。
 
 ## 实现

@@ -103,6 +103,17 @@ inline juce::Colour bad        { 0xffc08278 };
 inline juce::Colour violet     { 0xff94949c };
 inline juce::Colour track      { 0xff343a3b };   // empty meter track / progress rail
 
+// 3.1: the measurement window is dark in both themes, so plot ink cannot
+// follow the page palette. These tokens are fixed across light and dark.
+inline juce::Colour well      { 0xff0b0e0f };
+inline juce::Colour wellEdge  { 0xff2b3133 };
+inline juce::Colour plotInk   { 0xffe7e4d9 };
+inline juce::Colour plotFaint { 0xff8d948f };
+inline juce::Colour plotGrid  { 0xff232a2b };
+inline juce::Colour plotAccent{ 0xff9fbcab };
+inline juce::Colour plotWarn  { 0xffd8b48a };
+inline juce::Colour plotBad   { 0xffe0a39a };
+
 inline bool dark { true };
 inline int revisionCounter { 0 };
 
@@ -136,6 +147,10 @@ void glow (juce::Graphics&, juce::Rectangle<float> area, juce::Colour, float rad
 
 juce::String typefaceName();
 juce::Font getLabelFont();
+juce::Font getMicroFont();
+juce::Font getPageTitleFont();
+juce::Font getMetaFont();
+juce::Font getMonoFont (float height);
 juce::Font getLabelTrackedFont();
 juce::Font getValueFont();
 juce::Font getTitleFont();
@@ -342,6 +357,7 @@ public:
                            float position, float startAngle, float endAngle, juce::Slider&) override;
     void drawButtonBackground (juce::Graphics&, juce::Button&, const juce::Colour&,
                                bool isMouseOver, bool isButtonDown) override;
+    void drawButtonText (juce::Graphics&, juce::TextButton&, bool, bool) override;
 private:
     void timerCallback() override;
     struct ButtonMotion { juce::Component::SafePointer<juce::Button> button; float depth = 0.0f, velocity = 0.0f; };

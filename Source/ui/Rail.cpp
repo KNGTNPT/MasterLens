@@ -115,34 +115,51 @@ void ModuleRail::paint (juce::Graphics& g)
         const auto colour = sel ? theme::accent : (i == hoverRow ? theme::text : theme::textDim);
         const float cx = (float) r.getCentreX(), cy = (float) r.getY() + 14.0f;
         g.setColour (colour);
-        juce::Path icon;
-        switch (i)
+        // oil-ui tab icons: the exact 16x16 stroke paths from the design
+        // mockup, parsed once and recoloured per row.
+        static const char* iconPaths[] = {
+            "M3 13V6M7.5 13V3.5M12 13V8.5",
+            "M2 12l3.5-5 2.5 3L12 4",
+            "M2 11c3 0 3-7 5.5-7S10 12 14 11",
+            "M6 8a3 3 0 1 0 0-.1M11 8a3 3 0 1 0 0-.1",
+            "M3 5h10M3 8h7M3 11h10",
+            "M3 4h10v8H3zM6 4v8",
+            "M3 8h2l1.5-4 3 8L11 8h3",
+            "M3 8l3 3 7-6",
+            "M8 2a6 6 0 1 0 0 12A6 6 0 0 0 8 2zM8 5v3l2 1",
+            "M8 2a6 6 0 1 0 0 12A6 6 0 0 0 8 2zM8 5.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5z",
+            "M3 4h4l1.5 2H13v8H3z"
+        };
+
+        static juce::OwnedArray<juce::Drawable> iconCache;
+
+        if (iconCache.isEmpty())
         {
-            case 0: // three unequal meter stems
-                for (int j=0; j<3; ++j) g.fillRoundedRectangle (cx-7.0f+j*6.0f,cy-2.0f-j*2.0f,2.0f,7.0f+j*2.0f,1.0f);
-                break;
-            case 1:
-                icon.startNewSubPath(cx-8,cy+5); icon.lineTo(cx-2,cy+5); icon.lineTo(cx+1,cy-7); icon.lineTo(cx+4,cy+5); icon.lineTo(cx+8,cy+5); break;
-            case 2:
-                icon.startNewSubPath(cx-9,cy+5); icon.cubicTo(cx-5,cy+4,cx-6,cy-7,cx-2,cy-5); icon.cubicTo(cx+2,cy-3,cx+2,cy+4,cx+9,cy+5); break;
-            case 3:
-                g.drawEllipse(cx-9,cy-5,12,12,1.0f); g.drawEllipse(cx-3,cy-5,12,12,1.0f); break;
-            case 4:
-                for (int j=0;j<3;++j) { icon.startNewSubPath(cx-8,cy-4+j*5);icon.lineTo(cx+7-j*3,cy-4+j*5); } break;
-            case 5:
-                g.drawRoundedRectangle(cx-7,cy-5,14,12,2,1);g.drawEllipse(cx-2,cy-1,4,4,1);break;
-            case 6:
-                icon.startNewSubPath(cx-9,cy);icon.lineTo(cx-4,cy);icon.lineTo(cx-1,cy-6);icon.lineTo(cx+2,cy+6);icon.lineTo(cx+5,cy);icon.lineTo(cx+9,cy);break;
-            case 7:
-                icon.startNewSubPath(cx-6,cy);icon.lineTo(cx-1,cy+5);icon.lineTo(cx+7,cy-5);break;
-            case 8:
-                g.drawEllipse(cx-7,cy-6,14,14,1);icon.startNewSubPath(cx,cy-3);icon.lineTo(cx,cy+1);icon.lineTo(cx+4,cy+3);break;
-            case 9:
-                g.drawEllipse(cx-7,cy-6,14,14,1);g.drawEllipse(cx-3,cy-2,6,6,1);break;
-            case 10:
-                icon.startNewSubPath(cx-7,cy+6);icon.lineTo(cx-7,cy-6);icon.lineTo(cx+2,cy-6);icon.lineTo(cx+7,cy-1);icon.lineTo(cx+7,cy+6);icon.closeSubPath();break;
+            for (const auto* d : iconPaths)
+            {
+                const juce::String svg = juce::String ("<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 16 16\" fill=\"none\" stroke=\"#ffffff\" stroke-width=\"1.3\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"") + d + "\"/></svg>";
+                auto xml = juce::XmlDocument::parse (svg);
+
+                if (xml != nullptr)
+                    iconCache.add (juce::Drawable::createFromSVG (*xml).release());
+                else
+                    iconCache.add (nullptr);
+            }
         }
-        g.strokePath(icon,juce::PathStrokeType(1.15f));
+
+        if (auto* iconDrawable = i < iconCache.size() ? iconCache[i] : nullptr)
+        {
+            if (auto* comp = dynamic_cast<juce::DrawableComposite*> (iconDrawable))
+                for (int child = 0; child < comp->getNumChildComponents(); ++child)
+                    if (auto* path = dynamic_cast<juce::DrawablePath*> (comp->getChildComponent (child)))
+                        path->setStrokeFill (juce::FillType (colour));
+
+            const float size = 20.0f;
+            juce::Graphics::ScopedSaveState save (g);
+            g.addTransform (juce::AffineTransform::scale (size / 16.0f)
+                                .translated (cx - size * 0.5f, cy - size * 0.5f));
+            iconDrawable->draw (g, 1.0f);
+        }
         g.setFont (labelFontFor (T (zh[i], en[i]).toUpperCase()));
         g.drawText (T (zh[i], en[i]).toUpperCase(), r.withTrimmedTop (28).withTrimmedBottom (4),
                     juce::Justification::centred, false);

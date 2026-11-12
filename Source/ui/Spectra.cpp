@@ -127,7 +127,9 @@ void SpectrumDisplay::ensureBackground()
 
     juce::Graphics bg (background);
     bg.addTransform (juce::AffineTransform::scale (scale));
-    bg.fillAll ((theme::dark ? theme::card : juce::Colour (0xff283133)));
+    bg.fillAll (theme::well);
+    bg.setColour (theme::wellEdge);
+    bg.drawRect (getLocalBounds(), 1);
     drawGrid (bg);
     fillGradient.point1 = { 56.0f, 32.0f };
     fillGradient.point2 = { 56.0f, (float) h - 48.0f };
@@ -142,7 +144,9 @@ void SpectrumDisplay::paint (juce::Graphics& g)
 {
     if (backgroundDirty || background.isNull() || cachedThemeRevision != theme::revision())
     {
-        g.fillAll ((theme::dark ? theme::card : juce::Colour (0xff283133)));
+        g.fillAll (theme::well);
+        g.setColour (theme::wellEdge);
+        g.drawRect (getLocalBounds(), 1);
         return;
     }
 

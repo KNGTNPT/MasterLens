@@ -13,52 +13,58 @@ void theme::apply (bool useDark)
 
     if (useDark)
     {
-        theme::background = juce::Colour (0xff171a1b);
-        theme::card       = juce::Colour (0xff202425);
-        theme::cardAlt    = juce::Colour (0xff2a2f30);
-        theme::raised     = juce::Colour (0xff2a2f30);
-        theme::border     = juce::Colour (0xff3b4242);
-        theme::borderSoft = juce::Colour (0xff303637);
-        theme::divider    = juce::Colour (0xff303637);
-        theme::text       = juce::Colour (0xff969c98);
-        theme::textDim    = juce::Colour (0xff909994);
-        theme::textFaint  = juce::Colour (0xff858f89);
-        theme::accent     = juce::Colour (0xff819e90);
-        theme::accentInk  = juce::Colour (0xff9fc0b0);
-        theme::accentSoft = juce::Colour (0xff30463e);
-        theme::cyan       = juce::Colour (0xff80989f);
-        theme::good       = juce::Colour (0xff819e90);
-        theme::info       = juce::Colour (0xff819e90);
-        theme::warn       = juce::Colour (0xffb19870);
-        theme::bad        = juce::Colour (0xffc08278);
-        theme::violet     = juce::Colour (0xff94949c);
-        theme::track      = juce::Colour (0xff343a3b);
+        // oil-ui / Calibrated Plate palette (dark): warm plate, bone ink.
+        theme::background = juce::Colour (0xff141719);
+        theme::card       = juce::Colour (0xff191d1f);
+        theme::cardAlt    = juce::Colour (0xff1d2224);
+        theme::raised     = juce::Colour (0xff1d2224);
+        theme::border     = juce::Colour (0xff2b3133);
+        theme::borderSoft = juce::Colour (0xff202627);
+        theme::divider    = juce::Colour (0xff252b2d);
+        theme::text       = juce::Colour (0xffe9e6dc);
+        theme::textDim    = juce::Colour (0xffc9c7bd);
+        theme::textFaint  = juce::Colour (0xff939b95);
+        theme::accent     = juce::Colour (0xffa3bfae);
+        theme::accentInk  = juce::Colour (0xffc2d6c8);
+        theme::accentSoft = juce::Colour (0xff2a3833);
+        theme::cyan       = juce::Colour (0xff9fb7bf);
+        theme::good       = juce::Colour (0xffa3bfae);
+        theme::info       = juce::Colour (0xffa3bfae);
+        theme::warn       = juce::Colour (0xffcfa373);
+        theme::bad        = juce::Colour (0xffcd8f82);
+        theme::violet     = juce::Colour (0xffb3aac4);
+        theme::track      = juce::Colour (0xff2b3133);
+        theme::well       = juce::Colour (0xff0b0e0f);
+        theme::wellEdge   = juce::Colour (0xff2b3133);
     }
     else
     {
-        theme::background = juce::Colour (0xffe5e6df);
-        theme::card       = juce::Colour (0xffdce0d9);
-        theme::cardAlt    = juce::Colour (0xffe9ece5);
-        theme::raised     = juce::Colour (0xffdce0d9);
-        theme::border     = juce::Colour (0xffc4cdc5);
-        theme::borderSoft = juce::Colour (0xffd0d7cf);
-        theme::divider    = juce::Colour (0xffd0d7cf);
-        theme::text       = juce::Colour (0xff26352e);
-        theme::textDim    = juce::Colour (0xff53665b);
-        theme::textFaint  = juce::Colour (0xff62776a);
-        theme::accent     = juce::Colour (0xff356d56);
-        theme::accentInk  = juce::Colour (0xff356d56);
-        theme::accentSoft = juce::Colour (0xffd6e5d9);
+        // oil-ui / Calibrated Plate palette (light): warm paper, dark well.
+        theme::background = juce::Colour (0xffeae6db);
+        theme::card       = juce::Colour (0xfff1ede3);
+        theme::cardAlt    = juce::Colour (0xfff5f1e7);
+        theme::raised     = juce::Colour (0xfff5f1e7);
+        theme::border     = juce::Colour (0xffc6c0b0);
+        theme::borderSoft = juce::Colour (0xffd8d2c3);
+        theme::divider    = juce::Colour (0xffd3ccbd);
+        theme::text       = juce::Colour (0xff212822);
+        theme::textDim    = juce::Colour (0xff3a423c);
+        theme::textFaint  = juce::Colour (0xff5c665f);
+        theme::accent     = juce::Colour (0xff3e6a55);
+        theme::accentInk  = juce::Colour (0xff2f5544);
+        theme::accentSoft = juce::Colour (0xffdbe7dc);
         // Light status colours are the readable ink values, not the pale
         // indicator shades: they carry 14 px status text as well as 1-3 px
         // marks, and the pale variants only reached 3.1-4.3:1 on the card.
-        theme::cyan       = juce::Colour (0xff355b68);
+        theme::cyan       = juce::Colour (0xff3f6470);
         theme::good       = juce::Colour (0xff0d6b47);
         theme::info       = juce::Colour (0xff356d56);
-        theme::warn       = juce::Colour (0xff8a4f00);
-        theme::bad        = juce::Colour (0xffb3261e);
+        theme::warn       = juce::Colour (0xff8c5a1d);
+        theme::bad        = juce::Colour (0xffa33f33);
         theme::violet     = juce::Colour (0xff5a4bd3);
-        theme::track      = juce::Colour (0xffb3c0b6);
+        theme::track      = juce::Colour (0xffc9c3b4);
+        theme::well       = juce::Colour (0xff1b1f20);
+        theme::wellEdge   = juce::Colour (0xff141819);
     }
 
     ++theme::revisionCounter;
@@ -189,8 +195,11 @@ void panel (juce::Graphics& g, juce::Rectangle<float> r, bool isRaised)
 
 void graph (juce::Graphics& g, juce::Rectangle<float> area)
 {
-    panel (g, area, false);
-    // Plot boundaries and scales already identify the measurement window.
+    // 3.1: one dark measurement window in both themes.
+    g.setColour (theme::well);
+    g.fillRoundedRectangle (area, 2.0f);
+    g.setColour (theme::wellEdge);
+    g.drawRoundedRectangle (area.reduced (0.5f), 2.0f, 1.0f);
 }
 
 void noise (juce::Graphics&, juce::Rectangle<float>) {}
@@ -225,12 +234,17 @@ namespace
         juce::Typeface::Ptr brandMono = juce::Typeface::createSystemTypefaceFor (
             MasterLensFonts::GeistMonoRegular_otf, MasterLensFonts::GeistMonoRegular_otfSize);
 
+        const juce::Typeface::Ptr& monoTypeface() const noexcept { return brandMono; }
+
         // Untracked by default: CJK labels must not be widened. Runs of
         // uppercase Latin ask for the tracked face through labelFontFor().
         juce::Font label { options (regular, 14.0f).withFeatureEnabled ("tnum") };
         juce::Font labelTracked { options (regular, 14.0f)
                                       .withKerningFactor (0.04f)
                                       .withFeatureEnabled ("tnum") };
+        juce::Font micro { options (regular, 11.0f) };
+        juce::Font pageTitle { options (medium, 15.0f) };
+        juce::Font meta { options (regular, 10.0f) };
         juce::Font value { options (medium, 18.0f).withFeatureEnabled ("tnum") };
         juce::Font title { options (medium, 20.0f) };
         juce::Font critical { options (bold, 30.0f).withFeatureEnabled ("tnum") };
@@ -260,6 +274,15 @@ namespace
 
 juce::String typefaceName() { return InstrumentFonts::get().regular->getName(); }
 juce::Font getLabelFont() { return InstrumentFonts::get().label; }
+juce::Font getMicroFont() { return InstrumentFonts::get().micro; }
+juce::Font getPageTitleFont() { return InstrumentFonts::get().pageTitle; }
+juce::Font getMetaFont() { return InstrumentFonts::get().meta; }
+
+juce::Font getMonoFont (float height)
+{
+    return juce::FontOptions (InstrumentFonts::get().monoTypeface()).withHeight (height)
+        .withFallbacks ({ "PingFang SC", "Microsoft YaHei UI", "Noto Sans CJK SC" });
+}
 juce::Font getLabelTrackedFont() { return InstrumentFonts::get().labelTracked; }
 
 juce::Font labelFontFor (const juce::String& text)
@@ -473,6 +496,35 @@ void MasterLensLookAndFeel::drawRotarySlider (juce::Graphics& g, int x, int y, i
     g.restoreState();
 }
 
+void MasterLensLookAndFeel::drawButtonText (juce::Graphics& g, juce::TextButton& button,
+                                             bool highlight, bool down)
+{
+    // The press animation sinks the button body; the label sinks with it so the
+    // text never floats above a moving surface.
+    float depth = 0.0f;
+
+    for (const auto& motion : buttonMotions)
+        if (motion.button.getComponent() == &button)
+        {
+            depth = motion.depth;
+            break;
+        }
+
+    juce::Graphics::ScopedSaveState save (g);
+    g.addTransform (juce::AffineTransform::translation (0.0f, depth * 2.0f));
+
+    if (button.getComponentID() == "accentButton")
+    {
+        g.setColour (theme::background);
+        g.setFont (getTextButtonFont (button, button.getHeight()));
+        g.drawText (button.getButtonText(), button.getLocalBounds().reduced (6, 0),
+                    juce::Justification::centred, false);
+        return;
+    }
+
+    juce::LookAndFeel_V4::drawButtonText (g, button, highlight, down);
+}
+
 void MasterLensLookAndFeel::drawButtonBackground (juce::Graphics& g, juce::Button& button,
     const juce::Colour&, bool hover, bool down)
 {
@@ -482,6 +534,8 @@ void MasterLensLookAndFeel::drawButtonBackground (juce::Graphics& g, juce::Butto
     auto bounds = button.getLocalBounds().toFloat().reduced (0.5f)
         .reduced (juce::jmax (0.0f, depth) * 0.5f).translated (0.0f, depth * 2.0f);
     auto base = button.findColour (juce::TextButton::buttonColourId);
+    if (button.getComponentID() == "accentButton")
+        base = theme::accent;
     if (button.getToggleState()) base = base.brighter (0.07f);
     if (down) base = base.darker (0.18f);
     g.saveState();

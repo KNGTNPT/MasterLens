@@ -1,5 +1,8 @@
 #include "CodecCheck.h"
 
+#include <cmath>
+#include <vector>
+
 #include <juce_audio_formats/juce_audio_formats.h>
 #include <juce_cryptography/juce_cryptography.h>
 
@@ -22,6 +25,7 @@ double sourceDuration (const juce::File& file)
     return (double) reader->lengthInSamples / reader->sampleRate;
 }
 } // namespace
+
 
 CodecCheckResult runCodecCheck (const juce::File& input, const juce::String& codec,
                                 const juce::File& outputDirectory)
@@ -63,6 +67,9 @@ CodecCheckResult runCodecCheck (const juce::File& input, const juce::String& cod
 
     auto preview = createCodecPreview (input, r.codec, outputDirectory, nullptr,
                                        sourceDuration (input));
+    r.delaySamples = preview.delaySamples;
+    r.tailSamples = preview.tailSamples;
+    r.residual = preview.residual;
 
     struct Cleanup
     {

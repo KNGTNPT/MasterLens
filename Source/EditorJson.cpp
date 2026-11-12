@@ -24,8 +24,9 @@ juce::String MasterLensAudioProcessorEditor::buildReportJson() const
     const auto fileBasis = currentBasis();
     const float fileTarget = fileBasis.hasComparison() ? fileBasis.comparisonLufs()
         : (fileBasis.mode == ml::BasisMode::manual ? processor.getTargetLufs() : -14.0f);
+    const auto fileEff = ml::effectiveDelivery (deliverySpec, fileTarget, processor.getCeilingDb());
     for (const auto& r : fileResults)
-        offline.add (ml::fileResultToVar (r, fileTarget, processor.getCeilingDb()));
+        offline.add (ml::fileResultToVar (r, fileEff.targetLufs, fileEff.ceilingDbtp, &deliverySpec));
     root->setProperty ("fileQC", offline);
 
     auto* loud = new juce::DynamicObject();

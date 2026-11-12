@@ -25,10 +25,10 @@ namespace
         const auto r = area.toFloat().reduced (0.5f);
         const bool compact = area.getHeight() < 104;   // 98 px cards on the signal page
 
-        g.setColour (c.active ? theme::accent.withAlpha (0.18f) : theme::cardAlt);
-        g.fillRoundedRectangle (r, tokens::radiusCard);
+        g.setColour (c.active ? theme::accent.withAlpha (0.12f) : theme::background);
+        g.fillRoundedRectangle (r, 2.0f);
         g.setColour (c.active ? theme::accent : theme::border);
-        g.drawRoundedRectangle (r, tokens::radiusCard, c.active ? 1.5f : 1.0f);
+        g.drawRoundedRectangle (r, 2.0f, c.active ? 1.5f : 1.0f);
 
         if (c.active)
         {
@@ -53,10 +53,10 @@ namespace
         // ~3.5:1 on a 14 % tint in both themes. A neutral chip fill with a
         // coloured hairline keeps the hue on the text, where the card
         // background gives it 4.9-5.7:1.
-        g.setColour (theme::card);
-        g.fillRoundedRectangle (chip.toFloat(), 9.0f);
+        g.setColour (theme::background);
+        g.fillRoundedRectangle (chip.toFloat(), 2.0f);
         g.setColour (colour.withAlpha (0.55f));
-        g.drawRoundedRectangle (chip.toFloat().reduced (0.5f), 9.0f, 1.0f);
+        g.drawRoundedRectangle (chip.toFloat().reduced (0.5f), 2.0f, 1.0f);
         g.setColour (colour);
         g.setFont (getValueFont());
         g.drawText (status, chip, juce::Justification::centred);
@@ -64,7 +64,7 @@ namespace
         auto valueRow = inner.removeFromTop (compact ? 24 : juce::jmin (38, inner.getHeight() / 2));
 
         // Value and unit share the value font's baseline; no manual y nudge.
-        const auto valueFont = getValueFont();
+        const auto valueFont = getMonoFont (compact ? 22.0f : 26.0f);
         const float baseline = text::centredBaseline (valueFont, valueRow);
         const int valueWidth = text::drawRun (g, valueFont, colour, c.primary,
                                               valueRow.getX(), baseline);
@@ -151,9 +151,9 @@ void DetailArea::paintSignal (juce::Graphics& g)
                                              : T ("信号本身完整", "Signal is intact");
 
         g.setColour (colour.withAlpha (0.10f));
-        g.fillRoundedRectangle (strip.toFloat(), tokens::radiusCard);
+        g.fillRoundedRectangle (strip.toFloat(), 2.0f);
         g.setColour (colour.withAlpha (0.35f));
-        g.drawRoundedRectangle (strip.toFloat().reduced (0.5f), tokens::radiusCard, 1.0f);
+        g.drawRoundedRectangle (strip.toFloat().reduced (0.5f), 2.0f, 1.0f);
 
         g.setColour (colour);
         g.fillRoundedRectangle ((float) strip.getX() + 12.0f, (float) strip.getY() + 12.0f,
@@ -313,10 +313,10 @@ void DetailArea::paintSignal (juce::Graphics& g)
     // ---- attribution layer --------------------------------------------------
     if (attribution.getHeight() >= 24)
     {
-        g.setColour (theme::cardAlt);
-        g.fillRoundedRectangle (attribution.toFloat(), tokens::radiusCard);
+        g.setColour (theme::background);
+        g.fillRoundedRectangle (attribution.toFloat(), 2.0f);
         g.setColour (theme::border);
-        g.drawRoundedRectangle (attribution.toFloat().reduced (0.5f), tokens::radiusCard, 1.0f);
+        g.drawRoundedRectangle (attribution.toFloat().reduced (0.5f), 2.0f, 1.0f);
 
         auto inner = attribution.reduced (14, 9);
 

@@ -14,9 +14,12 @@ void MasterLensAudioProcessorEditor::updateTexts()
 
     holdButton.setButtonText (ml::grid::controlText (frozen ? T ("恢复", "Resume") : T ("保持", "Hold")));
     clearButton.setButtonText (ml::grid::controlText (T ("清零", "Clear")));
-    aboutButton.setButtonText (ml::grid::controlText (T ("关于", "About")));
-    settingsButton.setButtonText (ml::grid::controlText (T ("设置", "Settings")));
-    themeButton.setButtonText (ml::grid::controlText (ml::theme::dark ? T ("深色", "Dark") : T ("浅色", "Light")));
+    aboutButton.setButtonText ({});
+    aboutButton.setTooltip (T ("关于", "About"));
+    settingsButton.setButtonText ({});
+    settingsButton.setTooltip (T ("设置", "Settings"));
+    themeButton.setButtonText ({});
+    themeButton.setTooltip (T ("切换主题", "Toggle theme"));
     languageButton.setButtonText (ml::grid::controlText (en ? juce::String::fromUTF8 ("中文") : juce::String ("EN")));
     exportButton.setButtonText (ml::grid::controlText (T ("导出报告", "Export")));
     snapshotCaption.setText (T ("读数快照", "SNAPSHOT"), juce::dontSendNotification);

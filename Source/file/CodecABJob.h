@@ -18,6 +18,10 @@ struct CodecABResult
     juce::int64 encodedBytes = 0;
     float decodedLufs = kSilentDb;
     float decodedTp = kSilentDb;
+    int delaySamples = 0;
+    int tailSamples = 0;
+    float residual = 1.0f;
+    double peakTimeSeconds = -1.0;
     juce::String backend;
     juce::String ffmpegVersion;
 };

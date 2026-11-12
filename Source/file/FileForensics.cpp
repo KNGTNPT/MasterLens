@@ -189,6 +189,8 @@ juce::var FileForensics::toVar (double sr) const
         e->setProperty ("channel", f.channel);
         e->setProperty ("value", f.value);
         e->setProperty ("reviewed", f.reviewed);
+        e->setProperty ("ignored", f.ignored);
+        e->setProperty ("note", f.note);
         events.add (juce::var (e));
     }
     o->setProperty ("findings", events);

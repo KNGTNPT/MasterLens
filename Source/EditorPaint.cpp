@@ -38,6 +38,30 @@ void MasterLensAudioProcessorEditor::paint (juce::Graphics& g)
     byline.draw (g, juce::AffineTransform::translation (
         (float) brand.getX() - bylineInk.getX(),
         top + titleHeight + lineGap - bylineInk.getY()));
+    // 3.1: persistent measurement / monitoring context (what is measured vs what is heard).
+    {
+        const int ctxX = 372;
+        const int labelY = headerArea.getY() + 18;
+        const int valueY = labelY + 13;
+        g.setColour (ml::theme::textFaint);
+        g.setFont (ml::getMicroFont());
+        g.drawText (T ("测量", "METERING"), ctxX, labelY, 110, 12,
+                    juce::Justification::centredLeft, false);
+        g.drawText (T ("监听", "MONITORING"), ctxX + 132, labelY, 110, 12,
+                    juce::Justification::centredLeft, false);
+        g.setColour (ml::theme::textDim);
+        g.setFont (ml::getMonoFont (13.0f));
+        const juce::String metering = selectedPage == (int) ml::PageId::files
+            ? T ("文件输入", "FILE INPUT") : T ("工程输入", "PROJECT INPUT");
+        juce::String monitoring = T ("工程 · 主输出", "PROJECT · MAIN OUT");
+        if (processor.referencePlayer.isEnabled())      monitoring = T ("参考", "REFERENCE");
+        else if (processor.isAuditionActive())          monitoring = T ("问题片段", "EVIDENCE");
+        g.drawText (metering, ctxX, valueY, 120, 16, juce::Justification::centredLeft, false);
+        g.drawText (monitoring, ctxX + 132, valueY, 120, 16, juce::Justification::centredLeft, false);
+        g.setColour (ml::theme::text.withAlpha (0.12f));
+        g.fillRect ((float) (ctxX + 120), (float) labelY - 2.0f, 1.0f, 32.0f);
+    }
+
     ml::surface::hairlineH (g, 16.0f, width - 16.0f, 112.0f);
 
     g.setColour (ml::theme::card);
@@ -107,7 +131,14 @@ void MasterLensAudioProcessorEditor::paint (juce::Graphics& g)
             sourceIsProject = false;
         }
 
-        const auto leftText = (! sourceIsProject && footerStatusText.isNotEmpty()) ? footerStatusText : tech;
+        // Statuses are shown while a non-project source is monitored, and also
+        // when they carry a codec result or an error: otherwise a finished codec
+        // check (or a failure) disappears behind the technical line as soon as
+        // the preview is not running.
+        const bool statusVisible = footerStatusText.isNotEmpty()
+                                   && (! sourceIsProject || hasCodecPreview
+                                       || footerStatusColour == ml::theme::bad);
+        const auto leftText = statusVisible ? footerStatusText : tech;
         g.setColour (ml::theme::textFaint);
         g.setFont (ml::getLabelFont());
         g.drawFittedText (leftText, f.getX(), f.getY(), 300, f.getHeight(),
@@ -163,4 +194,51 @@ void MasterLensAudioProcessorEditor::paint (juce::Graphics& g)
         ml::paintBerryWordmark (g, brand, ml::theme::textFaint, 11.0f,
                                 juce::Justification::centredLeft);
     }
+}
+
+//==============================================================================
+void MasterLensAudioProcessorEditor::paintOverChildren (juce::Graphics& g)
+{
+    // oil-ui header squares: sun / info / gear glyphs instead of text labels.
+    const auto drawGlyph = [&] (juce::Rectangle<int> button, int which)
+    {
+        auto box = button.toFloat().withSizeKeepingCentre (18.0f, 18.0f);
+        const float s = box.getWidth() / 16.0f;
+        const auto c = box.getCentre();
+        g.setColour (ml::theme::textDim);
+        const float stroke = juce::jmax (1.0f, 1.25f * s);
+
+        if (which == 0) // sun
+        {
+            g.drawEllipse (c.x - 3.4f * s, c.y - 3.4f * s, 6.8f * s, 6.8f * s, stroke);
+            for (int i = 0; i < 8; ++i)
+            {
+                const float a = juce::MathConstants<float>::twoPi * (float) i / 8.0f;
+                const float r0 = 5.2f * s, r1 = 7.0f * s;
+                g.drawLine (c.x + std::cos (a) * r0, c.y + std::sin (a) * r0,
+                            c.x + std::cos (a) * r1, c.y + std::sin (a) * r1, stroke);
+            }
+        }
+        else if (which == 1) // info
+        {
+            g.drawEllipse (c.x - 6.2f * s, c.y - 6.2f * s, 12.4f * s, 12.4f * s, stroke);
+            g.drawLine (c.x, c.y - 1.6f * s, c.x, c.y + 3.2f * s, stroke);
+            g.fillEllipse (c.x - 0.8f * s, c.y - 3.8f * s, 1.6f * s, 1.6f * s);
+        }
+        else // gear
+        {
+            g.drawEllipse (c.x - 2.2f * s, c.y - 2.2f * s, 4.4f * s, 4.4f * s, stroke);
+            for (int i = 0; i < 8; ++i)
+            {
+                const float a = juce::MathConstants<float>::twoPi * (float) i / 8.0f;
+                const float r0 = 4.6f * s, r1 = 6.6f * s;
+                g.drawLine (c.x + std::cos (a) * r0, c.y + std::sin (a) * r0,
+                            c.x + std::cos (a) * r1, c.y + std::sin (a) * r1, stroke);
+            }
+        }
+    };
+
+    drawGlyph (themeButton.getBounds(), 0);
+    drawGlyph (aboutButton.getBounds(), 1);
+    drawGlyph (settingsButton.getBounds(), 2);
 }

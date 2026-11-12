@@ -31,8 +31,8 @@ public:
         // constrainer, so its limits are what the user can actually resize to.
         if (auto* constrainer = editor.getConstrainer())
         {
-            check (constrainer->getMinimumWidth() == 1120 && constrainer->getMinimumHeight() == 700,
-                   "host minimum editor size 1120x700");
+            check (constrainer->getMinimumWidth() == 1000 && constrainer->getMinimumHeight() == 630,
+                   "host minimum editor size 1000x630 (compact tier)");
             check (constrainer->getMaximumWidth() == 2240 && constrainer->getMaximumHeight() == 1400,
                    "host maximum editor size 2240x1400");
         }
@@ -42,8 +42,8 @@ public:
         }
 
         editor.setBoundsConstrained (juce::Rectangle<int> (0, 0, 800, 500));
-        check (editor.getWidth() >= 1120 && editor.getHeight() >= 700,
-               "shrinking below the canvas is refused");
+        check (editor.getWidth() >= 1000 && editor.getHeight() >= 630,
+               "shrinking below the compact canvas is refused");
         editor.setBoundsConstrained (juce::Rectangle<int> (0, 0, 4000, 3000));
         check (editor.getWidth() <= 2240 && editor.getHeight() <= 1400,
                "growing beyond 200% is refused");

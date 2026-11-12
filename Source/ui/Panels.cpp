@@ -84,6 +84,13 @@ void ReadoutBand::resized()
 
 void ReadoutBand::paint (juce::Graphics& g)
 {
+    // 3.1 vertical rail: one large mono readout, a target window, then rows.
+    if (getWidth() <= getHeight() * 2)
+    {
+        paintRail31 (g);
+        return;
+    }
+
     g.fillAll (theme::card);
 
     const int bandHeight = juce::jmax (
@@ -115,7 +122,131 @@ void ReadoutBand::paint (juce::Graphics& g)
     }
 }
 
+
+void ReadoutBand::paintRail31 (juce::Graphics& g)
+{
+    g.fillAll (theme::background);
+
+    auto area = getLocalBounds().reduced (16, 14);
+    const auto& main = cells[0];
+    const bool live = hasSignal && stats.integrated > -70.0f;
+
+    g.setColour (theme::textFaint);
+    g.setFont (getMicroFont());
+    g.drawText (main.label, area.removeFromTop (14), juce::Justification::centredLeft, false);
+
+    auto displayRow = area.removeFromTop (54);
+    const auto displayFont = getMonoFont (46.0f);
+    const int run = text::drawRun (g, displayFont, theme::text, main.value, displayRow.getX(),
+                                   text::centredBaseline (displayFont, displayRow));
+    g.setColour (theme::textFaint);
+    g.setFont (getMonoFont (11.0f));
+    g.drawText (main.unit, displayRow.getX() + run + 6, displayRow.getY() + 36, 44, 14,
+                juce::Justification::centredLeft, false);
+
+    // Target window: the marker is the live integrated value, the band is ±1 LU.
+    area.removeFromTop (8);
+    auto bandArea = area.removeFromTop (32);
+    {
+        auto trackArea = bandArea.removeFromTop (18).withSizeKeepingCentre (bandArea.getWidth(), 6);
+        g.setColour (theme::track);
+        g.fillRect (trackArea);
+
+        constexpr float span = 12.0f;
+        const auto xFor = [&] (float lufs)
+        {
+            const float t = juce::jlimit (0.0f, 1.0f, (lufs - (target - span * 0.5f)) / span);
+            return (float) trackArea.getX() + t * (float) trackArea.getWidth();
+        };
+
+        const float zoneL = xFor (target - 1.0f);
+        const float zoneR = xFor (target + 1.0f);
+        g.setColour (theme::accent.withAlpha (0.26f));
+        g.fillRect (juce::Rectangle<float> (zoneL, (float) trackArea.getY(),
+                                            juce::jmax (1.0f, zoneR - zoneL),
+                                            (float) trackArea.getHeight()));
+
+        if (live)
+        {
+            const float x = xFor (stats.integrated);
+            g.setColour (theme::text);
+            g.fillRect (juce::Rectangle<float> (x - 5.0f, (float) trackArea.getY() - 5.0f, 10.0f, 16.0f));
+        }
+
+        g.setColour (theme::textFaint);
+        g.setFont (getMicroFont());
+        g.drawText (T ("目标 ", "TARGET ") + num (target) + " \xc2\xb1 1.0 LU", bandArea,
+                    juce::Justification::centredLeft, false);
+    }
+
+    // One 36 px row per metric, label left and mono value right on one baseline.
+    for (int i = 1; i < 5; ++i)
+    {
+        auto row = area.removeFromTop (38);
+        g.setColour (theme::text.withAlpha (0.10f));
+        g.fillRect ((float) row.getX(), (float) row.getY(), (float) row.getWidth(), 1.0f);
+
+        auto inner = row.reduced (0, 8);
+        g.setColour (theme::textFaint);
+        g.setFont (getMicroFont());
+        g.drawText (cells[i].label, inner, juce::Justification::centredLeft, false);
+
+        const auto valueColour = cells[i].status == theme::bad ? theme::bad : theme::text;
+        text::drawValueUnitRight (g, inner, cells[i].value, cells[i].unit,
+                                  getMonoFont (15.0f), getMonoFont (10.0f),
+                                  valueColour, theme::textFaint, 4);
+    }
+
+    // oil-ui info rows: threshold, true-peak meter rate, source.
+    {
+        const std::pair<juce::String, juce::String> rows[] {
+            { T ("门限", "GATE"), "BS.1770-4" },
+            { T ("真峰值", "TP RATE"), meterText.isNotEmpty() ? meterText : juce::String ("--") },
+            { T ("来源", "SOURCE"), sourceText }
+        };
+
+        for (const auto& info : rows)
+        {
+            auto row = area.removeFromTop (28);
+
+            if (row.getHeight() < 20)
+                break;
+
+            g.setColour (theme::text.withAlpha (0.10f));
+            g.fillRect ((float) row.getX(), (float) row.getY(), (float) row.getWidth(), 1.0f);
+            auto inner = row.reduced (0, 7);
+            g.setColour (theme::textFaint);
+            g.setFont (getMicroFont());
+            g.drawText (info.first, inner, juce::Justification::centredLeft, false);
+            text::drawValueUnitRight (g, inner, info.second, {}, getMonoFont (12.0f), getMonoFont (9.0f),
+                                      theme::textDim, theme::textFaint, 4);
+        }
+    }
+
+    // Coverage sits at the bottom of the rail, never inside the readout.
+    auto footer = area.removeFromBottom (20);
+    g.setColour (theme::text.withAlpha (0.10f));
+    g.fillRect ((float) footer.getX(), (float) footer.getY() - 8.0f,
+                (float) footer.getWidth(), 1.0f);
+    g.setColour (theme::textFaint);
+    g.setFont (getMicroFont());
+    const juce::String cov = stats.coveragePct >= 0.0f ? num (stats.coveragePct) + " %"
+                                                       : T ("未覆盖", "N/A");
+    g.drawText (T ("覆盖 ", "COVERAGE ") + cov, footer,
+                juce::Justification::centredLeft, false);
+    if (clockText.isNotEmpty())
+        g.drawText (clockText, footer, juce::Justification::centredRight, false);
+}
+
 //==============================================================================
+void ReadoutBand::setSessionInfo (juce::String source, juce::String meterRate, juce::String clock)
+{
+    sourceText = std::move (source);
+    meterText = std::move (meterRate);
+    clockText = std::move (clock);
+    repaint();
+}
+
 void MetricGrid::setValues (const StatsSnapshot& s, const BasisContext& b,
                             const PlatformSummary& p, float targetLufs,
                             float ceilingDb, bool signal)

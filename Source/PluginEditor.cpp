@@ -95,6 +95,59 @@ MasterLensAudioProcessorEditor::MasterLensAudioProcessorEditor (MasterLensAudioP
     detail.onTargetWarChanged = [this] (float pct) { setTargetWar (pct); };
     detail.onApplyTargetPlan = [this] { applyTargetPlan(); };
     detail.onChooseFiles = [this] { chooseFiles(); };
+
+    detail.onReferenceCue = [this] (int which)
+    {
+        const double duration = processor.referencePlayer.getDuration();
+        const double refTime = juce::jlimit (0.0, juce::jmax (0.0, duration),
+                                             stats.hostPosition + processor.referencePlayer.getOffsetSeconds());
+
+        if (which == 0)
+            refCueA = refTime;
+        else if (which == 1)
+            refCueB = refTime;
+        else
+            refLoop = ! refLoop;
+
+        if (refCueB <= refCueA + 0.05)
+            refLoop = false;
+
+        processor.referencePlayer.setLoop (refLoop, refCueA, refCueB - refCueA);
+
+        if (refLoop && processor.referencePlayer.isReady())
+            processor.referencePlayer.setEnabled (true);
+
+        processor.apvts.state.setProperty ("refCueA", refCueA, nullptr);
+        processor.apvts.state.setProperty ("refCueB", refCueB, nullptr);
+        processor.apvts.state.setProperty ("refLoop", refLoop, nullptr);
+        detail.setReferenceCues (refCueA, refCueB, refLoop, refCueAName, refCueBName);
+    };
+
+    detail.onReferenceCueName = [this] (int which, const juce::String& text)
+    {
+        const auto name = text.isNotEmpty() ? text.substring (0, 18)
+                                            : (which == 0 ? juce::String ("A") : juce::String ("B"));
+        if (which == 0) refCueAName = name; else refCueBName = name;
+        processor.apvts.state.setProperty (which == 0 ? "refCueAName" : "refCueBName", name, nullptr);
+        detail.setReferenceCues (refCueA, refCueB, refLoop, refCueAName, refCueBName);
+    };
+
+
+    detail.onDeliverySpecChanged = [this] (const ml::DeliverySpec& s)
+    {
+        deliverySpec = s;
+        detail.setDeliverySpec (deliverySpec);
+    };
+
+    refCueA = (double) processor.apvts.state.getProperty ("refCueA", 0.0);
+    refCueB = (double) processor.apvts.state.getProperty ("refCueB", 0.0);
+    refLoop = (bool) processor.apvts.state.getProperty ("refLoop", false);
+    refCueAName = processor.apvts.state.getProperty ("refCueAName", "A").toString();
+    refCueBName = processor.apvts.state.getProperty ("refCueBName", "B").toString();
+    if (refCueB <= refCueA + 0.05)
+        refLoop = false;
+    processor.referencePlayer.setLoop (refLoop, refCueA, refCueB - refCueA);
+    detail.setReferenceCues (refCueA, refCueB, refLoop, refCueAName, refCueBName);
     detail.onChooseFolder = [this] { chooseFolder(); };
     detail.onPlayFile = [this] { toggleFilePlayback(); };
     detail.onSeekFile = [this] (double seconds)
@@ -181,7 +234,7 @@ MasterLensAudioProcessorEditor::MasterLensAudioProcessorEditor (MasterLensAudioP
         (float) processor.apvts.state.getProperty ("targetWarPct", 50.0));
 
     setResizable (true, true);
-    setResizeLimits (1120, 700, 2240, 1400);
+    setResizeLimits (1000, 630, 2240, 1400);
     if (auto* limits = getConstrainer()) limits->setFixedAspectRatio (1.6);
     setSize (juce::roundToInt (1120.0f * uiScale), juce::roundToInt (700.0f * uiScale));
 

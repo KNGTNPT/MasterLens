@@ -220,4 +220,40 @@ exec sleep 10
         corrupt_checks=json.loads((root/'codec-corrupt.json').read_text(encoding='utf-8'))['codecChecks']
         check(not corrupt_checks or not corrupt_checks[0]['ok'],
               'corrupt input cannot pass codec coverage')
+# 3.4: incremental batch state + summary.
+with tempfile.TemporaryDirectory(prefix='masterlens-batch-') as temp:
+    root = Path(temp)
+    folder = root / 'album'
+    folder.mkdir()
+    write(folder / 'a.wav', 48000)
+    write(folder / 'b.wav', 48000)
+    state = root / 'state.json'
+    summary = root / 'summary.json'
+    args = [cli, 'analyze', str(folder), '--state', str(state), '--summary', str(summary)]
+    first = subprocess.run(args, capture_output=True, text=True, encoding='utf-8', errors='replace')
+    check(first.returncode == 0, f'batch run1 exit {first.returncode}: {first.stderr}')
+    s1 = json.loads(summary.read_text(encoding='utf-8'))
+    check(s1['analyzed'] == 2 and s1['skipped'] == 0, 'batch run1 analyses both files')
+    second = subprocess.run(args, capture_output=True, text=True, encoding='utf-8', errors='replace')
+    check(second.returncode == 0, f'batch run2 exit {second.returncode}: {second.stderr}')
+    s2 = json.loads(summary.read_text(encoding='utf-8'))
+    check(s2['analyzed'] == 0 and s2['skipped'] == 2, 'batch run2 skips unchanged files')
+    check(all(f.get('previousStatus') for f in s2['files']), 'batch summary keeps the previous status')
+    write(folder / 'a.wav', 48000, inverted=True)
+    third = subprocess.run(args, capture_output=True, text=True, encoding='utf-8', errors='replace')
+    check(third.returncode == 0, f'batch run3 exit {third.returncode}: {third.stderr}')
+    s3 = json.loads(summary.read_text(encoding='utf-8'))
+    check(s3['analyzed'] == 1 and s3['skipped'] == 1, 'batch run3 re-analyses only the changed file')
+    changed = [f for f in s3['files'] if f['changed']]
+    check(len(changed) == 1 and changed[0]['versionChanged'], 'batch summary flags the version change')
+    # 3.4: --watch supervises repeated passes; the state carries across them.
+    watch_summary = root / 'watch-summary.json'
+    watched = subprocess.run([cli, 'analyze', str(folder), '--state', str(state),
+                              '--summary', str(watch_summary), '--watch', '1',
+                              '--watch-iterations', '2'],
+                             capture_output=True, text=True, encoding='utf-8', errors='replace')
+    check(watched.returncode == 0, f'watch exit {watched.returncode}: {watched.stderr}')
+    ws = json.loads(watch_summary.read_text(encoding='utf-8'))
+    check(ws['skipped'] == 2 and ws['analyzed'] == 0, 'watch pass reuses the incremental state')
+
 print(f'{checks} CLI integration checks passed, {skipped} skipped')

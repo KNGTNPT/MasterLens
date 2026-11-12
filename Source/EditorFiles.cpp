@@ -133,7 +133,7 @@ void MasterLensAudioProcessorEditor::toggleFilePlayback()
     repaint();
 }
 
-void MasterLensAudioProcessorEditor::startFileAnalysis (const juce::StringArray& paths)
+void MasterLensAudioProcessorEditor::startFileAnalysis (const juce::StringArray& paths, bool merge)
 {
     const auto expanded = ml::FileAnalyzer::expandPaths (paths);
 
@@ -161,10 +161,22 @@ void MasterLensAudioProcessorEditor::startFileAnalysis (const juce::StringArray&
     if (pendingAlbumName.isEmpty() || pendingAlbumName == "/")
         pendingAlbumName = "File QC";
 
-    fileResults.clear();
-    fileAnalysisStatus = T ("准备分析 ", "Preparing ") + juce::String (expanded.size())
-                         + T (" 个文件", " files");
-    detail.setFileResults ({}, true, 0, expanded.size(), fileAnalysisStatus);
+    if (! merge)
+    {
+        fileResults.clear();
+        fileAnalysisStatus = T ("准备分析 ", "Preparing ") + juce::String (expanded.size())
+                             + T (" 个文件", " files");
+        detail.setFileResults ({}, true, 0, expanded.size(), fileAnalysisStatus);
+    }
+    else
+    {
+        // 3.4: watch-folder re-check. Keep the unchanged rows and only replace
+        // the entries whose files actually changed.
+        fileAnalysisStatus = T ("复检 ", "Re-checking ") + juce::String (expanded.size())
+                             + T (" 个变更文件", " changed files");
+        detail.setFileResults (fileResults, true, 0, expanded.size(), fileAnalysisStatus);
+    }
+
     setPage ((int) ml::PageId::files);
 
     if (! fileAnalyzer.analyse (expanded))
@@ -196,6 +208,14 @@ void MasterLensAudioProcessorEditor::pollFileAnalysis()
         {
             addFileResultToAlbum (result);
             added = true;
+        }
+
+        for (auto it = fileResults.begin(); it != fileResults.end();)
+        {
+            if (it->path == result.path)
+                it = fileResults.erase (it);
+            else
+                ++it;
         }
 
         fileResults.push_back (std::move (result));
@@ -339,12 +359,47 @@ void MasterLensAudioProcessorEditor::exportFileTable()
                                   const auto basis = currentBasis();
                                   const float target = basis.hasComparison() ? basis.comparisonLufs()
                                       : (basis.mode == ml::BasisMode::manual ? processor.getTargetLufs() : -14.0f);
+                                  const auto eff = ml::effectiveDelivery (deliverySpec, target, processor.getCeilingDb());
                                   juce::Array<juce::var> files;
                                   for (const auto& r : exportResults)
-                                      files.add (ml::fileResultToVar (r, target, processor.getCeilingDb(), &deliverySpec));
+                                      files.add (ml::fileResultToVar (r, eff.targetLufs, eff.ceilingDbtp, &deliverySpec));
                                   root->setProperty ("files", files);
                                   root->setProperty ("deliverySpec", deliverySpec.toVar());
-                                  if (ml::writeTextAtomic (file, ml::fileResultsCsv (exportResults, target, processor.getCeilingDb()))
+
+                                  // 3.4 GUI batch summary: the same pass / review /
+                                  // block / error counts the CLI prints, exported
+                                  // with the table instead of only on the console.
+                                  {
+                                      int passed = 0, review = 0, blocked = 0, errors = 0;
+
+                                      for (const auto& r : exportResults)
+                                      {
+                                          if (! r.ok) { ++errors; continue; }
+
+                                          const auto specCheck = ml::evaluateSpec (r, deliverySpec);
+                                          const bool over = r.stats.truePeakDb > eff.ceilingDbtp + 0.05f;
+
+                                          if (r.forensic.blockers() > 0 || over
+                                              || (deliverySpec.enabled && ! specCheck.ok))
+                                              ++blocked;
+                                          else if (! r.forensic.findings.empty())
+                                              ++review;
+                                          else
+                                              ++passed;
+                                      }
+
+                                      auto* summary = new juce::DynamicObject();
+                                      summary->setProperty ("version", ml::kVersion);
+                                      summary->setProperty ("analyzed", (int) exportResults.size());
+                                      summary->setProperty ("passed", passed);
+                                      summary->setProperty ("review", review);
+                                      summary->setProperty ("blocked", blocked);
+                                      summary->setProperty ("errors", errors);
+                                      summary->setProperty ("targetLufs", eff.targetLufs);
+                                      summary->setProperty ("ceilingDbtp", eff.ceilingDbtp);
+                                      root->setProperty ("summary", juce::var (summary));
+                                  }
+                                  if (ml::writeTextAtomic (file, ml::fileResultsCsv (exportResults, eff.targetLufs, eff.ceilingDbtp))
                                       && ml::writeTextAtomic (jsonFile, juce::JSON::toString (juce::var (root), true)))
                                   {
                                       footerStatusText = T ("CSV + JSON 已导出 · ", "CSV + JSON exported · ")

@@ -19,8 +19,9 @@ void DetailArea::ensureBackground()
 
     juce::Graphics bg (backgroundCache);
     bg.addTransform (juce::AffineTransform::scale ((float) scale));
-    const auto b = getLocalBounds().toFloat().reduced (0.5f);
-    surface::panel (bg, b);
+    // 3.1: pages sit on the plate; the measurement well is the only raised
+    // surface. No rounded page card.
+    bg.fillAll (theme::background);
 
     backgroundDirty = false;
     cachedBackgroundRevision = theme::revision();
@@ -51,7 +52,7 @@ void DetailArea::paintPageHeader (juce::Graphics& g, const juce::String& meta)
     auto header = contentArea().removeFromTop (32);
 
     g.setColour (theme::text);
-    g.setFont (getTitleFont());
+    g.setFont (getPageTitleFont());
     g.drawText (pageTitle (page), header.removeFromLeft (juce::jmin (320, header.getWidth() * 2 / 3)),
                 juce::Justification::centredLeft);
 
@@ -71,7 +72,7 @@ void DetailArea::paintPageHeader (juce::Graphics& g, const juce::String& meta)
     }
 
     g.setColour (theme::textFaint);
-    g.setFont (getLabelFont());
+    g.setFont (getMetaFont());
     g.drawText (meta, header, juce::Justification::centredRight);
 
     if (page == PageId::spectrum)
@@ -187,8 +188,68 @@ void DetailArea::paint (juce::Graphics& g)
 }
 
 //==============================================================================
+void DetailArea::paintDeliveryLedger (juce::Graphics& g)
+{
+    if (deliveryArea.isEmpty() || deliveryArea.getWidth() < 160)
+        return;
+
+    auto area = deliveryArea;
+    auto head = area.removeFromTop (18);
+    g.setColour (theme::textFaint);
+    g.setFont (getMicroFont());
+    g.drawText (T ("平台交付", "DELIVERY"), head, juce::Justification::centredLeft, false);
+
+    const bool live = state.stats.integrated > -70.0f;
+    int limited = 0;
+
+    for (int i = 0; i < ml::numPlatforms; ++i)
+    {
+        const auto& p = ml::platform (i);
+        const auto r = ml::evaluate (state.stats, p);
+        const bool warn = r.state != DeliveryState::ok;
+
+        if (warn && live) ++limited;
+
+        auto row = area.removeFromTop (27);
+        g.setColour (theme::text.withAlpha (0.08f));
+        g.fillRect ((float) row.getX(), (float) row.getBottom() - 1.0f, (float) row.getWidth(), 1.0f);
+
+        const auto colour = ! live ? theme::textFaint
+                          : r.state == DeliveryState::over ? theme::bad
+                          : r.state == DeliveryState::warning ? theme::warn
+                                                              : theme::accent;
+        g.setColour (colour);
+        g.fillEllipse ((float) row.getX(), (float) row.getCentreY() - 2.5f, 5.0f, 5.0f);
+
+        g.setColour (theme::textDim);
+        g.setFont (getMicroFont());
+        g.drawText (T (p.nameZh, p.nameEn), row.withTrimmedLeft (12).withTrimmedRight (108),
+                    juce::Justification::centredLeft, false);
+
+        g.setColour (theme::textFaint);
+        g.setFont (getMonoFont (10.0f));
+        g.drawText (num (p.targetLufs), row.withTrimmedRight (58).removeFromRight (50),
+                    juce::Justification::centredRight, false);
+
+        const float delta = state.stats.integrated - p.targetLufs;
+        const bool near = ! live || std::abs (delta) < 0.05f;
+        g.setColour (near ? theme::textFaint : colour);
+        g.drawText (near ? juce::String::fromUTF8 ("\xe2\x80\x94") : sgn (delta) + " LU",
+                    row.removeFromRight (52), juce::Justification::centredRight, false);
+    }
+
+    auto foot = area.removeFromTop (20);
+    g.setColour (theme::textFaint);
+    g.setFont (getMicroFont());
+    const auto footText = live ? juce::String (limited) + T (" 个平台受限", " platforms limited")
+                               : T ("等待信号", "WAITING FOR SIGNAL");
+    g.drawText (footText, foot, juce::Justification::centredLeft, false);
+}
+
 void DetailArea::paintLoudness (juce::Graphics& g)
 {
+    paintDeliveryLedger (g);
+
     if (loudnessSideArea.isEmpty())
         return;
 
