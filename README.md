@@ -5,7 +5,7 @@
 **母带响度 / 文件 QC / 频谱 / 声场 / 专辑交付 / CLI**<br>
 by **BerryStudio** · developer **KNGTNPT 兰**<br>
 macOS / Windows · VST3 / AU / 独立版 · C++17 + JUCE 8<br>
-当前版本：**3.0.3**（界面整理，已发布）
+当前版本：**3.1.0**（Calibrated Plate 与交付工作流）
 
 MasterLens 是放在母带链末尾的小检查员：这首歌有多响、峰值会不会顶过头、立体声合成单声道后会不会变薄、交出去之前还有哪里值得听一遍，它都帮你留意着。把它插在 Master / Stereo Out 的最后一级就好。
 
@@ -13,60 +13,67 @@ MasterLens 是放在母带链末尾的小检查员：这首歌有多响、峰值
 
 歌该做成什么样，还是你的耳朵说了算。数字有点多也没关系，我们一项项看；它负责把容易漏掉的小细节摊开，陪你把交付前的最后一遍检查做完。
 
-## 3.0.3：排印、层级与可读性整理
+## 3.1.0：Calibrated Plate 与交付工作流
 
-3.0.3 只动界面。测量、监听、随包 FFmpeg 与 CLI 行为都和 3.0.2 一样；改的是评审里那些“能读，但还不够稳”的细节。界面规范也一起重写进了 [DESIGN.md](DESIGN.md) 和 [FRONTEND-DESIGN.md](FRONTEND-DESIGN.md)。
+3.1 把 3.0.4–3.4 的能力和 Calibrated Plate 界面并入同一版本。测量口径、随包 FFmpeg 与默认旁路不变；改变的是界面组织，以及从文件 QC 到交付的那条工作流。
 
-- **四档排印**：Label 14 / Value 18 / Title 20 / Critical 30（JUCE 字体高度，落屏约 11 / 14 / 16 / 24 px）。页面标题改用 Title，右上元信息退回 Label，页脚不再和标题争音量；读数带仍共用一条基线。
-- **浅色主题**：`good / warn / bad / cyan / violet` 换成能承载 14 px 文字的深值；状态胶囊由同色填充改为中性底 + 1px 语义色描边；accent 文字压在 `accentSoft` 上时改用 `accentInk`。
-- **频谱页**：补上与其他页同构的标题行；dB 轴从 0…−100 改为 +6…−90，格线与曲线共用同一映射，轴标签使用真正的减号（U+2212）。
-- **数字与分隔符**：读数统一走格式化器（U+2212 负号、en dash 范围、负零归零、`7.8%` / `97/100` 紧贴、时间区间两侧留空）；元信息统一用 `·`，不再混用 `|` 和 `/`。
-- **中英混排**：中文页不再夹整句英文（`L / 真峰值`、`完成 2/2`、`离线 · 文件 QC`），只保留 `dBTP`、`LUFS`、M/S、TP、DC、CLIP、SHA256 这类固定缩写。
-- **构图**：关于浮层 520→350、设置 520→430，按内容收紧；平台页没有参考时不再画空卡，改为满宽表格 + 两行说明；信号卡风险条移入文字流；表格单位降一档；空量表轨道使用 `theme::track`。
-- **可访问性**：中文标签不再加字距，只有全大写拉丁标签使用 0.04em tracking；最小缩放 100%（窗口 1120×700 – 2240×1400），80% 档取消。
+- **Calibrated Plate**：去掉一叠带边框的卡片，改成一块校准面板 + 一扇深石墨测量窗。深浅主题都保留，但浅色的历史图 / 频谱图仍是深窗——这是整套设计的签名。响度页用 46px 等宽主读数、目标窗口、指标行、覆盖率与平台交付账本。
+- **紧凑档**：窗口下限 1000×630；这一区间用 1:1 字号、收窄左栏并隐藏交付账本，不缩小中文。1120 及以上恢复右侧账本与常规布局（实拍 [compact-3.1.0.png](docs/compact-3.1.0.png)）。
+- **可信交付（3.0.4）**：`effectiveDelivery` 统一 GUI / CLI / CSV / JSON 的有效目标，客户规格优先；独立版文件播放按**唯一覆盖时间段**统计，部分播放不再报 100%。
+- **文件 QC 工作流**：跨文件「下一处待回听」；证据行单击试听、`[ ] / [x]` 确认、双击添加备注或忽略；`ignored / note` 随证据 JSON 导出；「客户规格」浮层实时预览通过与阻断。
+- **参考试听（3.2 首批）**：参考 A/B 片段、命名与 LOOP（64 样本等功率交叉淡化）；超过 64 MB 的参考改走有界流式读取（8 s 预读，约 3 MB），≤30 s 的 Cue 可循环，无 Cue 时用前 60 s 有界前缀测响度并支持等响监听。
+- **编码对听（3.3 首批）**：前 8k 样本互相关测编码延迟并按延迟对齐 A/B；A−B 等响差分（+6 dB）听伪影；4× sinc 插值定位编码后真峰值；JSON 公开 `delaySamples / tailSamples / residual`。
+- **批量交付（3.4 首批）**：CLI `--state / --summary / --retry / --watch` 做增量队列与连续监视；GUI 监控按 mtime/size 只复检变更文件；导出 QC 的 JSON 带 `summary` 计数块。
 
-### 3.0.3 验证
+### 3.1.0 验证
 
-- UI 布局：**46/46 场景通过**；`docs/layout-3.0.3.json` 共 92 条记录，0 失败。详细记录见 [3.0.3 验证记录](docs/performance-3.0.3.md)。含宿主 resize 断言：最小 1120×700、最大 2240×1400，`setBoundsConstrained(800×500)` 被拒绝。
-- DSP / 可靠性：**178 项通过**；CLI：**76 项通过**（3.0.3 构建 + 随包运行时，0 跳过）。
+- 构建：Universal（arm64 + x86_64）的 AU / VST3 / Standalone / CLI / UiShot / DspTest 全部通过。
+- DSP / 可靠性：**214 passed / 0 failed / 0 skipped**（`MASTERLENS_REQUIRE_RUNTIME=1`）。
+- CLI：**86 passed / 0 skipped**（随包运行时）；UI 布局：**46/46 场景**，`docs/layout-3.1.0.json` 92 条记录 0 失败。
 - `auval -v aufx Maln OrcA`：**PASS**，`Cocoa Views Available: 1`。
-- 截图：8 张，`docs/screenshots-3.0.3.json` 记录尺寸、参数、渲染器与 SHA-256。
-- 已发布：[v3.0.3](https://github.com/KNGTNPT/MasterLens/releases/tag/v3.0.3)，含 macOS DMG 与 Windows x64 / ARM64 安装包、`SHA256SUMS.txt`。
+- 截图：9 张 `docs/*-3.1.0.png`（含紧凑档），`docs/screenshots-3.1.0.json` 记录参数、尺寸与 SHA-256。
+- 本机 DMG 已打包并复核：版本 3.1.0、三份插件包内的 FFmpeg 签名有效、CLI 在无 PATH 时可完成 MP3 编码。
 
-![MasterLens 3.0.3 响度与动态](docs/screenshot-3.0.3.png)
+![MasterLens 3.1.0 响度与校准面板](docs/screenshot-3.1.0.png)
 
-![MasterLens 3.0.3 信号健康](docs/signal-3.0.3.png)
+![MasterLens 3.1.0 信号健康](docs/signal-3.1.0.png)
 
-![MasterLens 3.0.3 频谱平衡](docs/spectrum-3.0.3.png)
+![MasterLens 3.1.0 频谱](docs/spectrum-3.1.0.png)
 
-![MasterLens 3.0.3 声场与相位](docs/stereo-3.0.3.png)
+![MasterLens 3.1.0 声场与相位](docs/stereo-3.1.0.png)
 
-![MasterLens 3.0.3 文件 QC](docs/fileqc-3.0.3.png)
+![MasterLens 3.1.0 文件 QC](docs/fileqc-3.1.0.png)
 
-![MasterLens 3.0.3 关于页](docs/about-3.0.3.png)
+![MasterLens 3.1.0 关于页](docs/about-3.1.0.png)
 
-![MasterLens 3.0.3 编码就绪状态](docs/codec-ready-3.0.3.png)
+![MasterLens 3.1.0 紧凑档](docs/compact-3.1.0.png)
 
-![MasterLens 3.0.3 编码失败状态](docs/codec-failed-3.0.3.png)
+![MasterLens 3.1.0 编码就绪状态](docs/codec-ready-3.1.0.png)
 
-## 界面规范（3.0.3 重写）
+![MasterLens 3.1.0 编码失败状态](docs/codec-failed-3.1.0.png)
 
-这一版把界面约束从“三档字号 + 明色指示灯色”改成可以直接落地的 token 与规则。完整内容见 [DESIGN.md](DESIGN.md)（MasterLens 硬性约束）和 [FRONTEND-DESIGN.md](FRONTEND-DESIGN.md)（团队参考）。
+## 3.0.3：排印与层级整理（历史）
 
-| 角色 | 字号（JUCE 高度） | 落屏约 | 用途 |
-| --- | --- | --- | --- |
-| Label | 14 Regular | 11 px | 标签、刻度、单位、表头、按钮、导航 |
-| Value | 18 Medium，tabular | 14 px | 常规读数、表格数值、输入值、操作文字 |
-| Title | 20 Medium | 16 px | 页面标题 |
-| Critical | 30 Bold，tabular | 24 px | 仅 LUFS / 真峰值，同屏最多两处 |
+3.0.3 只动界面：四档排印、浅色状态色、频谱 +6…−90 dB 轴、数字与分隔符、中英混排、浮层构图与最小缩放。完整记录见 [3.0.3 验证记录](docs/performance-3.0.3.md)。
 
-- **只从四个访问器取字号**：`getLabelFont()`、`getValueFont()`、`getTitleFont()`、`getCriticalFont()`；组件内不新建字体，标签与数值至少差 4 个单位。
-- **明暗分工**：暗色频谱允许比文字更亮；明色频谱 / 时频图使用独立深石墨面，条形图沿用卡片面。状态色不铺同色底，避免 14 px 文字掉到 3.5–3.9:1。
-- **分隔符各管一类**：元信息用 `·`；`/` 只出现在名称与单位内部（`WAV / AIFF`、`kHz / 24`）；`|` 不再用于元信息。
-- **缩放只有 100%–200%**：整张画布、文字、控件共用同一个缩放因子；默认优先 125%，按屏幕可用空间收敛。
-- **中英规则**：中文保持正常字距；只有全大写拉丁标签加 0.04em tracking。中文页面不出现整句英文。
+## 界面规范（Calibrated Plate）
 
-## 3.0.2：安装包自带 FFmpeg（上一版）
+3.1 把 3.0.3 的四档语义字体继续用于标签与常规读数，同时在测量页引入更大的显示层级与共用测量窗。完整规则见 [DESIGN.md](DESIGN.md)、[FRONTEND-DESIGN.md](FRONTEND-DESIGN.md) 与 [design-3.1.md](docs/design-3.1.md)。
+
+| 角色 | 3.1 取值 | 用途 |
+| --- | --- | --- |
+| Display | 46 px Mono | 综合响度主读数，同屏只此一处 |
+| Title / Value | 15 px | 页标题、面板标题、指标与表格数值 |
+| Label | 12 px | 标签、导航、按钮；全大写拉丁 +0.10em |
+| Micro | 10–11 px | 元信息、单位旁注、页脚 |
+
+- **材质分层**：深色是石墨仪器，浅色是暖纸面板；测量窗口两种主题都保持深石墨，不随主题反相。
+- **只靠细线分区**：1px hairline + 内凹窗口 + 留白，不用圆角卡片、投影和彩色底；一屏最多一个实心强调按钮。
+- **数字与分隔符**：所有数值走等宽数字；U+2212 负号、en dash 范围、负零归零；元信息统一 `·`，`/` 只留在名称与单位内部。
+- **语言安全**：中文标签不缩、不加字距；全大写拉丁才加字距；固定标签列 / 数值列，切换语言不推挤行。
+- **缩放**：100%–200%，默认优先 125%；1000×630 紧凑档按 1:1 布局，不缩小中文字号。
+
+## 3.0.2：安装包自带 FFmpeg（历史）
 
 3.0.2 把 3.0.1 准备好的运行时结构真正填满：安装后直接可用 AAC 256k / MP3 320k 编码 A/B，不需要 Homebrew、PATH 或手动安装 FFmpeg。
 
@@ -102,22 +109,22 @@ MasterLens 是放在母带链末尾的小检查员：这首歌有多响、峰值
 | 频谱与声场 | 低中高频怎么分布，左右有多宽，合成单声道后会不会变薄。提供 8192 FFT、频谱图、10 段频段热力、相关性、宽度与三段侧向能量 |
 | 平台后果 | 按不同平台参照，看看可能需要调多少电平、峰值会到哪里。包含 Spotify、Apple Music、YouTube、Tidal、Amazon、SoundCloud、播客和俱乐部的本机情景与目标差额 |
 | 专辑门禁 | 哪首和整张专辑差得有点远，哪些检查还没过。包含专辑中位比较、测量覆盖度、可开关规则、风险排序、JSON / TXT 证明与证据哈希 |
-| 文件 QC | 不用在 DAW 里从头播完，直接检查导出的音频。按原生采样率分析，保留样本证据、头尾静音、分频折叠、增益预算与源文件 SHA256；导出 CSV + JSON，成功结果写入当前专辑 |
-| 参考与试听 | 和参考曲比一比，也能单独回听可疑片段。支持参考轨 A/B、宿主播放头同步、等响监听、包络粗略对齐和信号区域试听 |
-| 编码 A/B | 随包 FFmpeg 生成 AAC 256k / MP3 320k，在同一时间码切换原始与编码后，比较 ΔLUFS / ΔTP；失败会明确说明原因 |
-| 报告与自动化 | 把检查结果留档，或交给脚本批量处理。提供 TXT / JSON / CSV / PDF、100 ms 原始序列、时间线选区估算和无界面的 CLI |
+| 文件 QC | 不用在 DAW 里从头播完，直接检查导出的音频。按原生采样率分析，保留样本证据、头尾静音、分频折叠、增益预算与源文件 SHA256；可跨文件「下一处待回听」、确认 / 忽略证据并写备注；「客户规格」实时预览通过或阻断；导出 CSV + JSON 并写入当前专辑 |
+| 参考与试听 | 和参考曲比一比，也能单独回听可疑片段。支持参考 A/B 片段、命名与 LOOP、宿主播放头同步、等响监听和粗略对齐；超过 64 MB 的参考走有界流式读取，≤30 s 的 Cue 可循环 |
+| 编码 A/B | 随包 FFmpeg 生成 AAC 256k / MP3 320k；按互相关测出的编码延迟对齐 A/B，比较 ΔLUFS / ΔTP，可听等响 A−B 差分并跳到编码后最高峰；失败会明确说明原因 |
+| 报告与自动化 | 把检查结果留档，或交给脚本批量处理。提供 TXT / JSON / CSV / PDF、100 ms 原始序列与无界面 CLI；`--state / --summary / --retry / --watch` 支持增量队列、失败重试和连续监视 |
 
 ## 五分钟上手
 
 ### 先装好，再播一首
 
-[下载最新发布版](https://github.com/KNGTNPT/MasterLens/releases/tag/v3.0.3)（当前 3.0.3）。macOS 打开 DMG，运行「安装 Install.command」；Windows 运行对应 x64 / ARM64 的 EXE，然后重启 DAW。
+[下载最新发布版](https://github.com/KNGTNPT/MasterLens/releases/tag/v3.1.0)（当前 3.1.0）。macOS 打开 DMG，运行「安装 Install.command」；Windows 运行对应 x64 / ARM64 的 EXE，然后重启 DAW。把窗口拖窄到 1000×630 会进入紧凑档：字号不缩，左栏收窄，交付账本先让位给读数。
 
 把 MasterLens 插在母带链最后，先播 20–30 秒，跟它打个招呼。左侧的综合响度看整体有多响，真峰值看最高处有没有越线；LRA 看强弱变化的范围，PLR 看峰值与平均响度之间还留了多少空间。中央曲线会把变化过程画出来。
 
 底部「比较基准」决定拿谁来对照：平台参照、参考曲、专辑中位，或者你自己设定的目标。想手动填目标，就选「手动参考值」再改 REF；CEIL 是你设定的真峰值上限。先用默认值熟悉界面也完全可以呀。
 
-要重新测一次，点「清零」或按 R。按住 Shift+空格可保持显示；A / B 存放读数快照，右键清空。
+要重新测一次，点「清零」或按 R。按住 Shift+空格可保持显示；底部按钮上的 1 / 2 存放读数快照，右键清空。
 
 ### 整张专辑，拖进来一起看看
 
@@ -149,6 +156,8 @@ MasterLensCli analyze track.wav --csv
 MasterLensCli analyze /path/to/album --target -14 --ceiling -1 --fail-on error --json qc.json
 MasterLensCli analyze track.wav --spec delivery-spec.json --json spec-qc.json
 MasterLensCli analyze track.wav --codec mp3 --json codec-qc.json
+MasterLensCli analyze /path/to/album --state qc-state.json --summary qc-summary.json --retry 2
+MasterLensCli analyze /path/to/album --state qc-state.json --watch 2 --watch-iterations 10
 ```
 
 支持多个路径与递归文件夹。`--fail-on error` 对样本阻断或超过自选 TP 上限返回 2；`--fail-on warning` 连需要试听的提示与明显分频抵消也一起拦下。0 是分析完成，1 是输入、解码或写报告失败，2 是 QC 未通过。默认不开门禁，适合先拿报告再判断。
@@ -203,7 +212,7 @@ scripts/verify-runtime.sh third_party/ffmpeg/macos-universal/ffmpeg macos-univer
 
 发布流程遵循 [`docs/ffmpeg-release-readiness-guide.md`](docs/ffmpeg-release-readiness-guide.md)：先准备随包 FFmpeg，再跑 DSP / CLI / 布局 / 安装产物门禁。开发环境没有随包运行时，可用 `MASTERLENS_ALLOW_SYSTEM_FFMPEG=1` 显式使用系统 ffmpeg；缺失运行时在 `MASTERLENS_REQUIRE_RUNTIME=1` 下直接失败。
 
-本地验证（3.0.3 构建）：**178 项 DSP / 可靠性断言**、**76 项 CLI 集成检查**、**46/46 布局场景**（92 条记录）。原生 macOS / Windows 安装包由 [GitHub Actions](https://github.com/KNGTNPT/MasterLens/actions) 构建；三个目标全部成功后才上传 Release，并附带 `SHA256SUMS.txt`。离屏检查和构建不能代替真实 DAW 与音频硬件回归。
+本地验证（3.1.0 Universal 构建）：**214 项 DSP / 可靠性断言**、**86 项 CLI 集成检查**、**46/46 布局场景**（92 条记录），`auval` PASS。本机 DMG 已打包并复核运行时与 CLI。原生 macOS / Windows 安装包由 [GitHub Actions](https://github.com/KNGTNPT/MasterLens/actions) 构建；三个目标全部成功后上传 Release，并附带 `SHA256SUMS.txt`。离屏检查和构建不能代替真实 DAW 与音频硬件回归。
 
 ## 工程结构
 
@@ -211,7 +220,7 @@ scripts/verify-runtime.sh third_party/ffmpeg/macos-universal/ffmpeg macos-univer
 - `Source/Editor*.cpp`：窗口布局、控制、调度和报告。
 - `Source/ui/`：自绘界面、图表、页面与诊断规则；四档字体、明暗 token 与数字格式化集中在 `Theme.h` / `Theme.cpp`。
 - `Source/file/FFmpegRuntime.*`：随包 FFmpeg 的解析、能力探测与进程管理；GUI、文件 QC 与 CLI 共用。
-- [`DESIGN.md`](DESIGN.md)：MasterLens 的界面硬性约束；[`FRONTEND-DESIGN.md`](FRONTEND-DESIGN.md)：团队可迁移的审美与 token 参考。
+- [`DESIGN.md`](DESIGN.md)：MasterLens 的界面硬性约束；[`FRONTEND-DESIGN.md`](FRONTEND-DESIGN.md)：团队可迁移的审美与 token 参考；[`docs/design-3.1.md`](docs/design-3.1.md)：3.1 的 Calibrated Plate 方向与迁移清单。
 - `Source/dsp/`：响度、真峰值、频谱与信号分析。
 - `Source/audio/`、`Source/file/`、`Source/album/`：试听、文件 QC 与专辑门禁。
 - `third_party/ffmpeg/`：三个平台的运行时、许可证与 `build-info.txt`。
@@ -226,12 +235,13 @@ scripts/verify-runtime.sh third_party/ffmpeg/macos-universal/ffmpeg macos-univer
 
 MasterLens 不做总线 ARA：多数宿主只向音频轨开放 ARA，总线整张混音的离线分析由文件 QC 处理。AAX、DDP、Apple 公证和商业代码签名需要另外的 SDK、编码器或证书。
 
-真实宿主（Logic / REAPER / Cubase）与 ≥2 小时真实文件持续播放尚未完成验收；Windows ARM64 为交叉构建，未在 ARM64 实机运行；编码 A/B 的编码器延迟补偿仍未实现。macOS 版本为 ad-hoc 签名、未公证，首次打开可能需要「右键 → 打开」。
+真实宿主（Logic / REAPER / Cubase）与 ≥2 小时真实文件持续播放尚未完成验收；Windows ARM64 为交叉构建，未在 ARM64 实机运行。3.2 的流式参考用前缀响度近似，不等同整段精确测量；3.4 的监视轮询间隔 2 s，只保证变更文件会被复检，不保证亚秒级响应。macOS 版本为 ad-hoc 签名、未公证，首次打开可能需要「右键 → 打开」。
 
 ## 版本历史
 
 | 版本 | 内容 | 记录 |
 | --- | --- | --- |
+| 3.1.0 | Calibrated Plate 界面、紧凑档、可信交付、QC 工作流、参考流式、编码对齐、批量交付 | [验证记录](docs/performance-3.1.md) |
 | 3.0.3 | 排印、层级、对比度与构图的界面整理；设计规范重写 | [验证记录](docs/performance-3.0.3.md) |
 | 3.0.2 | 安装包自带 LGPL FFmpeg 9.0.2 + LAME 3.100，稳定发布 | [验证记录](docs/performance-3.0.2.md) |
 | 3.0.1 | 统一 `FFmpegRuntime`、失败分类、打包与发布门禁 | [验证记录](docs/performance-3.0.1.md) |
@@ -246,13 +256,13 @@ MasterLens 不做总线 ARA：多数宿主只向音频轨开放 ARA，总线整�
 
 ## English summary
 
-MasterLens 3.0.3 is a small extra pair of eyes at the end of your mastering chain. It checks loudness, peaks, stereo balance, spectra and delivery risks on macOS and Windows, with VST3, AU, Standalone and a file-QC CLI. By default it adds no latency and never alters your audio; auditioning, loudness matching and reference A/B only change the output when you turn them on.
+MasterLens 3.1.0 is a small extra pair of eyes at the end of your mastering chain. It checks loudness, peaks, stereo balance, spectra and delivery risks on macOS and Windows, with VST3, AU, Standalone and a file-QC CLI. By default it adds no latency and never alters your audio; auditioning, loudness matching and reference A/B only change the output when you turn them on.
 
-3.0.3 is a UI-only release. Typography is now four semantic roles (Label 14 / Value 18 / Title 20 / Critical 30 at JUCE font height), page titles and metadata sit on a clearer hierarchy, and light-theme status colours are deep enough to carry 14 px text. Status chips use a neutral fill with a 1 px semantic outline; the spectrum axis runs from +6 to −90 dB with one mapping for grid and curve; numbers and separators follow a single formatter (true minus, en dash, zero-negative normalisation); and Chinese pages no longer mix in full English sentences. The minimum zoom is 100% (window 1120×700 to 2240×1400), and the rewritten rules live in `DESIGN.md` and `FRONTEND-DESIGN.md`.
+3.1 brings the Calibrated Plate editor and the 3.0.4–3.4 delivery workflow into one release. Cards give way to a calibrated plate and a shared graphite measurement window, with a 46 px mono readout, target band, metric rows, coverage and a platform delivery ledger. A compact tier at 1000×630 keeps 1:1 type and hides the ledger instead of shrinking Chinese labels. Client delivery specs now drive one effective target across GUI, CLI, CSV and JSON; File QC can walk to the next unreviewed finding, confirm or ignore evidence with notes, and preview a client spec before export. Reference A/B gains named cues and looping, with bounded streaming for references over 64 MB. Codec A/B aligns by the measured encoder delay, offers an equal-loudness A−B difference and locates the encoded true peak with 4× sinc interpolation. Batch delivery adds incremental state, summaries, retries and a watch mode.
 
 Since 3.0.2 the installers carry a trimmed LGPL FFmpeg 9.0.2 with LAME 3.100, so AAC 256k / MP3 320k codec A/B and the CLI `--codec` round-trip work without Homebrew or a PATH setup. The runtime is resolved from the package first, with an explicit `MASTERLENS_FFMPEG` override and a development-only PATH fallback. FFmpeg and LAME are LGPL-2.1-or-later; licence texts, pinned source URLs, checksums and the exact configure line ship with the runtime.
 
-Multi-reference files (1–4), region markers and problem-loop audition remain part of the workflow. Multi-reference spectra are energy aggregates, not a synthetic “reference master”; live region figures remain 100 ms envelope estimates, while file QC stays the exact offline path. No dataset, model or cloud inference is used. See the [validation record](docs/performance-3.0.2.md) for scope and limits.
+Multi-reference files (1–4), region markers and problem-loop audition remain part of the workflow. Multi-reference spectra are energy aggregates, not a synthetic “reference master”; live region figures remain 100 ms envelope estimates, while file QC stays the exact offline path. No dataset, model or cloud inference is used. See the [validation record](docs/performance-3.1.md) for scope and limits.
 
 JUCE 8.0.15 使用 AGPLv3 / 商业双许可；本项目按 AGPLv3 使用 JUCE。随包 FFmpeg / LAME 的许可见 [`packaging/THIRD-PARTY-NOTICES.md`](packaging/THIRD-PARTY-NOTICES.md)；Geist 字体按 SIL Open Font License 分发。
 
