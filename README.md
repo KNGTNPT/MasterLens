@@ -35,6 +35,8 @@ MasterLens 是放在母带链末尾的小检查员：这首歌有多响、峰值
 - 截图：9 张 `docs/*-3.1.0.png`（含紧凑档），`docs/screenshots-3.1.0.json` 记录参数、尺寸与 SHA-256。
 - 已发布：[v3.1.0](https://github.com/KNGTNPT/MasterLens/releases/tag/v3.1.0)，含 macOS DMG 与 Windows x64 / ARM64 安装包、`SHA256SUMS.txt`（CI run `43164010215` 全绿）。
 
+详细记录见 [3.1.0 验证记录](docs/performance-3.1.md) 与 [交付说明](docs/release-3.1.0.md)。
+
 ![MasterLens 3.1.0 响度与校准面板](docs/screenshot-3.1.0.png)
 
 ![MasterLens 3.1.0 信号健康](docs/signal-3.1.0.png)
